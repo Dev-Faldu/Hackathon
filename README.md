@@ -8,6 +8,30 @@ Visual blueprint: [`docs/rampcast-blueprint.html`](docs/rampcast-blueprint.html)
 End-to-end research (takeoff → landing → ramp → car → hotel, decision rights, 22 edge cases, runway-closure scenario): [`docs/gate-to-hotel.html`](docs/gate-to-hotel.html)
 Team contracts (file and API shapes, assumptions): [`contracts/`](contracts/)
 
+## Run it
+
+```bash
+make setup      # Python venv + npm install (one time)
+make dev        # API on :8000 and app on http://localhost:5173
+make test       # server tests + app typecheck
+```
+
+Optional: `export ANTHROPIC_API_KEY=...` before `make dev` turns on Claude-written briefings and what-if explanations. Without a key, the app uses template text built from the same engine facts. Open a specific replay moment with `http://localhost:5173/?t=2027-02-12T10:00:00-08:00#live`.
+
+**Data modes.** With `data/processed/replay_2027.jsonl` present, Live ops and After-action replay the real Super Bowl LVI week (OpenSky, shifted +1,827 days). Without it, they use a seeded sample week shaped by public analog counts, and the sidebar labels it "Sample week".
+
+**Plug-in modules.** `server/rampcast_server/adapters.py` swaps in team modules as soon as they exist: `rampcast.forecast.api.get_forecast/get_occupancy` and `rampcast.engine.api.get_strategies`. Each returns the shapes in `contracts/README.md`. Until then, the built-in reference engine answers every route.
+
+## Product tour (demo path)
+
+| Screen | What it shows | Demo beat |
+|---|---|---|
+| Event setup | Event facts, FBO capacity, staff, fuel trucks, need-based priority weights, the data-certainty ladder | "The manager sets the rules; the AI never uses name, status or price" |
+| Plan board | Ordinary week vs Super Bowl week (P10–P90), hour-by-day ramp heatmap, strategies A/B/C with approvers, briefing | Switch Low/Medium/High; approve Strategy B |
+| Live ops | Replay clock, inbound map with an LA-basin inset and the SoFi TFR rings, stand map with boxed-in flags, alerts, ground-handling priority queue | Press play at 600x; open the #1 queue item and approve the car |
+| What-if | Runway closure, demand +20%, early customs close; before/after KPIs; option cards for operators' dispatchers | Run "Runway 16R/34L closed"; show that the pilot decides |
+| After-action | Forecast error vs the naive rule, interval coverage, hours over capacity avoided, CO2 avoided, the audit trail | Close on "what the AI never decides" |
+
 ## Why this angle
 
 1. **LA already hosted this game.** Super Bowl LVI was played at SoFi in Feb 2022. That week is a real, labelled analog, so we can train on data before it, forecast it blind, and report real error.

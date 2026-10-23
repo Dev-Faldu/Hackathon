@@ -124,7 +124,7 @@ Response: `{"kpi_diff":{"A":{"hours_over_capacity":[0,3]}},"new_alerts":[...],"s
 ### `GET /briefing?t=...` and `POST /explain` (Role 3)
 
 ```json
-{"text":"Friday peak: medium scenario puts the ramp at 107% from 13:00 to 17:00 (A.kpis...).","cited_ids":["A.kpis.hours_over_capacity"],"model":"claude-sonnet-5-5","fallback":false}
+{"text":"Friday peak: medium scenario puts the ramp at 107% from 13:00 to 17:00 (A.kpis...).","cited_ids":["A.kpis.hours_over_capacity"],"model":"claude-opus-5-5","fallback":false}
 ```
 
 ### Audit log (`logs/audit.jsonl`, Role 3)

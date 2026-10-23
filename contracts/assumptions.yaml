@@ -13,6 +13,10 @@ fbo:
   airport: KVNY
   capacity_large_equiv: 48          # assumption
   reservation_buffer_pct: 10        # assumption: keep 10% of stands unbooked
+  share_of_airport_arrivals: 0.30   # assumption: our FBO's share of KVNY bizjet arrivals (4 major FBOs)
+  temp_taxiway_stands: 12           # assumption: extra stands if a taxiway is closed for parking (strategy C)
+  staff_on_shift: 10                # assumption: line techs per shift in an ordinary week
+  fuel_trucks: 3                    # assumption
 
 large_equiv_factor:                 # parking footprint per size class (assumption)
   light: 0.4
@@ -64,3 +68,27 @@ priority_weights_default:           # manager-editable; need-based only
 alerts:
   ramp_threshold_pct: 90
   ramp_lookahead_h: 2
+
+drive_minutes:                      # assumption: typical midday drive time, airport -> hotel zone
+  KVNY: {Beverly Hills: 35, Santa Monica: 40, Downtown LA: 45, Inglewood: 50, Burbank: 20}
+  KBUR: {Beverly Hills: 30, Santa Monica: 45, Downtown LA: 25, Inglewood: 45, Burbank: 8}
+  KWHP: {Beverly Hills: 40, Santa Monica: 45, Downtown LA: 40, Inglewood: 55, Burbank: 18}
+  KCMA: {Beverly Hills: 60, Santa Monica: 55, Downtown LA: 70, Inglewood: 70, Burbank: 55}
+  KLGB: {Beverly Hills: 50, Santa Monica: 50, Downtown LA: 35, Inglewood: 30, Burbank: 50}
+  KONT: {Beverly Hills: 70, Santa Monica: 80, Downtown LA: 55, Inglewood: 65, Burbank: 55}
+  KLAX: {Beverly Hills: 30, Santa Monica: 25, Downtown LA: 35, Inglewood: 15, Burbank: 45}
+
+alternates:                         # runway length approximate (verify against FAA airport data); customs status must be verified for 2027
+  KBUR: {name: Hollywood Burbank, runway_ft: 6886, customs: verify, partner_parking: true}
+  KWHP: {name: Whiteman, runway_ft: 4120, customs: "no", partner_parking: true}
+  KCMA: {name: Camarillo, runway_ft: 6013, customs: "no", partner_parking: true}
+  KLGB: {name: Long Beach, runway_ft: 10003, customs: verify, partner_parking: false}
+  KONT: {name: Ontario Intl, runway_ft: 12197, customs: "yes", partner_parking: false}
+  KLAX: {name: Los Angeles Intl, runway_ft: 12923, customs: "yes", partner_parking: false}
+
+runway_needed_ft:                   # assumption: planning minimum by size class, not a performance calculation
+  light: 4000
+  mid: 4800
+  super_mid: 5200
+  large: 5800
+  other: 5000

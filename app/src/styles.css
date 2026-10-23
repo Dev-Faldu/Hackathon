@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sky-0: #f7f9fc;
+  --sky-1: #eaf1fb;
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --hairline: rgba(15, 30, 60, 0.08);
+  --ink: #0b1b33;
+  --ink-2: #4a5b73;
+  --runway: #2563eb;
+  color-scheme: light;
+}
+
+html { background: #eef3fa; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  background: linear-gradient(135deg, var(--sky-0) 0%, #f2f6fc 45%, var(--sky-1) 100%) fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Two soft aurora blobs behind every glass panel. */
+.aurora::before, .aurora::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+}
+.aurora::before { width: 46vw; height: 46vw; left: -10vw; top: -14vw; background: rgba(56, 189, 248, 0.20); }
+.aurora::after { width: 40vw; height: 40vw; right: -8vw; bottom: -14vw; background: rgba(167, 139, 250, 0.16); }
+
+@layer components {
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--hairline);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.75), 0 12px 40px rgba(20, 40, 80, 0.08);
+    border-radius: 20px;
+  }
+  .glass-strong {
+    background: var(--glass-strong);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--hairline);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8), 0 12px 40px rgba(20, 40, 80, 0.08);
+    border-radius: 20px;
+  }
+  .label { @apply font-mono text-2xs uppercase tracking-[0.08em] text-ink-2; }
+  .num { font-family: "Geist Mono Variable", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-control px-3.5 py-2 text-[13px] font-medium transition
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-runway/50 disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-runway text-white shadow-[0_6px_18px_rgba(37,99,235,0.28)] hover:bg-[#1d4fd6]; }
+  .btn-ghost { @apply btn border border-hairline bg-white/70 text-ink hover:bg-white; }
+  .chip { @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-medium; }
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(15, 30, 60, 0.14); border-radius: 10px; border: 3px solid transparent; background-clip: content-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
