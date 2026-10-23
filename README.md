@@ -5,6 +5,7 @@
 RAMPCAST is an AI ramp-capacity planner for a fictional FBO, *Sepulveda Jet Center*, at Van Nuys Airport (KVNY) during Super Bowl LXI week (Sun Feb 14 2027, SoFi Stadium). It forecasts parking demand, shows which hours the ramp overflows under low, medium and high demand, and drafts a plan (reservation caps, overflow partners, fuel and crews) that a human FBO manager approves.
 
 Visual blueprint: [`docs/rampcast-blueprint.html`](docs/rampcast-blueprint.html)
+End-to-end research (takeoff → landing → ramp → car → hotel, decision rights, 22 edge cases, runway-closure scenario): [`docs/gate-to-hotel.html`](docs/gate-to-hotel.html)
 
 ## Why this angle
 
