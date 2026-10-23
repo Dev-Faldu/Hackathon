@@ -1,0 +1,520 @@
+<title>RAMPCAST Blueprint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an aeronautical-chart briefing. One reading column, wide figures (map, flow, heatmap) break out to full width. */
+:root{
+  --paper:#F3F6F7; --panel:#FFFFFF; --ink:#12233A; --muted:#566578; --rule:#D3DCE3;
+  --chart-blue:#1D5FA8; --tfr:#B4237D; --tfr-soft:rgba(180,35,125,.10); --teal:#17808F; --amber:#B97A0B;
+  --ok:#2E8B57; --watch:#C9A227; --tight:#D9771E; --over:#C0392B; --cell-empty:#E7EDF1;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0D141D; --panel:#131D29; --ink:#DCE6EE; --muted:#93A3B5; --rule:#273648;
+  --chart-blue:#6AA8EE; --tfr:#E35DAE; --tfr-soft:rgba(227,93,174,.13); --teal:#4DB8C7; --amber:#E2A83C;
+  --ok:#4CB879; --watch:#D9B840; --tight:#E8893A; --over:#E5574A; --cell-empty:#1A2633; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0D141D; --panel:#131D29; --ink:#DCE6EE; --muted:#93A3B5; --rule:#273648;
+  --chart-blue:#6AA8EE; --tfr:#E35DAE; --tfr-soft:rgba(227,93,174,.13); --teal:#4DB8C7; --amber:#E2A83C;
+  --ok:#4CB879; --watch:#D9B840; --tight:#E8893A; --over:#E5574A; --cell-empty:#1A2633; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1080px;margin:0 auto}
+.col{max-width:68ch}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;text-wrap:balance;margin:0}
+h1{font-size:clamp(52px,9vw,104px);letter-spacing:.01em}
+h2{font-size:clamp(30px,4.2vw,42px);letter-spacing:.01em}
+h3{font-size:22px;font-weight:600;letter-spacing:.02em}
+p{margin:0}
+a{color:var(--chart-blue)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--tfr);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+section{padding-block:56px 8px;display:grid;gap:22px}
+.sec-head{display:grid;gap:10px;border-top:1px solid var(--rule);padding-top:18px}
+.lede{color:var(--muted);font-size:17px}
+
+/* header */
+header{padding-block:44px 8px;display:grid;gap:18px}
+.callsign{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--rule);padding:3px 9px;border-radius:3px;color:var(--muted)}
+.chip.tfr{border-color:var(--tfr);color:var(--tfr)}
+h1 .slash{color:var(--tfr)}
+.thesis{font-size:clamp(19px,2.3vw,23px);line-height:1.4;max-width:40ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:8px}
+.fact{background:var(--panel);padding:14px 16px;display:grid;gap:4px;align-content:start}
+.fact b{font-family:var(--display);font-size:38px;line-height:1;font-weight:700}
+.fact span{font-size:13px;color:var(--muted);line-height:1.4}
+
+/* insights */
+.insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+.insight{display:grid;gap:8px;align-content:start}
+.insight .k{font-family:var(--display);font-size:20px;font-weight:600;color:var(--tfr)}
+
+/* map */
+.figure{background:var(--panel);border:1px solid var(--rule);padding:14px;display:grid;gap:10px}
+.scroll-x{overflow-x:auto}
+svg text{font-family:var(--mono)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:6px;border-radius:2px}
+
+/* timeline */
+.days{display:grid;grid-template-columns:repeat(7,minmax(118px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);min-width:840px}
+.day{background:var(--panel);padding:10px 12px;display:grid;gap:6px;align-content:start;font-size:13px;line-height:1.4}
+.day .d{font-family:var(--display);font-size:22px;font-weight:600}
+.day.game{background:var(--tfr-soft)}
+.day .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--tfr)}
+
+/* controls */
+.toggle{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--panel)}
+.toggle button{font:500 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;background:none;border:0;color:var(--muted);padding:8px 14px;cursor:pointer;border-right:1px solid var(--rule)}
+.toggle button:last-child{border-right:0}
+.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+
+/* flow diagram */
+.flow{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:0;min-width:900px}
+.stage{display:grid;gap:8px;align-content:start;padding:0 14px;position:relative}
+.stage:not(:last-child)::after{content:"";position:absolute;right:-7px;top:12px;width:14px;height:14px;border-top:2px solid var(--muted);border-right:2px solid var(--muted);transform:rotate(45deg)}
+.stage h3{font-size:18px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.node{border:1px solid var(--rule);background:var(--paper);padding:8px 10px;border-radius:3px;font-size:12.5px;line-height:1.35}
+.node b{display:block;font-size:13.5px}
+.node.human{border-color:var(--tfr);background:var(--tfr-soft)}
+.node.ai{border-color:var(--teal)}
+.node.data{border-left:3px solid var(--chart-blue)}
+
+/* models */
+.models{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.model{background:var(--panel);padding:16px;display:grid;gap:8px;align-content:start;font-size:14px}
+.model .n{font-family:var(--mono);font-size:11.5px;color:var(--teal);letter-spacing:.1em}
+.model code{font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.sel td{background:var(--tfr-soft)}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.watch{color:var(--watch)} .pill.tight{color:var(--tight)} .pill.over{color:var(--over)}
+
+/* heatmap */
+.heat{display:grid;grid-template-columns:62px repeat(24,minmax(22px,1fr));gap:2px;min-width:700px;font-family:var(--mono);font-size:10.5px}
+.heat .c{height:26px;border-radius:2px;background:var(--cell-empty)}
+.heat .rl{align-self:center;color:var(--muted)}
+.heat .hl{text-align:center;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.kpi{background:var(--panel);padding:12px 14px;display:grid;gap:2px}
+.kpi b{font-family:var(--display);font-size:32px;line-height:1.05}
+.kpi span{font-size:12.5px;color:var(--muted);line-height:1.35}
+
+/* guardrails */
+.never{border:2px solid var(--tfr);padding:20px;display:grid;gap:10px;background:var(--panel)}
+.never .q{font-family:var(--display);font-size:clamp(24px,3.4vw,34px);font-weight:600;line-height:1.15}
+.rails{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.rails div{display:grid;gap:6px;align-content:start;font-size:14px}
+.rails b{font-family:var(--display);font-size:19px;font-weight:600}
+
+/* build plan */
+.hours{display:grid;grid-template-columns:110px 1fr;gap:0;border-top:1px solid var(--rule)}
+.hours > div{padding:10px 8px;border-bottom:1px solid var(--rule);font-size:14px}
+.hours .t{font-family:var(--mono);color:var(--muted);font-size:12.5px}
+ul{margin:0;padding-left:18px} li{margin:2px 0}
+.note{font-size:12.5px;color:var(--muted)}
+.sources{font-size:13px;color:var(--muted);display:grid;gap:4px}
+@media (max-width:640px){.hours{grid-template-columns:78px 1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="callsign">
+    <span class="chip">SpartHill Hacks 2026</span>
+    <span class="chip">Track 01 · The Intelligent FBO</span>
+    <span class="chip tfr">Super Bowl LXI · SoFi Stadium · Sun Feb 14 2027</span>
+  </div>
+  <h1>RAMP<span class="slash">/</span>CAST</h1>
+  <p class="thesis">A ramp-capacity planner for an FBO at Van Nuys. It forecasts how many jets will want to park during Super Bowl week, warns which hours the ramp overflows, and drafts a plan that a human manager approves.</p>
+  <p class="lede col">Focus area: <b>Parking</b>. Arrivals forecasting is the engine underneath; fuel and staffing fall out of the same model. Our FBO is fictional (call it <b>Sepulveda Jet Center</b>), and the airport, the airspace and the history are real.</p>
+  <div class="facts" aria-label="Key facts from past Super Bowls">
+    <div class="fact"><b class="mono">1,400+</b><span>business-aviation flights into LA-area airports in the days before Super Bowl LVI, SoFi 2022 (FlightAware via BJT)</span></div>
+    <div class="fact"><b class="mono">501</b><span>bizjet arrivals across LA airports on the Friday before LVI, the single peak day (WingX)</span></div>
+    <div class="fact"><b class="mono">548</b><span>bizjet departures the Monday after LVI, a one-day exodus (WingX)</span></div>
+    <div class="fact"><b class="mono">~3×</b><span>day-after departure surge vs a normal February day, Bay Area at Super Bowl LX, Feb 2026 (WingX)</span></div>
+    <div class="fact"><b class="mono">10 / 30 nm</b><span>game-day TFR inner core and outer ring around SoFi in 2022, 2:30 to 8:30 PM</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="sec-head"><span class="label">Why this pitch wins</span><h2>Three insights the other teams will miss</h2></div>
+  <div class="insights">
+    <div class="insight"><span class="k">1 · LA already ran this exam</span><p>Super Bowl LVI was played at the same stadium in February 2022. That gives us a real, labelled analog week at the same airports. We can train on everything before it, predict it blind, and report real forecast error. Most teams will only have synthetic data.</p></div>
+    <div class="insight"><span class="k">2 · Parking is the binding constraint</span><p>In 2022 the FAA did not ration runways. It ran a <i>parking reservation program</i> through each FBO, Feb 6 to 14. Slots ran out and NBAA told operators to plan drop-and-go. The ramp is where the week is won or lost.</p></div>
+    <div class="insight"><span class="k">3 · Overflow burns fuel</span><p>A jet that can't park drops its passengers and flies away empty, then comes back empty. Those are two deadhead legs per aircraft. Planning the ramp well cuts empty flights, so the sustainability benefit can be measured in gallons and tonnes of CO₂.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Airspace picture · drawn to scale</span><h2>Why Van Nuys becomes the hub</h2>
+  <p class="lede col">Hawthorne sits 1.9 nm from SoFi. LAX, Santa Monica and Torrance are also inside the 10 nm core of the 2022 game-day TFR. Van Nuys is 17 nm out, in the outer ring, with an 8,000 ft runway and four major FBOs. It sees roughly 230,000 operations a year and absorbs the overflow.</p></div>
+  <div class="figure">
+    <div class="scroll-x"><svg id="map" viewBox="0 0 900 520" width="100%" style="min-width:640px;display:block" role="img" aria-label="Map of LA-area airports with distance rings around SoFi Stadium"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--tfr-soft);border:1px solid var(--tfr)"></i>2022 TFR inner core (10 nm) and outer ring (30 nm)</span>
+      <span><i style="background:var(--chart-blue)"></i>Airport in the 2022 FBO parking-reservation program</span>
+      <span><i style="background:var(--muted)"></i>Other relief airport</span>
+      <span><i style="background:var(--amber)"></i>Our FBO (VNY)</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Planning window · 7 days</span><h2>Tue Feb 9 to Mon Feb 15, 2027</h2>
+  <p class="lede col">Two calendar facts change the shape of the week. Game day is Valentine's Day, and the Monday after is Presidents' Day, a federal holiday. Expect couples and leisure trips, and a departure wave spread over Sunday night and Monday.</p></div>
+  <div class="scroll-x"><div class="days">
+    <div class="day"><span class="d">Tue 9</span><span>Early teams, media, sponsors, league staff. Baseline plus a little.</span></div>
+    <div class="day"><span class="d">Wed 10</span><span>Corporate hospitality crews position. Reservations start to bind.</span></div>
+    <div class="day"><span class="d">Thu 11</span><span>NFL Honors and parties. Arrival ramp-up begins.</span></div>
+    <div class="day"><span class="d">Fri 12</span><span class="tag">Peak arrivals</span><span>The 2022 analog peaked here at 501 arrivals basin-wide.</span></div>
+    <div class="day"><span class="d">Sat 13</span><span>Second wave. Ramp near full. Long-stay jets locked in.</span></div>
+    <div class="day game"><span class="d">Sun 14</span><span class="tag">Game · TFR</span><span>Morning arrivals only. TFR window (2022: 2:30–8:30 PM). Night exodus begins.</span></div>
+    <div class="day"><span class="d">Mon 15</span><span class="tag">Departure wave</span><span>Presidents' Day. Fuel and line crews at maximum. 2022 analog: 548 departures.</span></div>
+  </div></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Live concept demo · synthetic numbers</span><h2>Baseline, forecast and scenario plan</h2>
+  <p class="lede col">Switch scenarios to see how the plan changes. The numbers here come from a stated synthetic model shaped like the 2022 and 2026 analog curves. In the real build, the OpenSky history replaces them.</p></div>
+  <div class="toolbar">
+    <div class="toggle" role="group" aria-label="Demand scenario">
+      <button type="button" data-sc="low" aria-pressed="false">Low</button>
+      <button type="button" data-sc="med" aria-pressed="true">Medium</button>
+      <button type="button" data-sc="high" aria-pressed="false">High</button>
+    </div>
+    <span class="note mono" id="capnote"></span>
+  </div>
+  <div class="figure">
+    <span class="label">Daily jet arrivals at our FBO</span>
+    <div class="scroll-x"><svg id="chart" viewBox="0 0 900 300" width="100%" style="min-width:600px;display:block" role="img" aria-label="Daily arrivals: ordinary week vs Super Bowl scenarios"></svg></div>
+    <div class="legend">
+      <span><i style="background:var(--muted)"></i>Ordinary February week (baseline)</span>
+      <span><i style="background:var(--teal)"></i>Low · Medium · High (selected one is bold)</span>
+    </div>
+  </div>
+  <div class="figure">
+    <div class="toolbar"><span class="label">Hour-by-hour ramp occupancy vs capacity</span>
+      <span class="legend"><span><i style="background:var(--ok)"></i>&lt;70%</span><span><i style="background:var(--watch)"></i>70–90%</span><span><i style="background:var(--tight)"></i>90–100%</span><span><i style="background:var(--over)"></i>Over capacity</span></span></div>
+    <div class="scroll-x"><div class="heat" id="heat"></div></div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="scroll-x"><table id="plan" aria-label="Scenario comparison"></table></div>
+  <p class="note">Assumptions: ramp capacity of 48 spots counted in large-cabin (Gulfstream G450-class) equivalents. Ordinary-week arrivals of 14–24 per day. Super Bowl stayers remain through the game, and drop-and-go aircraft leave within 2 hours. Blended fuel uplift is 1,100 gal per departure. Each overflow jet repositions with 2 empty legs. Jet fuel emits 9.75 kg CO₂ per gallon (EPA factor). All of these are placeholders until the real history is loaded.</p>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">System architecture</span><h2>What we build</h2>
+  <p class="lede col">Five stages from left to right. The AI drafts the plan and a human signs it. Nothing reaches an aircraft, a pilot or ATC.</p></div>
+  <div class="figure scroll-x">
+    <div class="flow">
+      <div class="stage"><h3>Data</h3>
+        <div class="node data"><b>OpenSky ADS-B</b>Arrivals and departures at KVNY plus 9 basin airports, 2019–2026</div>
+        <div class="node data"><b>FAA Aircraft Registry</b>ICAO24 hex → make/model → size class</div>
+        <div class="node data"><b>FAA OPSNET</b>Daily tower counts to validate the ADS-B totals</div>
+        <div class="node data"><b>Event analogs</b>WingX/Argus counts for LVI–LX, NOTAM and TFR windows</div>
+        <div class="node data"><b>Weather + calendar</b>METARs, holidays, game time</div>
+      </div>
+      <div class="stage"><h3>Features</h3>
+        <div class="node"><b>Daily baseline</b>Day of week, month, holiday, trend</div>
+        <div class="node"><b>Event clock</b>Days relative to game: −5 … +1</div>
+        <div class="node"><b>Fleet mix</b>Light / mid / super-mid / large-cabin share</div>
+        <div class="node"><b>Stay profile</b>Drop-and-go vs overnight, length of stay</div>
+        <div class="node"><b>Privacy filter</b>LADD-blocked tails dropped, tails hashed</div>
+      </div>
+      <div class="stage"><h3>Models</h3>
+        <div class="node ai"><b>M1 Baseline forecaster</b>Ordinary-week arrivals with intervals</div>
+        <div class="node ai"><b>M2 Event uplift</b>Analog-event multiplier curve, low/med/high</div>
+        <div class="node ai"><b>M3 Ramp simulator</b>Monte Carlo of hourly occupancy</div>
+        <div class="node ai"><b>M4 Plan optimizer</b>Slot caps, overflow, fuel, crews</div>
+      </div>
+      <div class="stage"><h3>Planner</h3>
+        <div class="node"><b>Scenario board</b>Baseline vs forecast, L/M/H</div>
+        <div class="node"><b>Ramp heatmap</b>Hours at risk of overflow</div>
+        <div class="node"><b>Plan draft</b>Caps, fuel orders, crew roster</div>
+        <div class="node"><b>"Why" panel</b>Drivers, assumptions, uncertainty</div>
+      </div>
+      <div class="stage"><h3>Human gate</h3>
+        <div class="node human"><b>FBO GM approves</b>Edits, accepts or rejects each line</div>
+        <div class="node human"><b>Audit log</b>Who approved what and when</div>
+        <div class="node human"><b>Out of scope</b>Movement authority, ATC, safety calls</div>
+        <div class="node"><b>Outputs</b>Reservation cap, fuel PO, staffing roster, overflow partner list</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">The four models</span><h2>Small, explainable and testable</h2>
+  <p class="lede col">Use gradient boosting and simulation rather than a black box. Judges score accuracy and explanation, and every number here can be traced back to an input.</p></div>
+  <div class="models">
+    <div class="model"><span class="n">M1 · BASELINE</span><h3>What does an ordinary week look like?</h3><p>Daily arrivals at KVNY from two or more years of OpenSky flights. Fit a seasonal model (Prophet or LightGBM with day-of-week, month and holiday features). Output a P10/P50/P90 band for the same calendar week without a game.</p><code>y = f(dow, month, holiday, trend) ± interval</code></div>
+    <div class="model"><span class="n">M2 · EVENT UPLIFT</span><h3>How much extra, and on which days?</h3><p>Measure the uplift curve, actual ÷ baseline by day relative to the game, from real analogs. Use LVI LA 2022 for the same basin, plus LVII–LX. Scale by host-basin share. Low, medium and high come from the spread across analogs, not from guesses.</p><code>uplift(d) for d ∈ [−5, +1]</code></div>
+    <div class="model"><span class="n">M3 · RAMP SIMULATOR</span><h3>When does the ramp overflow?</h3><p>Sample arrivals by hour, aircraft size and stay type (drop-and-go vs stays through the game). Run 5,000 Monte Carlo weeks. Report P(occupancy &gt; capacity) per hour. This uncertainty is what we explain to the judges.</p><code>P(occ_h &gt; cap) per hour</code></div>
+    <div class="model"><span class="n">M4 · PLAN OPTIMIZER</span><h3>What should we do about it?</h3><p>A small integer program. Choose reservation caps by day and the drop-and-go quota, and assign overflow to the nearest partner airport to minimize empty legs. Fuel orders and crew shifts follow from the movement forecast.</p><code>min empty_leg_nm + unmet_demand · penalty</code></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Real data · where to get it</span><h2>Dataset shopping list</h2>
+  <p class="lede col">Every source here is public or free with academic sign-up. Pull scripts are in <span class="mono">data/scripts/</span> in the repo. Run them on a laptop, because this build environment's network blocks the aviation APIs.</p></div>
+  <div class="scroll-x"><table>
+    <thead><tr><th>Dataset</th><th>What we use it for</th><th>Access</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://opensky-network.org/data/api" target="_blank" rel="noopener">OpenSky Network REST API</a></td><td>Arrivals and departures per airport per day. KVNY, KHHR, KBUR, KLGB, KSMO, KTOA, KSNA, KONT, KCMA. Feb 2022 (LVI) vs ordinary weeks.</td><td>Free account. Max 7-day windows per call.</td></tr>
+      <tr><td><a href="https://opensky-network.org/data/trino" target="_blank" rel="noopener">OpenSky historical DB (Trino)</a></td><td>Full trajectories to measure ground time, which tells drop-and-go apart from overnight stays.</td><td>Research/academic access request</td></tr>
+      <tr><td><a href="https://www.faa.gov/licenses_certificates/aircraft_certification/aircraft_registry/releasable_aircraft_download" target="_blank" rel="noopener">FAA Releasable Aircraft Registry</a></td><td>ICAO24 Mode S hex → make/model → wingspan and size class → parking footprint and fuel uplift.</td><td>Free ZIP download</td></tr>
+      <tr><td><a href="https://aspm.faa.gov/opsnet/sys/main.asp" target="_blank" rel="noopener">FAA OPSNET (incl. former ATADS)</a></td><td>Official daily itinerant GA and air-taxi counts at VNY. Ground truth to calibrate ADS-B coverage.</td><td>Public, daily granularity</td></tr>
+      <tr><td><a href="https://mesonet.agron.iastate.edu/request/download.phtml" target="_blank" rel="noopener">Iowa Environmental Mesonet ASOS</a></td><td>Historical METARs for VNY. Weather is a covariate and also a disruption scenario.</td><td>Free CSV</td></tr>
+      <tr><td><a href="https://www.faa.gov/newsroom/super-bowl-lvi-flight-requirements-ga-pilots" target="_blank" rel="noopener">FAA Super Bowl LVI notice</a> · <a href="https://nbaa.org/aircraft-operations/airspace/regional/super-bowl-lvi/" target="_blank" rel="noopener">NBAA LVI page</a></td><td>Reservation airports and dates, TFR geometry and times, flight-plan filing rules. These become model constraints.</td><td>Public</td></tr>
+      <tr><td>WingX / Argus / FlightAware published counts</td><td>Basin totals for LVI–LX, used to calibrate M2 uplift curves and to sanity-check the OpenSky pull.</td><td>Press releases and articles</td></tr>
+      <tr><td><a href="https://www.faa.gov/pilots/ladd" target="_blank" rel="noopener">FAA LADD program</a></td><td>Owners who opted out of public tracking. We drop those tails, which is part of the privacy story.</td><td>Public policy</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Measure the impact</span><h2>How we prove it works</h2></div>
+  <div class="scroll-x"><table>
+    <thead><tr><th>Test</th><th>Method</th><th>Metric we report</th></tr></thead>
+    <tbody>
+      <tr><td><b>Blind backtest on LVI</b></td><td>Train on data up to Jan 2022. Forecast Feb 8–14 2022 daily arrivals at KVNY. Compare with actuals.</td><td>MAPE vs two naive rules: "same week last year" and "scale by stadium attendance"</td></tr>
+      <tr><td><b>Out-of-region holdout</b></td><td>Apply the uplift model to Super Bowl LX 2026 (Bay Area), then check it against WingX's ~1,000 arrivals / ~600 Monday departures.</td><td>Error on the basin total and the peak day</td></tr>
+      <tr><td><b>Ramp coverage</b></td><td>Simulate the week with our plan vs a first-come-first-served FBO.</td><td>Hours over capacity, aircraft turned away, average wait for a tug</td></tr>
+      <tr><td><b>Sustainability</b></td><td>Count empty repositioning legs with nearest-partner overflow vs ad-hoc overflow.</td><td>Gallons and tonnes CO₂ avoided (estimate, assumptions shown)</td></tr>
+      <tr><td><b>Disruption</b></td><td>Inject a disruption, such as a Saturday marine-layer IFR morning or the game going to overtime.</td><td>How the plan and its uncertainty band move</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Responsible AI</span><h2>Human in command</h2></div>
+  <div class="never">
+    <span class="label" style="color:var(--tfr)">Judge question · What decision should your AI never be allowed to make?</span>
+    <p class="q">It never decides whether a specific aircraft may land, park or depart, and it never decides which customer gets the last spot.</p>
+    <p>Those are safety and fairness calls. Movement authority belongs to ATC and the pilot in command. Ramp safety belongs to the line supervisor. Allocating scarce spots belongs to the FBO manager, under rules a person wrote. Our tool forecasts and drafts. It does not see individual passengers, and it never ranks customers by who they are.</p>
+  </div>
+  <div class="rails">
+    <div><b>Planning only</b><p>Outputs are recommendations with an approve, edit or reject step and an audit log. The tool has no write access to any reservation or ATC system.</p></div>
+    <div><b>Privacy by design</b><p>We use aggregate counts by aircraft size class only. Tail numbers are hashed, and LADD-blocked aircraft are excluded. We store no passenger names, manifests or VIP identities.</p></div>
+    <div><b>Uncertainty shown</b><p>Every forecast carries a P10–P90 band and a short "why". Low, medium and high scenarios come from the real spread across past events.</p></div>
+    <div><b>Assumptions in the open</b><p>Capacity, stay length, fuel per departure and CO₂ factor are editable inputs on screen. They are not hidden constants.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">30-hour flight plan · team of up to 5</span><h2>Build order</h2>
+  <p class="lede col">Roles: <b>Data</b> (OpenSky + registry), <b>Model</b> (M1–M3), <b>Optimizer</b> (M4 + fuel and staffing), <b>Frontend</b> (planner UI), <b>Pitch</b> (story, assumptions sheet, responsible-AI statement).</p></div>
+  <div class="hours">
+    <div class="t">H0–3</div><div>Pull OpenSky arrivals and departures for KVNY and 9 basin airports. Cover Feb 2022, plus 8 ordinary Februaries and Januaries. Download the FAA registry and join on ICAO24. Freeze the dataset.</div>
+    <div class="t">H3–8</div><div>Fit M1 baseline. Build the M2 uplift curve from the LVI 2022 week and published analog counts. Train on data before LVI only.</div>
+    <div class="t">H8–14</div><div>Run the blind LVI backtest and record MAPE against the naive rules. Build the M3 Monte Carlo ramp simulator. Sketch the UI.</div>
+    <div class="t">H14–20</div><div>Build the M4 plan: caps, overflow partners, fuel orders, crew shifts. Wire up the planner UI with the scenario toggle, heatmap and "why" panel. Sleep in shifts.</div>
+    <div class="t">H20–25</div><div>Add the disruption scenario, the CO₂ and empty-leg estimate, and the editable assumptions panel. Write the responsible-AI statement.</div>
+    <div class="t">H25–30</div><div>Freeze code. Rehearse the 3-minute pitch: problem (1 slide), live demo (90 s), backtest proof, the "never" answer. Prepare a backup video of the demo.</div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Stretch goals</span><h2>After the core works</h2></div>
+  <div class="rails">
+    <div><b>LA28 Olympics</b><p>Same engine with a different event clock. LA28 runs about 17 days (July 14–30, 2028) with many venues instead of one game, so the uplift curve is longer and flatter. Show the selected-period version for opening ceremony week.</p></div>
+    <div><b>Ground-handoff module</b><p>Forecast hourly passenger-arrival waves at the FBO curb so ground transport companies can stage cars. Counts only, with no VIP identities and no routing of named people.</p></div>
+    <div><b>Basin view for regulators</b><p>Aggregate all-airport demand as a planning input for airport authorities. It still does not allocate slots, because the FAA and airports do that.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Sources</span></div>
+  <div class="sources">
+    <span>Super Bowl LVI LA traffic (1,400+ flights; 501 Friday arrivals; 548 Monday departures): <a href="https://www.bjtonline.com/node/29088" target="_blank" rel="noopener">BJT</a></span>
+    <span>FAA LVI GA requirements (reservation program Feb 6–14, TFR 2:30–8:30 PM, 10/30 nm): <a href="https://www.faa.gov/newsroom/super-bowl-lvi-flight-requirements-ga-pilots" target="_blank" rel="noopener">FAA</a> · <a href="https://spectrumnews1.com/ca/la/transportation/2022/01/12/faa-announces-super-bowl-flight-requirements" target="_blank" rel="noopener">Spectrum News</a> · <a href="https://nbaa.org/aircraft-operations/airspace/regional/super-bowl-lvi/" target="_blank" rel="noopener">NBAA</a> · <a href="https://ops.group/blog/super-bowl-feb-2022/" target="_blank" rel="noopener">OPSGROUP</a></span>
+    <span>Super Bowl LX Bay Area (1,000+ arrivals, ~600 Monday departures, OAK 32% / SFO 22% / SJC 22%): <a href="https://www.globalair.com/articles/bay-area-airports-report-3x-the-normal-business-jets-traffic-during-super-bowl/11933" target="_blank" rel="noopener">GlobalAir</a> · <a href="https://www.flightradar24.com/blog/flight-tracking-news/just-for-fun/the-super-bowl-lx-private-jet-exodus/" target="_blank" rel="noopener">Flightradar24</a></span>
+    <span>Las Vegas 2024 (882 jets) and earlier records: <a href="https://www.adn.com/nation-world/2024/02/12/heres-how-many-private-jets-besides-taylor-swifts-ride-landed-in-vegas-for-the-super-bowl/" target="_blank" rel="noopener">AP via ADN</a> · <a href="https://krdo.com/news/2024/02/09/its-not-just-taylor-swift-record-number-of-private-jet-flights-expected-for-this-years-super-bowl/" target="_blank" rel="noopener">CNN via KRDO</a></span>
+    <span>Van Nuys facts (≈230k ops/yr, 8,000 ft runway, four major FBOs): <a href="https://en.wikipedia.org/wiki/Van_Nuys_Airport" target="_blank" rel="noopener">Wikipedia</a> · <a href="https://www.evaint.com/issue-article/van-nuys-airport-california/" target="_blank" rel="noopener">EVA</a></span>
+    <span>Super Bowl LXI date: <a href="https://www.foxla.com/news/2027-super-bowl-lxi-sofi-staduim-los-angeles" target="_blank" rel="noopener">FOX LA</a>. Distances computed from airport reference coordinates (great-circle, nm).</span>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, parent, text) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+
+  /* ---------- Map (equirectangular, cos-lat corrected, to scale) ---------- */
+  const SOFI = [33.9535, -118.3392];
+  const AP = [
+    ['HHR','Hawthorne',33.9228,-118.3352,'res'], ['LAX','Los Angeles Intl',33.9425,-118.4081,'res'],
+    ['SMO','Santa Monica',34.0158,-118.4513,'res'], ['TOA','Torrance',33.8034,-118.3396,'oth'],
+    ['LGB','Long Beach',33.8177,-118.1516,'res'], ['BUR','Burbank',34.2007,-118.3585,'res'],
+    ['VNY','Van Nuys',34.2098,-118.4900,'us'], ['SNA','John Wayne',33.6757,-117.8682,'res'],
+    ['ONT','Ontario',34.0560,-117.6012,'res'], ['CMA','Camarillo',34.2137,-119.0943,'oth'],
+    ['WHP','Whiteman',34.2593,-118.4134,'oth'], ['EMT','El Monte',34.0861,-118.0350,'oth']
+  ];
+  const lat0 = 33.98, lon0 = -118.36, k = 560, cx = 450, cy = 270;
+  const coslat = Math.cos(lat0 * Math.PI / 180);
+  const P = (lat, lon) => [cx + (lon - lon0) * coslat * k, cy - (lat - lat0) * k];
+  const nmToPx = nm => nm / 60 * k;
+  function drawMap(){
+    const svg = document.getElementById('map'); svg.innerHTML = '';
+    const ink = css('--ink'), muted = css('--muted'), tfr = css('--tfr'), soft = css('--tfr-soft'), blue = css('--chart-blue'), amber = css('--amber'), rule = css('--rule'), panel = css('--panel');
+    el('rect', {x:0, y:0, width:900, height:520, fill:panel}, svg);
+    // graticule
+    for (let lon = -119.2; lon <= -117.4; lon += 0.2) { const [x] = P(34, lon); el('line', {x1:x, y1:0, x2:x, y2:520, stroke:rule, 'stroke-width':0.6}, svg); }
+    for (let lat = 33.6; lat <= 34.4; lat += 0.1) { const [, y] = P(lat, -118); el('line', {x1:0, y1:y, x2:900, y2:y, stroke:rule, 'stroke-width':0.6}, svg); }
+    const [sx, sy] = P(SOFI[0], SOFI[1]);
+    el('circle', {cx:sx, cy:sy, r:nmToPx(30), fill:'none', stroke:tfr, 'stroke-width':1.4, 'stroke-dasharray':'6 5'}, svg);
+    el('circle', {cx:sx, cy:sy, r:nmToPx(10), fill:soft, stroke:tfr, 'stroke-width':2}, svg);
+    el('text', {x:sx + nmToPx(30) * 0.71 + 6, y:sy - nmToPx(30) * 0.71, fill:tfr, 'font-size':12}, svg, '30 NM OUTER RING');
+    el('text', {x:sx + nmToPx(10) * 0.71 + 4, y:sy - nmToPx(10) * 0.71 - 2, fill:tfr, 'font-size':12}, svg, '10 NM CORE');
+    // stadium
+    el('rect', {x:sx - 6, y:sy - 6, width:12, height:12, fill:tfr, transform:`rotate(45 ${sx} ${sy})`}, svg);
+    el('text', {x:sx + 10, y:sy + 18, fill:ink, 'font-size':12, 'font-weight':600}, svg, 'SoFi Stadium');
+    const toR = d => d * Math.PI / 180;
+    const dist = (a, b) => { const R = 3440.065; const dLa = toR(b[0] - a[0]), dLo = toR(b[1] - a[1]); const x = Math.sin(dLa / 2) ** 2 + Math.cos(toR(a[0])) * Math.cos(toR(b[0])) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+    const offs = {HHR:[10,-8,'start'], LAX:[-10,-8,'end'], SMO:[-10,-6,'end'], TOA:[-10,14,'end'], LGB:[10,14,'start'], BUR:[10,-8,'start'], VNY:[-12,-10,'end'], SNA:[10,14,'start'], ONT:[10,-8,'start'], CMA:[10,-8,'start'], WHP:[10,-10,'start'], EMT:[10,-8,'start']};
+    AP.forEach(([id, name, la, lo, kind]) => {
+      const [x, y] = P(la, lo); const d = dist(SOFI, [la, lo]);
+      const c = kind === 'us' ? amber : kind === 'res' ? blue : muted;
+      if (kind === 'us') el('circle', {cx:x, cy:y, r:13, fill:'none', stroke:amber, 'stroke-width':2}, svg);
+      el('circle', {cx:x, cy:y, r:kind === 'oth' ? 4.5 : 6.5, fill:c}, svg);
+      const [ox, oy, anc] = offs[id];
+      el('text', {x:x + ox, y:y + oy, fill:ink, 'font-size':13, 'font-weight':600, 'text-anchor':anc}, svg, id);
+      el('text', {x:x + ox, y:y + oy + 13, fill:muted, 'font-size':10.5, 'text-anchor':anc}, svg, d.toFixed(1) + ' nm');
+    });
+    // scale bar
+    const sbx = 30, sby = 495; el('line', {x1:sbx, y1:sby, x2:sbx + nmToPx(10), y2:sby, stroke:ink, 'stroke-width':2}, svg);
+    el('line', {x1:sbx, y1:sby - 4, x2:sbx, y2:sby + 4, stroke:ink, 'stroke-width':2}, svg); el('line', {x1:sbx + nmToPx(10), y1:sby - 4, x2:sbx + nmToPx(10), y2:sby + 4, stroke:ink, 'stroke-width':2}, svg);
+    el('text', {x:sbx, y:sby - 9, fill:ink, 'font-size':11}, svg, '10 NM');
+    el('text', {x:870, y:30, fill:muted, 'font-size':11, 'text-anchor':'end'}, svg, 'N ↑   distances: great-circle to SoFi');
+  }
+
+  /* ---------- Synthetic demand + ramp model (placeholder for OpenSky history) ---------- */
+  const DAYS = ['Tue 9','Wed 10','Thu 11','Fri 12','Sat 13','Sun 14','Mon 15'];
+  const BASE_ARR = [20,21,23,24,15,14,19];
+  const MED_MULT = [1.3,1.8,2.6,3.4,3.0,1.6,0.9];
+  const UPLIFT = {low:0.55, med:1, high:1.5};
+  const CAP = 48, FUEL_PER_DEP = 1100, CO2_PER_GAL = 9.75, ADHOC_NM = 150, PARTNER_NM = 40, GAL_PER_NM = 1.0;
+  const ARR_HOURS = (() => { const w = new Array(24).fill(0); [[6,2],[7,4],[8,6],[9,8],[10,10],[11,11],[12,11],[13,10],[14,10],[15,9],[16,8],[17,6],[18,4],[19,3],[20,2],[21,1]].forEach(([h, v]) => w[h] = v); const s = w.reduce((a, b) => a + b); return w.map(v => v / s); })();
+
+  function run(sc){
+    const kk = sc === 'base' ? 0 : UPLIFT[sc];
+    const arr = BASE_ARR.map((b, i) => Math.round(b * (1 + (MED_MULT[i] - 1) * kk)));
+    const stayShare = sc === 'base' ? 0.5 : 0.6;
+    const dep = [...Array(8)].map(() => new Array(24).fill(0));
+    for (let d = 0; d < 7; d++) for (let h = 0; h < 24; h++) {
+      const a = arr[d] * ARR_HOURS[h], stay = a * stayShare, dg = a - stay;
+      if (h + 2 < 24) dep[d][h + 2] += dg; else dep[d + 1][h - 22] += dg;
+      if (sc === 'base' || d < 3) { for (let hh = 8; hh < 17; hh++) dep[d + 1][hh] += stay / 9; }
+      else { for (let hh = 19; hh < 24; hh++) dep[5][hh] += stay * 0.35 / 5; for (let hh = 6; hh < 15; hh++) dep[6][hh] += stay * 0.65 / 9; }
+    }
+    for (let hh = 8; hh < 17; hh++) { dep[0][hh] += 11 / 9; dep[1][hh] += 11 / 9; }
+    let cur = 22, peakMoves = 0; const occ = [], deps = new Array(7).fill(0);
+    for (let d = 0; d < 7; d++) { const row = []; for (let h = 0; h < 24; h++) { const a = arr[d] * ARR_HOURS[h]; cur += a - dep[d][h]; deps[d] += dep[d][h]; peakMoves = Math.max(peakMoves, a + dep[d][h]); row.push(Math.max(0, cur)); } occ.push(row); }
+    const flat = occ.flat(), peak = Math.max(...flat);
+    const hoursOver = flat.filter(v => v > CAP).length;
+    const overflow = Math.max(0, Math.round(peak - CAP));
+    const peakDep = Math.round(Math.max(...deps));
+    const crews = Math.ceil(peakMoves / 3);
+    const galSaved = overflow * 2 * (ADHOC_NM - PARTNER_NM) * GAL_PER_NM;
+    return {arr, deps:deps.map(Math.round), occ, peak:Math.round(peak), hoursOver, overflow, peakDep,
+      weekArr: arr.reduce((a, b) => a + b), fuelPeak: peakDep * FUEL_PER_DEP, fuelWeek: Math.round(deps.reduce((a, b) => a + b)) * FUEL_PER_DEP,
+      crews, techs: crews * 2 + 2, peakMoves: Math.round(peakMoves), galSaved, co2t: galSaved * CO2_PER_GAL / 1000,
+      cap: Math.round(CAP * 0.9)};
+  }
+  const R = {base:run('base'), low:run('low'), med:run('med'), high:run('high')};
+  let sel = 'med';
+  const fmt = n => n.toLocaleString('en-US');
+  const status = r => r <= 0.7 ? 'ok' : r <= 0.9 ? 'watch' : r <= 1 ? 'tight' : 'over';
+
+  function drawChart(){
+    const svg = document.getElementById('chart'); svg.innerHTML = '';
+    const ink = css('--ink'), muted = css('--muted'), rule = css('--rule'), teal = css('--teal'), panel = css('--panel');
+    const L = 52, Rr = 20, T = 18, B = 40, W = 900, H = 300, ymax = 120;
+    el('rect', {x:0, y:0, width:W, height:H, fill:panel}, svg);
+    const x = i => L + (W - L - Rr) * (i + 0.5) / 7, y = v => T + (H - T - B) * (1 - v / ymax);
+    for (let v = 0; v <= ymax; v += 20) { el('line', {x1:L, y1:y(v), x2:W - Rr, y2:y(v), stroke:rule, 'stroke-width':1}, svg); el('text', {x:L - 8, y:y(v) + 4, fill:muted, 'font-size':11, 'text-anchor':'end'}, svg, v); }
+    DAYS.forEach((d, i) => el('text', {x:x(i), y:H - 14, fill:i === 5 ? css('--tfr') : muted, 'font-size':12, 'text-anchor':'middle'}, svg, d));
+    const line = (vals, color, w, dash) => el('polyline', {points:vals.map((v, i) => x(i) + ',' + y(v)).join(' '), fill:'none', stroke:color, 'stroke-width':w, 'stroke-dasharray':dash || 'none', 'stroke-linejoin':'round'}, svg);
+    // selected scenario area
+    const a = R[sel].arr;
+    el('polygon', {points:[x(0) + ',' + y(0), ...a.map((v, i) => x(i) + ',' + y(v)), x(6) + ',' + y(0)].join(' '), fill:teal, 'fill-opacity':0.12}, svg);
+    ['low','med','high'].forEach(s => { if (s !== sel) line(R[s].arr, teal, 1.4, '4 4'); });
+    line(R.base.arr, muted, 2, '2 3');
+    line(a, teal, 3);
+    a.forEach((v, i) => { el('circle', {cx:x(i), cy:y(v), r:4, fill:teal}, svg); el('text', {x:x(i), y:y(v) - 10, fill:ink, 'font-size':12, 'text-anchor':'middle', 'font-weight':600}, svg, v); });
+    R.base.arr.forEach((v, i) => el('text', {x:x(i), y:y(v) + 17, fill:muted, 'font-size':11, 'text-anchor':'middle'}, svg, v));
+    el('text', {x:L, y:12, fill:muted, 'font-size':11}, svg, 'arrivals / day');
+  }
+
+  function drawHeat(){
+    const box = document.getElementById('heat'); box.innerHTML = '';
+    const add = (cls, txt, title, bg) => { const d = document.createElement('div'); d.className = cls; if (txt != null) d.textContent = txt; if (title) d.title = title; if (bg) d.style.background = bg; box.appendChild(d); };
+    add('rl', '');
+    for (let h = 0; h < 24; h++) add('hl', h % 3 === 0 ? String(h).padStart(2, '0') : '');
+    const colors = {ok:css('--ok'), watch:css('--watch'), tight:css('--tight'), over:css('--over')};
+    R[sel].occ.forEach((row, d) => {
+      add('rl', DAYS[d]);
+      row.forEach((v, h) => add('c', null, `${DAYS[d]} ${String(h).padStart(2, '0')}:00 · ${Math.round(v)} of ${CAP} spots`, colors[status(v / CAP)]));
+    });
+  }
+
+  function drawKpis(){
+    const r = R[sel];
+    document.getElementById('kpis').innerHTML = [
+      [fmt(r.weekArr), `arrivals this week vs ${R.base.weekArr} in an ordinary week`],
+      [`${r.peak} / ${CAP}`, `peak unconstrained ramp demand vs capacity (${Math.round(r.peak / CAP * 100)}%)`],
+      [`${r.hoursOver} h`, 'hours over capacity if nothing is done'],
+      [fmt(r.fuelPeak) + ' gal', `Jet A on the peak departure day (${r.peakDep} departures)`],
+      [`${r.techs}`, `line techs on the peak shift (${r.peakMoves} movements/hr)`],
+      [`${r.co2t.toFixed(0)} t`, `CO₂ avoided by nearest-partner overflow (${fmt(r.galSaved)} gal)`]
+    ].map(([b, s]) => `<div class="kpi"><b class="mono">${b}</b><span>${s}</span></div>`).join('');
+    document.getElementById('capnote').textContent = `Ramp capacity ${CAP} spots · reservation cap ${R[sel].cap} (10% safety buffer)`;
+  }
+
+  function drawPlan(){
+    const rows = [
+      ['Arrivals, 7 days', s => fmt(R[s].weekArr), true],
+      ['Peak ramp demand (spots)', s => `${R[s].peak} <span class="pill ${status(R[s].peak / CAP)}">${Math.round(R[s].peak / CAP * 100)}%</span>`, true],
+      ['Overnight reservation cap', s => R[s].cap, true],
+      ['Aircraft needing overflow', s => R[s].overflow, true],
+      ['Drop-and-go quota, Thu–Sat', s => s === 'base' ? '–' : `${Math.round(R[s].overflow * 0.6)} jets`, true],
+      ['Partner overflow airports', s => s === 'base' ? 'none' : R[s].overflow < 25 ? 'WHP, CMA' : R[s].overflow < 50 ? 'WHP, CMA, BUR' : 'WHP, CMA, BUR, ONT', false],
+      ['Jet A, peak day (gal)', s => fmt(R[s].fuelPeak), true],
+      ['Jet A, whole week (gal)', s => fmt(R[s].fuelWeek), true],
+      ['Refueler loads, peak day (5,000 gal)', s => Math.ceil(R[s].fuelPeak / 5000), true],
+      ['Line techs, peak shift', s => R[s].techs, true],
+      ['CO₂ avoided vs ad-hoc overflow', s => s === 'base' ? '–' : R[s].co2t.toFixed(0) + ' t', true]
+    ];
+    const cols = ['base','low','med','high'], names = {base:'Ordinary week', low:'Low', med:'Medium', high:'High'};
+    let h = '<thead><tr><th>Plan line</th>' + cols.map(c => `<th class="num"${c === sel ? ' style="color:var(--tfr)"' : ''}>${names[c]}</th>`).join('') + '</tr></thead><tbody>';
+    rows.forEach(([label, f, num]) => { h += `<tr><td>${label}</td>` + cols.map(c => `<td class="${num ? 'num' : ''}"${c === sel ? ' style="background:var(--tfr-soft)"' : ''}>${f(c)}</td>`).join('') + '</tr>'; });
+    document.getElementById('plan').innerHTML = h + '</tbody>';
+  }
+
+  function render(){ drawMap(); drawChart(); drawHeat(); drawKpis(); drawPlan(); }
+  document.querySelectorAll('.toggle button').forEach(b => b.addEventListener('click', () => {
+    sel = b.dataset.sc; document.querySelectorAll('.toggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); render();
+  }));
+  render();
+  const mq = window.matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', render);
+  new MutationObserver(render).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+})();
+</script>
