@@ -1,0 +1,66 @@
+# Every planning assumption in one place. The UI reads this file and makes each value editable.
+# Change a value here, never as a constant in code. Mark the source of each value or label it as an assumption.
+
+event:
+  name: Super Bowl LXI
+  game_date: "2027-02-14"
+  kickoff_local: "15:30"            # assumption: 2022 SoFi kickoff time; LXI time not yet announced
+  window: ["2027-02-09", "2027-02-15"]
+  replay_shift_days: 1827           # 261 weeks: Sun 2022-02-13 -> Sun 2027-02-14
+
+fbo:
+  name: Sepulveda Jet Center (fictional)
+  airport: KVNY
+  capacity_large_equiv: 48          # assumption
+  reservation_buffer_pct: 10        # assumption: keep 10% of stands unbooked
+
+large_equiv_factor:                 # parking footprint per size class (assumption)
+  light: 0.4
+  mid: 0.6
+  super_mid: 0.8
+  large: 1.0
+  other: 0.6
+
+fuel:
+  gal_per_departure_blended: 1100   # assumption, refine by size class
+  refueler_capacity_gal: 5000       # assumption
+  co2_kg_per_gal: 9.75              # EPA emission factor, kerosene-type jet fuel
+  gal_per_nm_repositioning: 1.0     # assumption, blended incl. climb
+
+overflow:
+  partner_airports: [KWHP, KCMA, KBUR]
+  empty_legs_per_overflow_aircraft: 2
+  adhoc_reposition_nm: 150          # assumption: unmanaged overflow distance
+  partner_reposition_nm: 40         # assumption: nearest partner distance
+
+customs_kvny:                       # CBP KVNY GA fact sheet, June 2024 (verify for 2027)
+  facility: Signature West GAF only
+  hours_local:
+    mon: ["09:00", "20:30"]
+    tue: ["15:00", "20:30"]
+    wed: ["15:00", "20:30"]
+    thu: ["09:00", "20:30"]
+    fri: ["09:00", "14:30"]
+    sat: ["09:00", "14:30"]
+    sun: ["09:00", "20:30"]
+  landing_rights_tolerance_min: 30
+
+curfew_kvny:                        # VNY noise ordinance; departures only
+  stage2_jets: ["22:00", "07:00"]
+  older_stage3_jets: ["23:00", "07:00"]
+  quieter_nights_voluntary: ["23:00", "07:00"]
+
+tfr_game_day:                       # 2022 / 2026 precedent; LXI NOTAM not yet published
+  window_local: ["14:30", "20:30"]
+  inner_core_nm: 10
+  outer_ring_nm: 30
+
+priority_weights_default:           # manager-editable; need-based only
+  fixed_time: 0.4
+  medical_access: 0.3
+  hard_deadline: 0.2
+  wait: 0.1
+
+alerts:
+  ramp_threshold_pct: 90
+  ramp_lookahead_h: 2

@@ -6,6 +6,7 @@ RAMPCAST is an AI ramp-capacity planner for a fictional FBO, *Sepulveda Jet Cent
 
 Visual blueprint: [`docs/rampcast-blueprint.html`](docs/rampcast-blueprint.html)
 End-to-end research (takeoff → landing → ramp → car → hotel, decision rights, 22 edge cases, runway-closure scenario): [`docs/gate-to-hotel.html`](docs/gate-to-hotel.html)
+Team contracts (file and API shapes, assumptions): [`contracts/`](contracts/)
 
 ## Why this angle
 
