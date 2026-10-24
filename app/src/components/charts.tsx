@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Fragment, useState } from "react";
-import { dayShort, fmt, hhmm } from "../lib/format";
+import { dayShort, fmt } from "../lib/format";
 import type { ForecastDay, OccupancyHour } from "../lib/types";
 
 /** Daily arrivals: ordinary-week baseline, P10-P90 band, P50 line, optional actual dots. */
@@ -76,44 +76,94 @@ export function occTone(ratio: number) {
   return "#BFDBFE";
 }
 
-/** Hour-by-day ramp occupancy (P50) against capacity. */
-export function RampHeatmap({ hours, capacity, nowIso }: { hours: OccupancyHour[]; capacity: number; nowIso?: string }) {
+const hourOf = (iso: string) => Number(iso.slice(11, 13));
+const ampm = (h: number) => `${h % 12 || 12}${h % 24 < 12 ? "am" : "pm"}`;
+const FULL = "#DC2626", TIGHT = "#F59E0B", ROOM = "#60A5FA";
+const cellTone = (r: number) => (r > 1 ? FULL : r >= 0.9 ? TIGHT : ROOM);
+
+/** Contiguous over-capacity stretches in one day, as "10am–6pm" labels. */
+function fullStretches(day: OccupancyHour[], capacity: number): string[] {
+  const out: string[] = [];
+  let start: number | null = null;
+  day.forEach((h, i) => {
+    const over = h.p50 > capacity;
+    if (over && start === null) start = hourOf(h.t_local);
+    if (start !== null && (!over || i === day.length - 1)) {
+      const end = over ? hourOf(h.t_local) + 1 : hourOf(h.t_local);
+      out.push(`${ampm(start)}–${ampm(end)}`);
+      start = null;
+    }
+  });
+  return out;
+}
+
+/** One row per day: a 24-hour strip in three plain colors, and a sentence saying when the ramp is full. */
+export function RampDays({ hours, capacity }: { hours: OccupancyHour[]; capacity: number }) {
   const rows: OccupancyHour[][] = [];
   for (let i = 0; i < hours.length; i += 24) rows.push(hours.slice(i, i + 24));
   const [tip, setTip] = useState<OccupancyHour | null>(null);
-  const nowKey = nowIso ? nowIso.slice(0, 13) : "";
   return (
     <div>
-      <div className="grid gap-[3px]" style={{ gridTemplateColumns: "54px repeat(24, minmax(0, 1fr))" }}>
+      <div className="grid items-center gap-x-4 gap-y-2" style={{ gridTemplateColumns: "64px minmax(0, 1fr) minmax(170px, 0.55fr)" }}>
         <div />
-        {Array.from({ length: 24 }, (_, h) => (
-          <div key={h} className="num text-center text-[10px] text-ink-2">{h % 3 === 0 ? String(h).padStart(2, "0") : ""}</div>
-        ))}
-        {rows.map((row) => (
-          <Fragment key={row[0].t_local}>
-            <div className={"self-center text-[11.5px] " + (row[0].t_local.startsWith("2027-02-14") ? "font-semibold text-tfr" : "text-ink-2")}>
-              {dayShort(row[0].t_local)} {row[0].t_local.slice(8, 10)}
-            </div>
-            {row.map((h) => (
-              <div key={h.t_local} onMouseEnter={() => setTip(h)} onMouseLeave={() => setTip(null)}
-                className={"h-[22px] rounded-[5px] transition-transform hover:scale-110 " + (h.t_local.slice(0, 13) === nowKey ? "ring-2 ring-ink" : "")}
-                style={{ background: occTone(h.p50 / capacity), opacity: 0.35 + Math.min(0.65, h.p50 / capacity * 0.65) }} />
-            ))}
-          </Fragment>
-        ))}
+        <div className="relative h-4 text-[10.5px] text-ink-2">
+          {[0, 6, 12, 18].map((h) => (
+            <span key={h} className="absolute -translate-x-1/2 first:translate-x-0" style={{ left: `${(h / 24) * 100}%` }}>
+              {h === 12 ? "noon" : ampm(h)}
+            </span>
+          ))}
+        </div>
+        <div />
+        {rows.map((row) => {
+          const day = row[0].t_local.slice(0, 10);
+          const game = day === "2027-02-14";
+          const peak = Math.max(...row.map((h) => h.p50));
+          const peakPct = Math.round((peak / capacity) * 100);
+          const stretches = fullStretches(row, capacity);
+          const fullHours = row.filter((h) => h.p50 > capacity).length;
+          return (
+            <Fragment key={day}>
+              <div className={"text-[12px] " + (game ? "font-semibold text-tfr" : "text-ink-2")}>
+                {dayShort(day)} {day.slice(8, 10)}{game && <div className="text-[10px] font-medium">Game day</div>}
+              </div>
+              <div className="flex h-[22px] gap-[2px]">
+                {row.map((h) => {
+                  const r = h.p50 / capacity;
+                  return (
+                    <div key={h.t_local} onMouseEnter={() => setTip(h)} onMouseLeave={() => setTip(null)}
+                      className="flex-1 rounded-[4px] transition-transform hover:scale-y-125"
+                      style={{ background: cellTone(r), opacity: r >= 0.9 ? 1 : 0.18 + 0.6 * r }} />
+                  );
+                })}
+              </div>
+              <div className="text-[12px] leading-snug">
+                {stretches.length ? (
+                  <><span className="font-semibold text-alert">Full {stretches.slice(0, 2).join(", ")}</span>
+                    <span className="text-ink-2"> · {fullHours} h, peaks at {peakPct}%</span></>
+                ) : (
+                  <><span className="font-semibold text-ok">Fits all day</span><span className="text-ink-2"> · peaks at {peakPct}%</span></>
+                )}
+              </div>
+            </Fragment>
+          );
+        })}
       </div>
-      <div className="mt-3 flex min-h-[20px] flex-wrap items-center justify-between gap-3 text-[11.5px] text-ink-2">
+      <div className="mt-4 flex min-h-[20px] flex-wrap items-center justify-between gap-3 text-[11.5px] text-ink-2">
         <div className="flex flex-wrap items-center gap-3">
-          {[["<40%", "#BFDBFE"], ["40–70%", "#60A5FA"], ["70–90%", "#F59E0B"], ["90–100%", "#F97316"], ["Over capacity", "#DC2626"]].map(([l, c]) => (
+          {[["Room to spare (darker = busier)", ROOM], ["Nearly full (90%+)", TIGHT], ["Over capacity", FULL]].map(([l, c]) => (
             <span key={l} className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: c }} />{l}</span>
           ))}
         </div>
-        {tip && (
-          <span className="num text-ink">
-            {dayShort(tip.t_local)} {hhmm(tip.t_local)} · P50 {fmt(tip.p50, 1)} / P90 {fmt(tip.p90, 1)} of {capacity} · P(over) {Math.round(tip.p_over_capacity * 100)}%
+        {tip ? (
+          <span className="text-ink">
+            <span className="font-medium">{dayShort(tip.t_local)} {ampm(hourOf(tip.t_local))}</span> · needs <span className="num">{fmt(tip.p50)}</span> of <span className="num">{capacity}</span> spaces
+            ({Math.round((tip.p50 / capacity) * 100)}%) · <span className="num">{Math.round(tip.p_over_capacity * 100)}%</span> chance it overflows
           </span>
-        )}
+        ) : <span>Hover an hour for details</span>}
       </div>
+      <p className="mt-2 text-[11px] text-ink-2">
+        Each square is one hour, showing the typical result of {fmt(120)} simulated weeks. One space fits one large jet; smaller jets take less.
+      </p>
     </div>
   );
 }

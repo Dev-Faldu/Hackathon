@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Ban, CloudFog, CloudRain, Globe2, Loader2, PlaneLanding, TrendingUp, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Ban, Car, CloudFog, CloudRain, Globe2, ListOrdered, Loader2, PlaneLanding, SquareParking, TrendingUp, Zap } from "lucide-react";
 import { useState } from "react";
 import { TopBar } from "../components/Shell";
 import { ApproveBar, Chip, CitedText, ErrorNote, Panel } from "../components/ui";
@@ -42,11 +42,18 @@ export default function WhatIf() {
   const [to, setTo] = useState("10:55");
   const [day, setDay] = useState("12");
   const [mult, setMult] = useState(100);
+  const [mods, setMods] = useState<Record<string, unknown>>({});
 
   const run = async (id: string, modifiers: Record<string, unknown>) => {
-    setActive(id); setLoading(true); setError(null);
+    setActive(id); setLoading(true); setError(null); setMods(modifiers);
     try { setResult(await api.whatif(scenario, modifiers)); } catch (e) { setError((e as Error).message); } finally { setLoading(false); }
   };
+  // The operator's dispatcher reports where a disrupted jet will land; re-plan with that fact.
+  const confirmDiversion = (flightId: string, airport: string) => {
+    const diversions = { ...((mods.diversions as Record<string, string>) ?? {}), [flightId]: airport };
+    run(active ?? "custom", { ...mods, diversions });
+  };
+  const diverted = (mods.diversions as Record<string, string> | undefined) ?? {};
   const runCustom = () => run("custom", {
     runway_closed: { from: `2027-02-${day}T${from}:00-08:00`, to: `2027-02-${day}T${to}:00-08:00` }, demand_multiplier: mult / 100,
   });
@@ -137,9 +144,9 @@ export default function WhatIf() {
               {result.new_alerts.length > 0 && (
                 <div className="mt-4 space-y-2">
                   <div className="label">New alerts</div>
-                  {result.new_alerts.slice(0, 4).map((a) => (
-                    <div key={a.id} className="rounded-control border border-hairline bg-white/70 px-3 py-2 text-[12.5px]">
-                      <div className="font-medium">{a.message}</div>
+                  {[...result.new_alerts].sort((x, y) => Number(y.kind === "car_wrong_airport") - Number(x.kind === "car_wrong_airport")).slice(0, 6).map((a) => (
+                    <div key={a.id} className={cx("rounded-control border px-3 py-2 text-[12.5px]", a.kind === "car_wrong_airport" ? "border-watch/40 bg-watch/[0.07]" : "border-hairline bg-white/70")}>
+                      <div className="flex items-start gap-1.5 font-medium">{a.kind === "car_wrong_airport" && <Car size={14} className="mt-[1px] shrink-0 text-watch" />}{a.message}</div>
                       <div className="mt-0.5 text-[11.5px] text-ink-2">{a.owner_role} · {a.recommended_action}</div>
                     </div>
                   ))}
@@ -151,6 +158,57 @@ export default function WhatIf() {
               </div>
             </Panel>
           </div>
+
+          {result.stand_plan && (
+            <Panel eyebrow={<span className="flex items-center gap-1.5"><SquareParking size={12} /> Stand plan · live week</span>}
+              title={`Re-solved for ${result.stand_plan.changed_times} new arrival or departure times`}
+              actions={<Chip tone={result.stand_plan.boxed_in ? "alert" : "ok"}>{result.stand_plan.boxed_in ? `${result.stand_plan.boxed_in} boxed in` : "Nobody boxed in"}</Chip>}>
+              <div className="flex flex-wrap gap-2 text-[12.5px]">
+                <Chip>{result.stand_plan.moves.length} stand {result.stand_plan.moves.length === 1 ? "change" : "changes"}</Chip>
+                <Chip tone={result.stand_plan.overflow_after > result.stand_plan.overflow_before ? "alert" : "neutral"}>
+                  Overflow {result.stand_plan.overflow_before} → {result.stand_plan.overflow_after}
+                </Chip>
+                <Chip>Every other jet keeps its stand</Chip>
+              </div>
+              {result.stand_plan.moves.length > 0 && (
+                <div className="mt-3 grid gap-1.5 md:grid-cols-2 2xl:grid-cols-4">
+                  {result.stand_plan.moves.slice(0, 8).map((m) => (
+                    <div key={m.flight_id} className="num flex items-center gap-2 rounded-control border border-hairline bg-white/70 px-3 py-1.5 text-[12px]">
+                      <span className="font-medium">{m.flight_id}</span>
+                      <span className="text-ink-2">{m.from ?? "overflow"}</span><ArrowRight size={11} className="text-ink-3" />
+                      <span className={cx("font-semibold", m.to ? "text-ink" : "text-alert")}>{m.to ?? "overflow"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="mt-2 text-[11.5px] text-ink-2">Same week Parking control shows. Only jets whose times changed, and those they touch, may move. The line supervisor approves each move.</p>
+            </Panel>
+          )}
+
+          {result.queue_changes && result.queue_changes.length > 0 && (
+            <Panel eyebrow={<span className="flex items-center gap-1.5"><ListOrdered size={12} /> Ground-handling queue</span>}
+              title={`${result.queue_changes.length} positions changed in the priority queue`}
+              actions={<Chip>Strict order: slack, medical, deadlines, wait</Chip>}>
+              <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
+                {result.queue_changes.slice(0, 9).map((q) => {
+                  const up = q.rank_before !== null && q.rank_after < q.rank_before;
+                  return (
+                    <div key={q.booking_code} className="flex items-start gap-3 rounded-control border border-hairline bg-white/70 px-3 py-2 text-[12.5px]">
+                      <div className="num shrink-0 text-[13px]">
+                        <span className="text-ink-2">{q.rank_before ?? "new"}</span>
+                        <ArrowRight size={11} className="mx-1 inline text-ink-3" />
+                        <span className={cx("font-semibold", up ? "text-ok" : "text-watch")}>#{q.rank_after}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="num font-medium">{q.booking_code}</div>
+                        <div className="text-[11.5px] leading-snug text-ink-2">{q.reasons[0]}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+          )}
 
           {result.affected_flights.length > 0 && (
             <Panel eyebrow="Option cards for operators' dispatchers" title={`${result.affected_flights.length} inbound jets affected`}
@@ -180,6 +238,13 @@ export default function WhatIf() {
                             <span className="num text-ink-2">{o.airport === "KVNY" ? `+${o.expected_delay_min} min` : `${o.extra_drive_min >= 0 ? "+" : ""}${o.extra_drive_min} min drive`}</span>
                           </div>
                           <div className="mt-0.5 text-[11px] text-ink-2">{o.notes.join(" · ")}</div>
+                          {o.airport !== "KVNY" && (diverted[f.flight_id] === o.airport ? (
+                            <div className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-watch"><Car size={12} /> Operator confirmed: lands here. Check the car alert.</div>
+                          ) : (
+                            <button onClick={() => confirmDiversion(f.flight_id, o.airport)} className="mt-1.5 text-[11px] font-medium text-runway hover:underline">
+                              Operator confirms it lands here
+                            </button>
+                          ))}
                         </li>
                       ))}
                     </ol>

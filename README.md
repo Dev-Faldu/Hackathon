@@ -24,6 +24,8 @@ No keys or accounts are needed: briefings, what-if explanations and answers to t
 
 **Plug-in modules.** `server/rampcast_server/adapters.py` swaps in team modules as soon as they exist: `rampcast.forecast.api.get_forecast/get_occupancy` and `rampcast.engine.api.get_strategies`. Each returns the shapes in `contracts/README.md`. Until then, the built-in reference engine answers every route.
 
+**Decision engine (Role 3).** `rampcast/engine/` holds strategies and the stand plan (both OR-Tools CP-SAT), the need-based priority queue, alerts, alternates (runway lengths from OurAirports, fetched by `data/scripts/fetch_ourairports.py`), what-if, the Claude layer (`claude-sonnet-5-5`) and the append-only audit log. The stand plan treats "nobody boxed in" as a hard rule and solves one day at a time so the same input always gives the same plan; set `RAMPCAST_STANDS_MODE=portfolio` for a whole-week parallel solve that is a little better but not bit-for-bit repeatable. Tests: one file per module in `server/tests/`.
+
 ## Product tour (demo path)
 
 | Screen | What it shows | Demo beat |

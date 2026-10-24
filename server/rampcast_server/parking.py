@@ -6,8 +6,9 @@ if nobody is parked in front of it yet. Every violation costs a tow out and back
 
 Two arrangements are produced so the difference can be measured:
 - "first_come": the whiteboard method, first free stand that fits, front stands first.
-- "optimized":  RAMPCAST's arrangement, which knows each jet's planned departure and parks long
-                stays deep, short stays in front, drop-and-go on hot spots, minimising tows.
+- "optimized":  RAMPCAST's CP-SAT plan (rampcast/engine/stands.py). It knows each jet's planned departure
+                and treats "nobody boxed in" as a hard rule, so it needs no tows unless the manager pins a
+                jet somewhere else. A manual move re-solves only the jets it touches.
 Both are suggestions. The line supervisor approves every tow and marshals every aircraft.
 """
 from __future__ import annotations
@@ -16,6 +17,8 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+
+from rampcast.engine import stands
 
 from . import config as C
 from .data import Dataset, Flight
@@ -46,6 +49,7 @@ class Plan:
     tows: list[dict] = field(default_factory=list)
     blocks: list[dict] = field(default_factory=list)
     notes: dict[str, list[str]] = field(default_factory=dict)  # flight_id -> reasons for the placement
+    solver: str = "whiteboard"                                # how the optimized plan was produced
 
 
 def positions(stands: list[dict], temp_zone: bool) -> list[Position]:
@@ -66,11 +70,6 @@ def _stay_h(f: Flight) -> float:
     return (f.departed_vny - f.landed).total_seconds() / 3600
 
 
-def _ideal_depth(f: Flight) -> int:
-    h = _stay_h(f)
-    return 3 if h > 20 else 2 if h > 4 else 1
-
-
 def _overlap(a: Flight, b: Flight) -> bool:
     return a.landed < b.departed_vny and b.landed < a.departed_vny
 
@@ -85,44 +84,24 @@ def _pair_blocks(back: Flight, front: Flight) -> list[tuple[str, datetime]]:
     return out
 
 
-def _column_cost(f: Flight, p: Position, members: list[tuple[Flight, Position]]) -> int:
-    n = 0
-    for g, q in members:
-        if g is f or not _overlap(f, g):
-            continue
-        if q.depth > p.depth:
-            n += len(_pair_blocks(g, f))
-        elif q.depth < p.depth:
-            n += len(_pair_blocks(f, g))
-    return n
+# Last optimized plan per (dataset, temp zone), so a manual move re-solves incrementally from it.
+# The dataset object itself is kept in the value: an id() alone could be reused by a newer dataset.
+_last: dict[tuple[int, bool], tuple[Dataset, dict[str, str], dict[str, str | None], str]] = {}
 
 
-def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins: dict[str, str] | None = None) -> Plan:
-    pins = pins or {}
+def _first_come(ds: Dataset, pos: list[Position], pins: dict[str, str]) -> tuple[dict[str, str | None], dict[str, str]]:
+    """The whiteboard method: each arrival takes the first free stand that fits, front stands first."""
     a = A()["parking"]
-    pos = positions(ds.stands, temp_zone)
     by_id = {p.id: p for p in pos}
-    column_of = lambda p: (p.row, p.column)  # noqa: E731
-    occupant: dict[str, Flight | None] = {p.id: None for p in pos}
-    plan = Plan(method, temp_zone, pos, {})
     order = sorted(pos, key=lambda p: ({"stand": 0, "temp": 1, "hot": 2}[p.kind], p.row, p.column, p.depth))
+    occupant: dict[str, Flight | None] = {p.id: None for p in pos}
+    assignment: dict[str, str | None] = {}
+    source: dict[str, str] = {}
     events = sorted([(f.landed, 1, f) for f in ds.flights] + [(f.departed_vny, 0, f) for f in ds.flights],
                     key=lambda e: (e[0], e[1]))
-    flights = {f.flight_id: f for f in ds.flights}
-    source: dict[str, str] = {}
-
-    def live_cost(f: Flight, p: Position) -> float:
-        """Greedy cost from the jets parked right now (their departures are planned, so we know them)."""
-        mates = [(o, by_id[q]) for q, o in occupant.items()
-                 if o is not None and p.kind == "stand" and by_id[q].kind == "stand" and column_of(by_id[q]) == column_of(p)]
-        c = 2.0 * _column_cost(f, p, mates)
-        c += 0.45 * abs(_ideal_depth(f) - p.depth) + 0.004 * (p.max_wingspan_ft - span(f))
-        return c + (1.5 if p.kind == "temp" else 0.0)
-
-    # 1. Place each arrival in time order.
     for _, kind, f in events:
         if kind == 0:
-            pid = plan.assignment.get(f.flight_id)
+            pid = assignment.get(f.flight_id)
             if pid and occupant.get(pid) is f:
                 occupant[pid] = None
             continue
@@ -133,57 +112,52 @@ def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins:
         if pin in by_id and occupant[pin] is None and by_id[pin].max_wingspan_ft >= span(f):
             choice, source[f.flight_id] = by_id[pin], "pin"
         elif free:
-            if method == "first_come":
-                choice, source[f.flight_id] = next((p for p in free if p.kind == "stand"), free[0]), "first_come"
-            else:
-                hot = [p for p in free if p.kind == "hot"]
-                if short and hot:
-                    choice, source[f.flight_id] = hot[0], "hot"
-                else:
-                    choice = min((p for p in free if p.kind != "hot"), key=lambda p: (live_cost(f, p), p.id), default=None) or free[0]
-                    source[f.flight_id] = "optimized"
-        plan.assignment[f.flight_id] = choice.id if choice else None
+            choice, source[f.flight_id] = next((p for p in free if p.kind == "stand"), free[0]), "first_come"
+        assignment[f.flight_id] = choice.id if choice else None
         if choice:
             occupant[choice.id] = f
+    return assignment, source
 
-    # 2. Optimized only: improve with the whole week in view (move one jet at a time while tows drop).
-    if method == "optimized":
-        at: dict[str, list[Flight]] = {p.id: [] for p in pos}
-        for fid, pid in plan.assignment.items():
-            if pid:
-                at[pid].append(flights[fid])
 
-        def members(p: Position) -> list[tuple[Flight, Position]]:
-            if p.kind != "stand":
-                return []
-            return [(g, q) for q in pos if q.kind == "stand" and column_of(q) == column_of(p) for g in at[q.id]]
+def _optimized(ds: Dataset, pos: list[Position], temp_zone: bool, pins: dict[str, str]) -> tuple[dict[str, str | None], dict[str, str], str]:
+    """CP-SAT stand plan (rampcast/engine/stands.py). A pin change re-solves only the jets it touches."""
+    key = (id(ds), temp_zone)
+    prev = _last.get(key)
+    if prev is not None and prev[0] is not ds:
+        prev = None
+    if prev is not None and prev[1] == pins:
+        assignment, solver = prev[2], prev[3]
+    else:
+        if prev is not None:
+            old_pins, old = prev[1], prev[2]
+            changed = {fid for fid in set(pins) | set(old_pins) if pins.get(fid) != old_pins.get(fid)}
+            sol = stands.resolve(ds.flights, pos, old, changed, pins)
+        else:
+            sol = stands.solve(ds.flights, pos, pins)
+        assignment, solver = sol.assignment, sol.method
+        if len(_last) >= 16:
+            _last.pop(next(iter(_last)))
+        _last[key] = (ds, dict(pins), assignment, solver)
+    by_id = {p.id: p for p in pos}
+    source = {fid: "pin" if fid in pins else "hot" if pid and by_id[pid].kind == "hot" else "optimized"
+              for fid, pid in assignment.items()}
+    return assignment, source, solver
 
-        for _ in range(4):
-            improved = False
-            for fid, pid in list(plan.assignment.items()):
-                if not pid or fid in pins or by_id[pid].kind != "stand":
-                    continue
-                f, cur = flights[fid], by_id[pid]
-                cur_cost = _column_cost(f, cur, members(cur))
-                if cur_cost == 0:
-                    continue
-                best, best_cost = None, cur_cost
-                for p in pos:
-                    if p.id == pid or p.kind == "hot" or p.max_wingspan_ft < span(f):
-                        continue
-                    if any(_overlap(f, g) for g in at[p.id]):
-                        continue
-                    c = _column_cost(f, p, members(p)) + (0.5 if p.kind == "temp" else 0)
-                    if c < best_cost:
-                        best, best_cost = p, c
-                if best is not None:
-                    at[pid].remove(f)
-                    at[best.id].append(f)
-                    plan.assignment[fid] = best.id
-                    source[fid] = "moved"
-                    improved = True
-            if not improved:
-                break
+
+def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins: dict[str, str] | None = None) -> Plan:
+    pins = pins or {}
+    a = A()["parking"]
+    pos = positions(ds.stands, temp_zone)
+    by_id = {p.id: p for p in pos}
+    column_of = lambda p: (p.row, p.column)  # noqa: E731
+    plan = Plan(method, temp_zone, pos, {})
+    flights = {f.flight_id: f for f in ds.flights}
+
+    # 1-2. Place every aircraft: whiteboard method, or the CP-SAT plan where nobody is boxed in.
+    if method == "first_come":
+        plan.assignment, source = _first_come(ds, pos, pins)
+    else:
+        plan.assignment, source, plan.solver = _optimized(ds, pos, temp_zone, pins)
 
     # 3. Count blocking events and the tows they need from the final arrangement.
     start = C.window_start_local()
@@ -232,8 +206,8 @@ def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins:
         else:
             where = {1: "front row, on the taxilane", 2: "middle row", 3: "back row"}[p.depth]
             why = [f"Stays {_stay_h(f):.0f} h, departs {f.departed_vny:%a %H:%M}: {where}"]
-            if src == "moved":
-                why.append("Moved by the optimizer after looking at the whole week")
+            if src == "optimized":
+                why.append("Lands before and leaves after every jet parked in front of it")
         n = involved.get(fid, 0)
         why.append(f"Needs {n * a['tows_per_block']} tow(s) to get in or out" if n else "No tows: nothing blocks it and it blocks nothing")
         plan.notes[fid] = why
@@ -283,6 +257,7 @@ def metrics(ds: Dataset, plan: Plan) -> dict:
         "utilization_pct": round(stand_hours / (len(stands) * C.n_hours()) * 100, 1) if stands else 0,
         "revenue_est_usd": round(revenue, -2),
         "aircraft_parked": sum(1 for v in plan.assignment.values() if v),
+        "solver": plan.solver,
     }
 
 

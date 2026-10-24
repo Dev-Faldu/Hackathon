@@ -35,7 +35,11 @@ overflow:
   partner_airports: [KWHP, KCMA, KBUR]
   empty_legs_per_overflow_aircraft: 2
   adhoc_reposition_nm: 150          # assumption: unmanaged overflow distance
-  partner_reposition_nm: 40         # assumption: nearest partner distance
+  partner_reposition_nm: 40         # assumption: nearest partner distance (used only when no partner is modelled)
+  partner_spaces:                   # assumption: large-cabin equivalents each partner FBO holds for us; distances are great-circle from KVNY
+    KWHP: 6
+    KBUR: 8
+    KCMA: 12
 
 customs_kvny:                       # CBP KVNY GA fact sheet, June 2024 (verify for 2027)
   facility: Signature West GAF only
@@ -53,11 +57,18 @@ curfew_kvny:                        # VNY noise ordinance; departures only
   stage2_jets: ["22:00", "07:00"]
   older_stage3_jets: ["23:00", "07:00"]
   quieter_nights_voluntary: ["23:00", "07:00"]
+  flagged_share_assumption:         # assumption: share of visiting jets each rule binds, until the registry join supplies noise stage
+    stage2_jets: 0.02
+    older_stage3_jets: 0.08
+  curfew_alert_lookahead_h: 10
 
 tfr_game_day:                       # 2022 / 2026 precedent; LXI NOTAM not yet published
   window_local: ["14:30", "20:30"]
   inner_core_nm: 10
   outer_ring_nm: 30
+
+priority_rules:
+  tight_slack_min: 60               # assumption: a fixed-time commitment counts as urgent once its slack is this small (or negative)
 
 priority_weights_default:           # manager-editable; need-based only
   fixed_time: 0.4

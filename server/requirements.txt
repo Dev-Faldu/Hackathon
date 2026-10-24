@@ -7,3 +7,4 @@ pyyaml
 anthropic
 httpx
 pytest
+ortools==9.15.6755

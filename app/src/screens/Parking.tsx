@@ -54,9 +54,12 @@ export default function Parking() {
           sub={st.data ? `${st.data.hot_used} on hot spots · ${st.data.temp_used} temp · ${st.data.overflow_now} without a position` : "…"} />
         <Kpi label="Tows this week" value={m?.tows ?? 0} tone={method === "optimized" ? "ok" : "alert"}
           sub={opt && base ? <span>RAMPCAST <b className="num">{opt.tows}</b> vs whiteboard <b className="num">{base.tows}</b> · <span className="font-semibold text-ok">−{towCut}%</span></span> : "…"} />
-        <Kpi label="Boxed-in events" value={m?.boxed_in_events ?? 0} sub="A jet stuck behind one leaving later" tone={method === "optimized" ? "ok" : "watch"} />
+        <Kpi label="Boxed-in events" value={m?.boxed_in_events ?? 0} tone={method === "optimized" ? "ok" : "watch"}
+          sub={method === "optimized" && m?.solver?.startsWith("cp-sat")
+            ? "CP-SAT plan: nobody boxed in is a hard rule (only your manual moves can break it)"
+            : "A jet stuck behind one leaving later"} />
         <Kpi label="Overflow aircraft" value={m?.overflow_aircraft ?? 0} tone={(m?.overflow_aircraft ?? 0) > 0 ? "alert" : "ok"}
-          sub={temp ? "With temporary taxiway stands open" : "Open the temp zone to absorb more"} />
+          sub={`Live week: no stand fits without boxing a jet in${temp ? " · temp zone open" : ". Open the temp zone to absorb more"}`} />
         <Kpi label="Hot-spot turns" value={m?.hot_spot_uses ?? 0} sub="Drop-and-go kept off the stands" />
         <Kpi label="Parking revenue (est.)" value={(m?.revenue_est_usd ?? 0) / 1000} digits={1} unit="k USD" sub={`${m?.utilization_pct ?? 0}% stand utilization · fees in assumptions`} />
       </div>

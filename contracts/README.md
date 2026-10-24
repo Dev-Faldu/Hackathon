@@ -30,6 +30,7 @@ Conventions:
 | direction | string | `arrival` | `arrival` or `departure` relative to `airport` |
 | airport | string | `KVNY` | the basin airport this row is about |
 | event_name | string | `SB_LVI_2022` | null for ordinary weeks |
+| curfew_class | string | `stage2_jets` | optional: `stage2_jets`, `older_stage3_jets` or empty; from the registry noise stage. Without it the engine uses the shares in assumptions.yaml |
 | day_offset | int | `-2` | days relative to game day, null for ordinary weeks |
 
 ### `daily_counts.csv`
@@ -53,6 +54,7 @@ Conventions:
 ```
 
 `commitment_type` is one of `fixed_time`, `medical_access` or `none`. `deadline_local` is null unless the type is `fixed_time`.
+Optional `car_staged_at` (ICAO, default `KVNY`): where the party's ground car waits. Used by the `car_wrong_airport` alert.
 `hotel_zone` is one of `Beverly Hills`, `Santa Monica`, `Downtown LA`, `Inglewood` or `Burbank`.
 
 ### `stands.json`
@@ -120,11 +122,12 @@ The scorer's input model must not contain name, status, tier, loyalty or payment
 Request: `{"scenario":"medium","modifiers":{"runway_closed":{"from":"2027-02-12T13:05:00-08:00","to":"2027-02-12T13:55:00-08:00"},"demand_multiplier":1.0,"customs_hours":null}}`
 
 Response: `{"kpi_diff":{"A":{"hours_over_capacity":[0,3]}},"new_alerts":[...],"strategies":[...]}`, where each pair is `[before, after]`.
+Optional modifiers: `arrival_delay` `{from, to, minutes}` and `diversions` `{flight_id: ICAO}`. The response also carries `queue` (top 10 after the change) and `queue_changes` (rank before and after).
 
 ### `GET /briefing?t=...` and `POST /explain` (Role 3)
 
 ```json
-{"text":"Friday peak: medium scenario puts the ramp at 107% from 13:00 to 17:00 (A.kpis...).","cited_ids":["A.kpis.hours_over_capacity"],"model":"claude-opus-5-5","fallback":false}
+{"text":"Friday peak: medium scenario puts the ramp at 107% from 13:00 to 17:00 (A.kpis...).","cited_ids":["A.kpis.hours_over_capacity"],"model":"claude-sonnet-5-5","fallback":false}
 ```
 
 ### Audit log (`logs/audit.jsonl`, Role 3)

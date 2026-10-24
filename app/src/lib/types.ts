@@ -37,11 +37,12 @@ export interface Occupancy { scenario: Scenario; capacity: number; runs: number;
 export interface Kpis {
   aircraft_accommodated: number; parked_at_vny: number; overflow_aircraft: number; hours_over_capacity: number;
   empty_legs: number; co2_t: number; co2_saved_vs_adhoc_t: number; peak_line_staff: number;
-  peak_movements_per_hour: number; fuel_gal_week: number; risk: "low" | "medium" | "high";
+  peak_movements_per_hour: number; fuel_gal_week: number; risk: "low" | "medium" | "high"; reposition_fuel_gal?: number;
 }
 export interface Strategy {
   id: "A" | "B" | "C"; name: string; summary: string; kpis: Kpis; approvers: string[];
   assumptions: string[]; explanation_facts: { id: string; text: string }[];
+  overflow_split?: Record<string, number>; solver?: string;
 }
 export interface StrategiesResponse {
   scenario: Scenario; source: string; capacity: number; approved: string | null;
@@ -95,6 +96,9 @@ export interface WhatIf {
   kpi_diff: Record<string, Record<string, [number, number]>>;
   status_quo: { before: { hours_over_capacity: number; peak_demand: number }; after: { hours_over_capacity: number; peak_demand: number } };
   new_alerts: Alert[]; affected_flights: AffectedFlight[]; strategies: Strategy[]; explanation: Explanation;
+  queue_changes?: { booking_code: string; flight_id: string; rank_before: number | null; rank_after: number; reasons: string[] }[];
+  stand_plan?: { changed_times: number; re_planned: number; overflow_before: number; overflow_after: number; boxed_in: number; solver: string;
+    moves: { flight_id: string; from: string | null; to: string | null; time_changed: boolean }[] };
 }
 export interface Briefing extends Explanation { recommended: string; facts: { id: string; value: number | string; text: string }[] }
 
@@ -112,7 +116,7 @@ export interface ParkingPosition { id: string; kind: "stand" | "hot" | "temp"; r
 export interface ParkingMetrics {
   method: ParkingMethod; temp_zone: boolean; tows: number; boxed_in_events: number; overflow_aircraft: number;
   hot_spot_uses: number; temp_zone_uses: number; peak_stands_used: number; stands: number; utilization_pct: number;
-  revenue_est_usd: number; aircraft_parked: number;
+  revenue_est_usd: number; aircraft_parked: number; solver?: string;
 }
 export interface GanttBar {
   flight_id: string; booking_code: string | null; size_class: SizeClass; start: string; end: string; stay_type: string;
