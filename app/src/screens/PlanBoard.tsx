@@ -81,9 +81,9 @@ export default function PlanBoard() {
         summary={occ.data ? `${occ.data.hours.filter((h) => h.p50 > occ.data!.capacity).length} hours this week when the typical case needs more space than the ramp has` : "…"}>
       <Panel className="mt-5" eyebrow="Ramp space · hour by hour, if nothing changes" title="When we run out of parking"
         actions={occ.data && <OverflowChip hours={occ.data.hours} capacity={occ.data.capacity} />}>
-        {occ.data ? <RampDays hours={occ.data.hours} capacity={occ.data.capacity} /> : (
+        {occ.data ? <RampDays hours={occ.data.hours} capacity={occ.data.capacity} runs={occ.data.runs} /> : (
           <div className="space-y-2"><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-full" /><Skeleton className="h-6 w-full" />
-            <p className="text-[12px] text-ink-2">Running {fmt(120)} simulated weeks…</p></div>
+            <p className="text-[12px] text-ink-2">Simulating the week thousands of times…</p></div>
         )}
       </Panel>
       </Fold>
