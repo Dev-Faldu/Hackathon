@@ -2,7 +2,9 @@
 
 **SpartHill Hacks 2026 · Track 01 "The Intelligent FBO" · Focus: Parking**
 
-RAMPCAST is an AI ramp-capacity planner for a fictional FBO, *Sepulveda Jet Center*, at Van Nuys Airport (KVNY) during Super Bowl LXI week (Sun Feb 14 2027, SoFi Stadium). It forecasts parking demand, shows which hours the ramp overflows under low, medium and high demand, and drafts a plan (reservation caps, overflow partners, fuel and crews) that a human FBO manager approves.
+RAMPCAST is an AI ramp-capacity planner for a fictional FBO, *Sepulveda Jet Center*, at Van Nuys Airport (KVNY) during Super Bowl LXI week (Sun Feb 14 2027, SoFi Stadium). It forecasts parking demand, shows which hours the ramp overflows under low, medium and high demand, and drafts a plan (reservation caps, overflow partners, stand arrangement, fuel and crews) that a human FBO manager approves. The stretch goal runs the same engine on the LA28 Olympics opening week.
+
+**The AI, in one line:** a probabilistic demand forecast (P10–P90, 120-run Monte Carlo of the ramp) plus an optimizer (departure-aware stand assignment with local search, three overflow strategies scored on capacity, risk, CO₂ and staff), with every sentence in the briefings generated from the engine's facts. It runs fully offline: no API keys, no external model.
 
 Visual blueprint: [`docs/rampcast-blueprint.html`](docs/rampcast-blueprint.html)
 End-to-end research (takeoff → landing → ramp → car → hotel, decision rights, 22 edge cases, runway-closure scenario): [`docs/gate-to-hotel.html`](docs/gate-to-hotel.html)
@@ -16,9 +18,9 @@ make dev        # API on :8000 and app on http://localhost:5173
 make test       # server tests + app typecheck
 ```
 
-Optional: `export ANTHROPIC_API_KEY=...` before `make dev` turns on Claude-written briefings and what-if explanations. Without a key, the app uses template text built from the same engine facts. Open a specific replay moment with `http://localhost:5173/?t=2027-02-12T10:00:00-08:00#live`.
+No keys or accounts are needed: briefings, what-if explanations and answers to the manager's questions come from the built-in writer, which only words the engine's facts and cites each number. (Optional: `RAMPCAST_USE_CLAUDE=1` plus an Anthropic key lets Claude word the same facts.) Open a specific replay moment with `http://localhost:5173/?t=2027-02-12T10:00:00-08:00#live`.
 
-**Data modes.** With `data/processed/replay_2027.jsonl` present, Live ops and After-action replay the real Super Bowl LVI week (OpenSky, shifted +1,827 days). Without it, they use a seeded sample week shaped by public analog counts, and the sidebar labels it "Sample week".
+**Data modes.** With `data/processed/replay_2027.jsonl` present, Live ops and After-action replay the real Super Bowl LVI week (OpenSky, shifted +1,827 days). Build it with `make data` on a machine with internet and a free OpenSky account (fetch, FAA registry join, then `data/scripts/build_replay.py`). Without it, they use a seeded sample week calibrated to published counts (FlightAware and WingX, below), and the sidebar labels it "Sample week".
 
 **Plug-in modules.** `server/rampcast_server/adapters.py` swaps in team modules as soon as they exist: `rampcast.forecast.api.get_forecast/get_occupancy` and `rampcast.engine.api.get_strategies`. Each returns the shapes in `contracts/README.md`. Until then, the built-in reference engine answers every route.
 
@@ -31,8 +33,9 @@ Optional: `export ANTHROPIC_API_KEY=...` before `make dev` turns on Claude-writt
 | Event setup | Event facts, FBO capacity, staff, fuel trucks, need-based priority weights, the data-certainty ladder | "The manager sets the rules; the AI never uses name, status or price" |
 | Plan board | Ordinary week vs Super Bowl week (P10–P90), hour-by-day ramp heatmap, strategies A/B/C with approvers, briefing | Switch Low/Medium/High; approve Strategy B |
 | Live ops | Replay clock, inbound map with an LA-basin inset and the SoFi TFR rings, stand map with boxed-in flags, alerts, ground-handling priority queue | Press play at 600x; open the #1 queue item and approve the car |
-| What-if | Runway closure, demand +20%, early customs close; before/after KPIs; option cards for operators' dispatchers | Run "Runway 16R/34L closed"; show that the pilot decides |
+| What-if | Runway closure, demand +20%, Friday arrival bank 3 h late, early customs close; before/after KPIs including staffing; option cards for operators' dispatchers | Run "Friday bank 3 h late" (peak movements 11 → 16/h, techs 12 → 16); show that the pilot decides |
 | After-action | Forecast error vs the naive rule, interval coverage, hours over capacity avoided, CO2 avoided, the audit trail | Close on "what the AI never decides" |
+| **LA28 stretch** | Same engine on the LA28 Olympics opening week (Tue 11 – Mon 17 Jul 2028, ceremony Fri 14 Jul): ordinary July vs Olympic week, ramp occupancy vs the Super Bowl, side-by-side comparison, five adapted recommendations with approvers, stated assumptions | "The Super Bowl spikes and clears; the Olympics fill the ramp and stay: 107 jets still parked at week end vs 3" |
 
 ### Airport 3D
 

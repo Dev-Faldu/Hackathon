@@ -61,6 +61,27 @@ ORIGINS = [
 ORIGIN_BY_ICAO = {o[0]: o for o in ORIGINS}
 KVNY = (34.2098, -118.4900)
 
+@dataclass(frozen=True)
+class Profile:
+    """Demand shape for one event week, in the engine's Tue..Mon frame."""
+    name: str
+    base: tuple[int, ...]            # ordinary-week arrivals per day
+    uplift: tuple[float, ...]        # medium-scenario multiplier per day
+    event_day: int                   # index of the main event day in the week
+    quiet_hours: tuple[int, int]     # local hours damped on the event day (TFR)
+    size_mix: tuple[tuple[str, float], ...]
+    pre_window: int                  # aircraft already parked when the week opens
+    pre_dep_days: tuple[int, int]    # when they leave, days after the week opens
+    dg_share_event: float            # drop-and-go share during the event
+    long_stay_share: float           # share of non-drop-and-go arrivals that stay for the event
+    origins: tuple = ()
+    note: str = ""
+
+
+SUPER_BOWL = Profile(
+    "super_bowl", tuple(BASE_ARRIVALS), tuple(MEDIUM_UPLIFT), 5, (14, 21), tuple(SIZE_MIX.items()), 18, (0, 2), 0.38,
+    0.0, tuple(ORIGINS), "Sample data: seeded flights shaped by public Super Bowl analogs. Not real movements.")
+
 HOTEL_ZONES = {"Beverly Hills": 0.30, "Santa Monica": 0.22, "Downtown LA": 0.18, "Inglewood": 0.18, "Burbank": 0.12}
 CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
@@ -78,7 +99,7 @@ class Flight:
     departed_origin: datetime
     landed: datetime
     departed_vny: datetime
-    stay_type: str            # drop_and_go | overnight | through_game | pre_window
+    stay_type: str            # drop_and_go | overnight | through_game | event_stay | pre_window
     source: str
     booking_code: str | None = None
 
@@ -143,38 +164,39 @@ def _code(rng: np.random.Generator) -> str:
     return "RC-" + "".join(rng.choice(list(CODE_CHARS), 4))
 
 
-def daily_arrivals(scenario: str) -> list[int]:
+def daily_arrivals(scenario: str, profile: Profile = SUPER_BOWL) -> list[int]:
     k = SCENARIO_K[scenario]
-    return [round(b * (1 + (m - 1) * k)) for b, m in zip(BASE_ARRIVALS, MEDIUM_UPLIFT)]
+    return [round(b * (1 + (m - 1) * k)) for b, m in zip(profile.base, profile.uplift)]
 
 
 def generate_sample(scenario: str = "medium", seed: int = 61, demand_multiplier: float = 1.0,
-                    count_noise: float = 0.0) -> Dataset:
+                    count_noise: float = 0.0, profile: Profile = SUPER_BOWL) -> Dataset:
     """Seeded flights and bookings for one plausible week. Shapes, not facts: labelled 'sample'.
 
     count_noise > 0 draws each day's count around the scenario mean, as a real week would.
     """
     rng = np.random.default_rng(seed)
     days = C.window_days()
-    counts = [c * demand_multiplier for c in daily_arrivals(scenario)]
+    counts = [c * demand_multiplier for c in daily_arrivals(scenario, profile)]
     if count_noise:
         counts = [rng.poisson(max(0.0, c * rng.normal(1, count_noise))) for c in counts]
     counts = [int(round(c)) for c in counts]
     event = scenario != "baseline"
-    weights = np.array([o[4] for o in ORIGINS], dtype=float)
+    origins = profile.origins
+    weights = np.array([o[4] for o in origins], dtype=float)
     weights /= weights.sum()
-    sizes, size_p = list(SIZE_MIX), np.array(list(SIZE_MIX.values()))
+    sizes, size_p = [k for k, _ in profile.size_mix], np.array([v for _, v in profile.size_mix])
     flights: list[Flight] = []
     bookings: dict[str, Booking] = {}
-    game_day = days[5]
+    game_day = days[profile.event_day]
     seq = 0
 
-    # Aircraft already parked when the window opens; they leave Tue/Wed.
-    for i in range(18):
+    # Aircraft already parked when the window opens.
+    for i in range(profile.pre_window):
         size = rng.choice(sizes, p=size_p)
-        o = ORIGINS[int(rng.choice(len(ORIGINS), p=weights))]
+        o = origins[int(rng.choice(len(origins), p=weights))]
         land = C.window_start_local() - timedelta(hours=int(rng.integers(4, 40)))
-        dep = C.window_start_local() + timedelta(days=int(rng.integers(0, 2)), hours=int(rng.integers(8, 17)),
+        dep = C.window_start_local() + timedelta(days=int(rng.integers(*profile.pre_dep_days)), hours=int(rng.integers(8, 17)),
                                                  minutes=int(rng.integers(0, 60)))
         seq += 1
         flights.append(Flight(f"VNY-{seq:04d}", _hash(seed, seq), size, o[0], o[1], o[2], o[3], o[5],
@@ -182,22 +204,27 @@ def generate_sample(scenario: str = "medium", seed: int = 61, demand_multiplier:
 
     for d, (day, n) in enumerate(zip(days, counts)):
         hw = HOUR_WEIGHTS.copy()
-        if event and d == 5:  # game day: TFR afternoon, arrivals mostly before 14:00
-            hw[14:21] *= 0.35
+        if event and d == profile.event_day:  # event day: TFR hours, arrivals mostly before them
+            hw[profile.quiet_hours[0]:profile.quiet_hours[1]] *= 0.35
         hw /= hw.sum()
         for _ in range(n):
             seq += 1
             size = str(rng.choice(sizes, p=size_p))
-            o = ORIGINS[int(rng.choice(len(ORIGINS), p=weights))]
+            o = origins[int(rng.choice(len(origins), p=weights))]
             hour = int(rng.choice(24, p=hw))
             land = datetime.combine(day, datetime.min.time(), tzinfo=C.LA) + timedelta(
                 hours=hour, minutes=int(rng.integers(0, 60)))
             dist = great_circle_nm(o[2], o[3], *KVNY)
             dep_origin = land - timedelta(hours=dist / 440 + 0.35)
-            dg_share = 0.38 if event else 0.30
+            dg_share = profile.dg_share_event if event else 0.30
             if rng.random() < dg_share:
                 stay, dep = "drop_and_go", land + timedelta(minutes=int(rng.integers(55, 130)))
-            elif event and 2 <= d <= 5:
+            elif event and profile.long_stay_share and rng.random() < profile.long_stay_share:
+                # Multi-day event (Olympics): stay 3-12 days, often past the end of the week.
+                stay = "event_stay"
+                dep = datetime.combine(day + timedelta(days=int(rng.integers(3, 13))), datetime.min.time(),
+                                       tzinfo=C.LA) + timedelta(hours=int(rng.integers(8, 17)), minutes=int(rng.integers(0, 60)))
+            elif event and profile is SUPER_BOWL and 2 <= d <= 5:
                 stay = "through_game"
                 if rng.random() < 0.35:
                     dep = datetime.combine(game_day, datetime.min.time(), tzinfo=C.LA) + timedelta(
@@ -219,8 +246,8 @@ def generate_sample(scenario: str = "medium", seed: int = 61, demand_multiplier:
             flights.append(f)
             bookings[code] = _booking(rng, code, f)
 
-    return Dataset("sample", scenario, sorted(flights, key=lambda f: f.landed), bookings, default_stands(),
-                   ["Sample data: seeded flights shaped by public Super Bowl analogs. Not real movements."])
+    source = "sample" if profile is SUPER_BOWL else f"sample_{profile.name}"
+    return Dataset(source, scenario, sorted(flights, key=lambda f: f.landed), bookings, default_stands(), [profile.note])
 
 
 def _hash(seed: int, seq: int) -> str:

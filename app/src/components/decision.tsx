@@ -77,7 +77,7 @@ export function StrategyCards({ strategies, recommended, approved }: {
 }
 
 export function BriefingPanel({ t }: { t?: string }) {
-  const { scenario, meta } = useApp();
+  const { scenario } = useApp();
   const tHour = t ? t.slice(0, 13) : undefined;
   const { data, loading } = useApi(() => api.briefing(scenario, t), [scenario, tHour]);
   const [question, setQuestion] = useState("");
@@ -96,7 +96,7 @@ export function BriefingPanel({ t }: { t?: string }) {
   };
   return (
     <Panel strong eyebrow={<span className="flex items-center gap-1.5"><Sparkles size={12} className="text-runway" /> Morning briefing</span>}
-      title="What the numbers say" actions={<Chip tone={data?.fallback ? "neutral" : "runway"}>{data ? (data.fallback ? "Template" : "Claude") : "…"}</Chip>}>
+      title="What the numbers say" actions={<Chip tone="runway">{data ? (data.fallback ? "Built-in" : "Claude") : "…"}</Chip>}>
       {loading && !data ? (
         <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-11/12" /><Skeleton className="h-4 w-4/5" /></div>
       ) : data ? (
@@ -110,12 +110,12 @@ export function BriefingPanel({ t }: { t?: string }) {
       )}
       <form className="mt-4 flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); ask(); }}>
         <input id="briefing-question" value={question} onChange={(e) => setQuestion(e.target.value)}
-          placeholder={meta?.claude_enabled ? "Ask: why is B suggested over C?" : "Ask a question (Claude needs an API key)"}
+          placeholder="Ask: why is B suggested? staffing? CO₂? parking?"
           className="min-w-0 flex-1 rounded-control border border-hairline bg-white/80 px-3 py-2 text-[13px] outline-none focus:ring-2 focus:ring-runway/30" />
         <button className="btn-primary" disabled={asking}>{asking ? "…" : <Send size={14} />}</button>
       </form>
       <p className="mt-2 flex items-center gap-1 text-[11px] text-ink-2">
-        Every number links to the engine fact it came from <ArrowRight size={11} /> Claude writes words, never numbers.
+        Every number links to the engine fact it came from <ArrowRight size={11} /> words never invent numbers.
       </p>
     </Panel>
   );

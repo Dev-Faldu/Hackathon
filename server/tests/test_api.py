@@ -103,3 +103,67 @@ def test_parking_assign_validates_before_pinning(client):
     small_stand = next(p["id"] for p in plan["positions"] if p["max_wingspan_ft"] == 60)
     r = client.post("/parking/assign", json={"flight_id": big["flight_id"], "position_id": small_stand, "confirm": True}).json()
     assert not r["ok"] and not r["confirmed"] and any("Wingspan" in i for i in r["issues"])
+
+
+def test_arrival_delay_compresses_the_afternoon(client):
+    mods = {"arrival_delay": {"from": "2027-02-12T09:00:00-08:00", "to": "2027-02-12T13:00:00-08:00", "minutes": 180}}
+    r = client.post("/whatif", json={"scenario": "medium", "modifiers": mods}).json()
+    assert r["affected_flights"] and all(f["delay_min"] == 180 for f in r["affected_flights"])
+    assert all(f["decided_by"].startswith("Operator dispatcher") for f in r["affected_flights"])
+    b = r["kpi_diff"]["B"]["peak_movements_per_hour"]
+    assert b[1] >= b[0]
+    assert "[whatif.peak_moves_after]" in r["explanation"]["text"]
+
+
+def test_offline_answers_cite_facts(client):
+    r = client.post("/explain", json={"question": "why is B suggested over C?"}).json()
+    assert r["fallback"] is True and "[B.kpis.hours_over_capacity]" in r["text"]
+    assert "decides" in r["text"]
+
+
+def test_la28_profile_differs_from_super_bowl(client):
+    r = client.get("/la28?scenario=medium").json()
+    assert r["event"]["ceremony_date"] == "2028-07-14"
+    assert [d["date"] for d in r["days"]][0] == "2028-07-11" and len(r["hours"]) == 168
+    assert all(d["p10"] <= d["p50"] <= d["p90"] for d in r["days"])
+    # Long Olympic stays: far more jets still parked when the week ends than after the Super Bowl.
+    assert r["la28"]["parked_at_week_end"] > r["super_bowl"]["parked_at_week_end"]
+    assert r["week_by_scenario"]["low"] < r["week_by_scenario"]["medium"] < r["week_by_scenario"]["high"]
+    assert all(x["approver"] for x in r["recommendations"])
+
+
+def test_build_replay_feeds_the_loader(tmp_path, monkeypatch):
+    """Raw OpenSky CSVs -> replay_2027.jsonl -> load_processed, without network."""
+    import csv as _csv
+    import importlib.util
+    from datetime import datetime, timezone
+    from rampcast_server import config as C
+    from rampcast_server.data import load_processed
+
+    spec = importlib.util.spec_from_file_location("build_replay", C.ROOT / "data" / "scripts" / "build_replay.py")
+    br = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(br)
+    raw = tmp_path / "raw"
+    (raw / "opensky").mkdir(parents=True)
+    ts = lambda s: int(datetime.fromisoformat(s).replace(tzinfo=timezone.utc).timestamp())
+    head = ["tail_hash", "icao24", "callsign", "dep", "arr", "first_seen", "last_seen"]
+    with open(raw / "opensky" / "KVNY_arrival_2022-02-11.csv", "w", newline="") as f:
+        w = _csv.writer(f); w.writerow(head)
+        w.writerow(["aaa", "a1b2c3", "N1", "KTEB", "KVNY", ts("2022-02-11T14:00"), ts("2022-02-11T19:30")])
+        w.writerow(["bbb", "d4e5f6", "C-GXYZ", "CYYZ", "KVNY", ts("2022-02-11T15:00"), ts("2022-02-11T20:10")])
+    with open(raw / "opensky" / "KVNY_departure_2022-02-14.csv", "w", newline="") as f:
+        w = _csv.writer(f); w.writerow(head)
+        w.writerow(["aaa", "a1b2c3", "N1", "KVNY", "KTEB", ts("2022-02-14T18:00"), ts("2022-02-14T23:00")])
+    with open(raw / "icao24_aircraft.csv", "w", newline="") as f:
+        w = _csv.writer(f); w.writerow(["icao24", "manufacturer", "model", "seats", "size_class"])
+        w.writerow(["a1b2c3", "GULFSTREAM", "G650", "16", "large"])
+    out = tmp_path / "processed" / "replay_2027.jsonl"
+    assert br.build(str(raw), str(out)) == 2
+    monkeypatch.setattr(C, "PROCESSED", out.parent)
+    base = C.assumptions()
+    monkeypatch.setattr(C, "assumptions", lambda: {**base, "fbo": {**base["fbo"], "share_of_airport_arrivals": 1.0}})
+    ds = load_processed()
+    assert ds and ds.source == "opensky_2022_shifted" and len(ds.flights) == 2
+    g = next(f for f in ds.flights if f.size_class == "large")
+    assert g.landed.date().isoformat() == "2027-02-12" and g.departed_vny.date().isoformat() == "2027-02-15"
+    assert next(f for f in ds.flights if f.origin == "CYYZ").is_international

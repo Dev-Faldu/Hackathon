@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BarChart3, Box, Database, FlaskConical, Pause, Play, Plane, Radar, Settings2, ShieldCheck, Sparkles, SquareParking } from "lucide-react";
+import { BarChart3, Box, Database, FlaskConical, Medal, Pause, Play, Plane, Radar, Settings2, ShieldCheck, Sparkles, SquareParking } from "lucide-react";
 import type { ReactNode } from "react";
 import { cx, dayLabel, hhmm } from "../lib/format";
 import { useApp, type Screen } from "../lib/store";
@@ -13,6 +13,7 @@ const NAV: { id: Screen; label: string; icon: ReactNode; hint: string }[] = [
   { id: "live", label: "Live ops", icon: <Radar size={17} />, hint: "Replay, ramp, priority queue" },
   { id: "whatif", label: "What-if", icon: <FlaskConical size={17} />, hint: "Disruptions and re-plans" },
   { id: "after", label: "After-action", icon: <ShieldCheck size={17} />, hint: "Accuracy, impact, audit" },
+  { id: "la28", label: "LA28 stretch", icon: <Medal size={17} />, hint: "Olympics opening week" },
 ];
 
 export function Sidebar() {
@@ -53,8 +54,8 @@ export function Sidebar() {
             {meta?.live_source === "opensky_2022_shifted" ? "Real 2022 replay (OpenSky)" : "Sample week (seeded)"}
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-[12px] font-medium">
-            <Sparkles size={13} className={meta?.claude_enabled ? "text-runway" : "text-ink-3"} />
-            {meta?.claude_enabled ? "Claude briefings on" : "Template briefings"}
+            <Sparkles size={13} className="text-runway" />
+            {meta?.claude_enabled ? "Claude wording on" : "Built-in briefings · offline"}
           </div>
         </div>
         <p className="px-1 text-[10.5px] leading-snug text-ink-2">
@@ -65,13 +66,13 @@ export function Sidebar() {
   );
 }
 
-export function TopBar({ title, subtitle, children }: { title: string; subtitle: string; children?: ReactNode }) {
+export function TopBar({ title, subtitle, children, event }: { title: string; subtitle: string; children?: ReactNode; event?: ReactNode }) {
   const { scenario, setScenario, meta } = useApp();
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 pb-5">
       <div>
         <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          <Chip tone="tfr">Super Bowl LXI · Sun Feb 14 2027</Chip>
+          <Chip tone="tfr">{event ?? "Super Bowl LXI · Sun Feb 14 2027"}</Chip>
           <Chip>KVNY · {meta?.settings.fbo_name ?? "Sepulveda Jet Center (fictional)"}</Chip>
         </div>
         <h1 className="text-[28px] font-semibold tracking-[-0.025em]">{title}</h1>

@@ -1,7 +1,8 @@
 """Plain-language briefings and explanations.
 
-Claude writes them from the JSON facts we pass in, citing fact ids. Numbers always come from the engine,
-never from the model. Without credentials (or on any API failure) a template writes the same facts.
+By default the built-in writer below turns the engine's JSON facts into sentences, citing fact ids; it runs
+offline and needs no keys. Setting RAMPCAST_USE_CLAUDE=1 (with an Anthropic key) lets Claude word the same
+facts instead. Numbers always come from the engine, never from a language model.
 """
 from __future__ import annotations
 
@@ -33,7 +34,7 @@ _client: anthropic.Anthropic | None = None
 
 
 def claude_available() -> bool:
-    if os.environ.get("RAMPCAST_DISABLE_CLAUDE"):
+    if os.environ.get("RAMPCAST_DISABLE_CLAUDE") or not os.environ.get("RAMPCAST_USE_CLAUDE"):
         return False
     return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
                 or (Path.home() / ".config" / "anthropic").exists())
@@ -83,13 +84,13 @@ def explain(kind: str, facts: dict, cache_key: str, question: str | None = None)
         except Exception as e:  # missing credentials and similar client-side errors
             log.warning("Claude unavailable (%s); using template", type(e).__name__)
     if result is None:
-        text = template(kind, facts)
+        text = template(kind, facts, question)
         result = {"text": text, "cited_ids": _cited(text, facts), "model": "template", "fallback": True}
     _cache[cache_key] = result
     return result
 
 
-def template(kind: str, facts: dict) -> str:
+def template(kind: str, facts: dict, question: str | None = None) -> str:
     f = {x["id"]: x for x in facts.get("facts", [])}
 
     def v(fid: str) -> str:
@@ -104,6 +105,16 @@ def template(kind: str, facts: dict) -> str:
                 f"{v(best + '.kpis.co2_t')} t CO2, with {v(best + '.kpis.peak_line_staff')} line techs at the peak hour. "
                 f"There are {v('alerts.high')} high-severity alerts open. "
                 f"The FBO general manager approves the strategy; partner FBOs confirm their stands.")
+    if kind == "question":
+        return answer(facts, question or "")
+    if kind == "whatif" and "whatif.peak_moves_after" in f:
+        return (f"The delay moves {v('whatif.affected')} inbound jets {v('whatif.max_delay_min')} min later, so the morning bank "
+                f"lands on top of the afternoon one: movements in the peak hour go from {v('whatif.peak_moves_before')} to "
+                f"{v('whatif.peak_moves_after')}, and strategy B needs {v('whatif.staff_after')} line techs instead of "
+                f"{v('whatif.staff_before')}. {v('whatif.commitments_at_risk')} fixed-time passenger commitments are now at risk "
+                f"and {v('whatif.customs_at_risk')} international arrivals risk missing customs. "
+                f"Hours over capacity move from {v('whatif.hours_before')} to {v('whatif.hours_after')}. "
+                f"The line supervisor approves calling in the extra shift; operators' dispatchers and pilots decide any change to their flights.")
     if kind == "whatif":
         return (f"The change delays {v('whatif.affected')} of our inbound jets by up to {v('whatif.max_delay_min')} min. "
                 f"{v('whatif.customs_at_risk')} international arrivals now risk missing customs. "
@@ -111,3 +122,44 @@ def template(kind: str, facts: dict) -> str:
                 f"Alternate-airport options go to each operator's dispatcher; the pilot in command decides. "
                 f"The FBO general manager approves holding stands, and customer service sends any customs request.")
     return "No explanation available."
+
+
+def answer(facts: dict, question: str) -> str:
+    """Rule-based answers to the manager's common questions, from the same facts as the briefing."""
+    f = {x["id"]: x for x in facts.get("facts", [])}
+    q = question.lower()
+    best = facts.get("recommended", "B")
+    ids = sorted({k.split(".")[0] for k in f if k[:1] in "ABC" and "." in k})
+
+    def v(fid: str) -> str:
+        return f"{f[fid]['value']} [{fid}]" if fid in f else "n/a"
+
+    def line(sid: str, key: str, label: str) -> str:
+        return f"{sid} {v(f'{sid}.kpis.{key}')} {label}"
+
+    if any(w in q for w in ("staff", "crew", "tech", "people", "shift")):
+        parts = "; ".join(line(s, "peak_line_staff", "line techs at the peak hour") for s in ids)
+        return (f"Staffing by strategy: {parts}. The peak comes from movements, not parked jets, so the extra techs "
+                f"cover arrival and departure banks. The FBO general manager approves the roster.")
+    if any(w in q for w in ("co2", "carbon", "emission", "fuel", "green", "sustain")):
+        parts = "; ".join(f"{line(s, 'empty_legs', 'empty legs')}, {v(f'{s}.kpis.co2_t')} t CO2" for s in ids)
+        return (f"Emissions come from empty repositioning legs when jets cannot stay: {parts}. Partner airports close "
+                f"by keep those legs short. The FBO general manager approves the strategy.")
+    if any(w in q for w in ("overflow", "park", "space", "stand", "capacity", "full")):
+        parts = "; ".join(f"{line(s, 'overflow_aircraft', 'overflow aircraft')}, {v(f'{s}.kpis.hours_over_capacity')} h over capacity" for s in ids)
+        return (f"With no plan the ramp peaks at {v('status_quo.peak_demand')} large-cabin equivalents against {v('capacity')}, "
+                f"{v('status_quo.hours_over_capacity')} hours over capacity. By strategy: {parts}. "
+                f"The FBO general manager approves; partner FBOs confirm their stands.")
+    if any(w in q for w in ("alert", "risk", "worry", "problem", "now")):
+        top = facts.get("top_alerts") or []
+        lead = f"There are {v('alerts.high')} high-severity alerts open."
+        return lead + (" Top items: " + "; ".join(top) + "." if top else " Nothing urgent is open right now.") + \
+            " Each alert names the role that acts on it; RAMPCAST does not act on its own."
+    others = [s for s in ids if s != best]
+    comp = "; ".join(f"{s}: {v(f'{s}.kpis.hours_over_capacity')} h over capacity, {v(f'{s}.kpis.co2_t')} t CO2, "
+                     f"approved by {f[f'{s}.approvers']['value'] if f'{s}.approvers' in f else 'n/a'}" for s in others)
+    return (f"Strategy {best} is suggested because it keeps the ramp within capacity with the least operational risk: "
+            f"{v(f'{best}.kpis.hours_over_capacity')} h over capacity, {v(f'{best}.kpis.empty_legs')} empty legs, "
+            f"{v(f'{best}.kpis.co2_t')} t CO2, {v(f'{best}.kpis.peak_line_staff')} line techs at the peak. "
+            f"The alternatives: {comp}. The rule is: fewest hours over capacity, then lowest risk, then CO2 and staff. "
+            f"It is a suggestion; the FBO general manager decides.")

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Ban, CloudFog, Globe2, Loader2, PlaneLanding, TrendingUp, Zap } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Ban, CloudFog, CloudRain, Globe2, Loader2, PlaneLanding, TrendingUp, Zap } from "lucide-react";
 import { useState } from "react";
 import { TopBar } from "../components/Shell";
 import { ApproveBar, Chip, CitedText, ErrorNote, Panel } from "../components/ui";
@@ -15,6 +15,8 @@ const PRESETS: Preset[] = [
     modifiers: { runway_closed: { from: "2027-02-12T10:05:00-08:00", to: "2027-02-12T10:55:00-08:00" } } },
   { id: "demand", title: "Demand 20% higher", detail: "Every day of the week, all size classes", icon: <TrendingUp size={18} />,
     modifiers: { demand_multiplier: 1.2 } },
+  { id: "delay", title: "Friday bank 3 h late", detail: "Weather at origin: Fri 09:00–13:00 arrivals land 180 min late", icon: <CloudRain size={18} />,
+    modifiers: { arrival_delay: { from: "2027-02-12T09:00:00-08:00", to: "2027-02-12T13:00:00-08:00", minutes: 180 } } },
   { id: "customs", title: "Customs closes early", detail: "Thu: VNY customs 09:00–13:00 instead of 20:30", icon: <Globe2 size={18} />,
     modifiers: { customs_hours: { thu: ["09:00", "13:00"] }, at: "2027-02-11T09:00:00-08:00" } },
   { id: "worst", title: "Worst Friday", detail: "Runway closure plus 20% more demand", icon: <CloudFog size={18} />,
@@ -27,6 +29,7 @@ const DIFF_ROWS: { key: string; label: string; unit?: string; digits?: number }[
   { key: "empty_legs", label: "Empty legs" },
   { key: "co2_t", label: "CO₂", unit: "t", digits: 1 },
   { key: "peak_line_staff", label: "Line techs at peak" },
+  { key: "peak_movements_per_hour", label: "Movements in peak hour" },
 ];
 
 export default function WhatIf() {
@@ -51,7 +54,7 @@ export default function WhatIf() {
   return (
     <div>
       <TopBar title="What-if" subtitle="Inject a disruption. RAMPCAST re-plans in seconds and shows every ripple; people decide what to do." />
-      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {PRESETS.map((p) => (
           <button key={p.id} onClick={() => run(p.id, p.modifiers)}
             className={cx("glass group flex flex-col items-start gap-2 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lift",
@@ -129,7 +132,7 @@ export default function WhatIf() {
               </div>
             </Panel>
             <Panel strong eyebrow="Explanation" title="What changed and who decides"
-              actions={<Chip tone={result.explanation.fallback ? "neutral" : "runway"}>{result.explanation.fallback ? "Template" : "Claude"}</Chip>}>
+              actions={<Chip tone="runway">{result.explanation.fallback ? "Built-in" : "Claude"}</Chip>}>
               <CitedText text={result.explanation.text} />
               {result.new_alerts.length > 0 && (
                 <div className="mt-4 space-y-2">
@@ -166,7 +169,8 @@ export default function WhatIf() {
                       <span className="text-ink-2 line-through">{hhmm(f.eta_local)}</span>
                       <ArrowRight size={12} className="text-ink-3" />
                       <span className="font-semibold">{hhmm(f.new_eta_local)}</span>
-                      <Chip tone="watch">+{f.delay_min} min if holding</Chip>
+                      <Chip tone="watch">{f.cause === "arrival_delay" ? `+${f.delay_min} min late` : `+${f.delay_min} min if holding`}</Chip>
+                      {f.customs_missed && <Chip tone="alert">After customs close</Chip>}
                     </div>
                     <ol className="mt-3 space-y-1.5">
                       {f.options.map((o, idx) => (

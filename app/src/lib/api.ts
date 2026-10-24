@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AfterAction, Alert, AssignResult, AuditRow, Briefing, Explanation, Forecast, Meta, Occupancy, ParkingMethod,
-  ParkingPlan, ParkingState, Queue, ReplayState, Reservation, Scenario, Settings, StrategiesResponse, WhatIf,
-} from "./types";
+  ParkingPlan, ParkingState, Queue, ReplayState, Reservation, Scenario, Settings, StrategiesResponse, WhatIf, La28Report } from "./types";
 
 const BASE = "/api";
 
@@ -29,6 +28,7 @@ export const api = {
   explain: (question: string, s: Scenario, t?: string) =>
     http<Explanation>("/explain", { method: "POST", body: JSON.stringify({ question, scenario: s, t }) }),
   afteraction: (s: Scenario) => http<AfterAction>(`/afteraction?scenario=${s}`),
+  la28: (s: Scenario) => http<La28Report>(`/la28?scenario=${s}`),
   settings: () => http<Settings>("/settings"),
   putSettings: (patch: Partial<Settings>) => http<Settings>("/settings", { method: "PUT", body: JSON.stringify(patch) }),
   audit: () => http<{ entries: AuditRow[] }>("/audit"),

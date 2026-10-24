@@ -87,7 +87,7 @@ export interface AltOption {
 export interface AffectedFlight {
   flight_id: string; booking_code: string | null; size_class: SizeClass; origin: string; origin_name: string;
   is_international: boolean; eta_local: string; new_eta_local: string; delay_min: number; hotel_zone: string;
-  options: AltOption[]; decided_by: string;
+  options: AltOption[]; decided_by: string; cause?: "runway_closure" | "arrival_delay"; customs_missed?: boolean;
 }
 export interface Explanation { text: string; cited_ids: string[]; model: string; fallback: boolean }
 export interface WhatIf {
@@ -140,3 +140,19 @@ export interface Reservation {
   action: "stand" | "hot_spot" | "temp" | "overflow"; label: string; reasons: string[]; tows: number;
 }
 export interface AssignResult { ok: boolean; issues: string[]; confirmed?: boolean; tows_before?: number; tows_after?: number; pins: Record<string, string> }
+
+export interface La28Profile {
+  arrivals: number; median_stay_h: number; parked_at_week_end: number; international_pct: number;
+  intl_after_customs_close: number; large_pct: number; peak_demand: number; hours_over_capacity: number;
+  tows_whiteboard: number; tows_rampcast: number; overflow_rampcast: number;
+  strategies: { id: "A" | "B" | "C"; name: string; kpis: Kpis; approvers: string[] }[];
+}
+export interface La28Report {
+  event: { name: string; ceremony_date: string; window: [string, string]; games: [string, string] };
+  scenario: Scenario; capacity: number; source: string; notes: string[]; assumptions: string[];
+  days: ForecastDay[]; week_by_scenario: Record<Scenario, number>;
+  hours: { t_local: string; la28_p50: number; la28_p90: number; sb_p50: number }[];
+  first_hour_over_capacity: string | null; hours_over_capacity_p50: number;
+  la28: La28Profile; super_bowl: La28Profile;
+  recommendations: { title: string; detail: string; approver: string }[]; never: string;
+}

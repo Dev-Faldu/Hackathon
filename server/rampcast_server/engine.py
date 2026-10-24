@@ -382,7 +382,35 @@ def apply_runway_closure(ds: Dataset, rc: dict) -> tuple[Dataset, list[dict]]:
         affected.append({"flight_id": f.flight_id, "booking_code": f.booking_code, "size_class": f.size_class,
                          "origin": f.origin, "origin_name": f.origin_name, "is_international": f.is_international,
                          "eta_local": C.iso_local(f.landed), "new_eta_local": C.iso_local(new_landed[f.flight_id]),
-                         "delay_min": delay, "hotel_zone": zone,
+                         "delay_min": delay, "hotel_zone": zone, "cause": "runway_closure",
                          "options": alternates(f, zone, delay),
+                         "decided_by": "Operator dispatcher and pilot in command"})
+    return Dataset(ds.source, ds.scenario, sorted(flights, key=lambda f: f.landed), ds.bookings, ds.stands, ds.notes), affected
+
+
+def apply_arrival_delay(ds: Dataset, ad: dict) -> tuple[Dataset, list[dict]]:
+    """A bank of inbound jets lands late (weather at origin, a ground delay program): same jets, later times."""
+    a_from, a_to, mins = C.parse_t(ad["from"]), C.parse_t(ad["to"]), int(ad.get("minutes", 120))
+    hit = sorted([f for f in ds.flights if f.stay_type != "pre_window" and a_from <= f.landed <= a_to], key=lambda f: f.landed)
+    late = {f.flight_id for f in hit}
+    flights = []
+    for f in ds.flights:
+        if f.flight_id in late:
+            nl = f.landed + timedelta(minutes=mins)
+            flights.append(replace(f, departed_origin=f.departed_origin + timedelta(minutes=mins), landed=nl,
+                                   departed_vny=max(f.departed_vny, nl + timedelta(minutes=50))))
+        else:
+            flights.append(f)
+    affected = []
+    for f in hit:
+        b = ds.bookings.get(f.booking_code or "")
+        zone = b.hotel_zone if b else "Beverly Hills"
+        nl = f.landed + timedelta(minutes=mins)
+        affected.append({"flight_id": f.flight_id, "booking_code": f.booking_code, "size_class": f.size_class,
+                         "origin": f.origin, "origin_name": f.origin_name, "is_international": f.is_international,
+                         "eta_local": C.iso_local(f.landed), "new_eta_local": C.iso_local(nl),
+                         "delay_min": mins, "hotel_zone": zone, "cause": "arrival_delay",
+                         "customs_missed": bool(f.is_international and nl > customs_close(nl)),
+                         "options": alternates(f, zone, mins),
                          "decided_by": "Operator dispatcher and pilot in command"})
     return Dataset(ds.source, ds.scenario, sorted(flights, key=lambda f: f.landed), ds.bookings, ds.stands, ds.notes), affected

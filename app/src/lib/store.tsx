@@ -3,7 +3,7 @@ import { api } from "./api";
 import { toLocalIso } from "./format";
 import type { Meta, Scenario } from "./types";
 
-export type Screen = "setup" | "parking" | "world" | "plan" | "live" | "whatif" | "after";
+export type Screen = "setup" | "parking" | "world" | "plan" | "live" | "whatif" | "after" | "la28";
 export interface Toast { id: number; title: string; body?: string; tone?: "ok" | "info" | "alert" }
 
 interface Ctx {
@@ -28,7 +28,7 @@ interface Ctx {
 }
 
 const AppCtx = createContext<Ctx | null>(null);
-const SCREENS: Screen[] = ["setup", "parking", "world", "plan", "live", "whatif", "after"];
+const SCREENS: Screen[] = ["setup", "parking", "world", "plan", "live", "whatif", "after", "la28"];
 
 const fromHash = (): Screen => {
   const h = window.location.hash.replace("#", "") as Screen;

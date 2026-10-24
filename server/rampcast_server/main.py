@@ -11,14 +11,14 @@ from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import adapters, config as C, engine, explain, forecast, parking, store
+from . import adapters, config as C, engine, explain, forecast, la28, parking, store
 from .data import Dataset, generate_sample, load_processed
 from .replay import Replay
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Warm the slow caches (Monte Carlo, stand plan) in the background so the first screen loads fast.
-    threading.Thread(target=lambda: (replay(), forecast.occupancy("medium")), daemon=True).start()
+    threading.Thread(target=lambda: (replay(), forecast.occupancy("medium"), la28.report("medium")), daemon=True).start()
     yield
 
 
@@ -63,8 +63,16 @@ class RunwayClosed(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class ArrivalDelay(BaseModel):
+    from_: str = Field(alias="from")
+    to: str
+    minutes: int = Field(120, ge=15, le=480)
+    model_config = {"populate_by_name": True}
+
+
 class Modifiers(BaseModel):
     runway_closed: RunwayClosed | None = None
+    arrival_delay: ArrivalDelay | None = None
     demand_multiplier: float = 1.0
     customs_hours: dict[str, list[str]] | None = None
     at: str | None = None
@@ -166,6 +174,11 @@ def post_whatif(req: PlanRequest):
         mods_alert = {**mods, "affected_count": len(affected)}
     else:
         mods_alert = mods
+    if mods.get("arrival_delay"):
+        changed, late = engine.apply_arrival_delay(changed, mods["arrival_delay"])
+        affected += late
+        t = C.parse_t(mods["arrival_delay"]["from"])
+        mods_alert = {**mods_alert, "affected_count": len(affected)}
     before, after = engine.strategies(base), engine.strategies(changed)
     kpi_diff = {}
     for b, a in zip(before["strategies"], after["strategies"]):
@@ -173,13 +186,31 @@ def post_whatif(req: PlanRequest):
     alerts_before = {x["id"] for x in engine.alerts(base, t)["alerts"]}
     alerts_after = engine.alerts(changed, t, mods_alert)["alerts"]
     customs_risk = [x for x in alerts_after if x["kind"] == "customs_window"]
+    customs_missed = sum(1 for x in affected if x.get("customs_missed"))
     facts = {"facts": [
         {"id": "whatif.affected", "value": len(affected), "text": "inbound jets affected"},
         {"id": "whatif.max_delay_min", "value": max([x["delay_min"] for x in affected], default=0), "text": "max delay"},
-        {"id": "whatif.customs_at_risk", "value": len(customs_risk), "text": "international arrivals at customs risk"},
+        {"id": "whatif.customs_at_risk", "value": max(len(customs_risk), customs_missed), "text": "international arrivals at customs risk"},
         {"id": "whatif.hours_before", "value": before["status_quo"]["hours_over_capacity"], "text": "hours over capacity before"},
         {"id": "whatif.hours_after", "value": after["status_quo"]["hours_over_capacity"], "text": "hours over capacity after"},
     ], "modifiers": mods}
+    if mods.get("arrival_delay"):
+        # Fixed-time commitments the delay now breaks: deadline was reachable before, not after.
+        broken = 0
+        for x in affected:
+            bk = base.bookings.get(x["booking_code"] or "")
+            if bk and bk.deadline_local:
+                drive = timedelta(minutes=engine.drive_minutes("KVNY", bk.hotel_zone) + 25)
+                if C.parse_t(x["eta_local"]) + drive <= bk.deadline_local < C.parse_t(x["new_eta_local"]) + drive:
+                    broken += 1
+        kb, ka = before["strategies"][1]["kpis"], after["strategies"][1]["kpis"]
+        facts["facts"] += [
+            {"id": "whatif.peak_moves_before", "value": kb["peak_movements_per_hour"], "text": "movements in the peak hour before"},
+            {"id": "whatif.peak_moves_after", "value": ka["peak_movements_per_hour"], "text": "movements in the peak hour after"},
+            {"id": "whatif.staff_before", "value": kb["peak_line_staff"], "text": "line techs at the peak, strategy B, before"},
+            {"id": "whatif.staff_after", "value": ka["peak_line_staff"], "text": "line techs at the peak, strategy B, after"},
+            {"id": "whatif.commitments_at_risk", "value": broken, "text": "fixed-time commitments now at risk"},
+        ]
     key = f"whatif:{scenario}:{sorted(mods.items())}"
     return {"scenario": scenario, "modifiers": mods, "kpi_diff": kpi_diff,
             "status_quo": {"before": before["status_quo"], "after": after["status_quo"]},
@@ -250,6 +281,12 @@ def get_afteraction(scenario: str = "medium"):
             "strategy": chosen, "strategy_kpis": card["kpis"],
             "peak_occupancy": round(float(occ.max()), 1), "capacity": engine.capacity(),
             "stand_conflicts_week": replay().conflicts, "audit": store.audit_list()[-50:]}
+
+
+@router.get("/la28")
+def get_la28(scenario: str = "medium"):
+    """Stretch goal: the same engine on an LA28 Olympic opening-week profile."""
+    return la28.report(check_scenario(scenario))
 
 
 @router.get("/settings")

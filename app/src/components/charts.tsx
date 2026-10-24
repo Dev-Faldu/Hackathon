@@ -4,7 +4,7 @@ import { dayShort, fmt, hhmm } from "../lib/format";
 import type { ForecastDay, OccupancyHour } from "../lib/types";
 
 /** Daily arrivals: ordinary-week baseline, P10-P90 band, P50 line, optional actual dots. */
-export function ForecastChart({ days, showActual }: { days: ForecastDay[]; showActual?: boolean }) {
+export function ForecastChart({ days, showActual, eventDate = "2027-02-14" }: { days: ForecastDay[]; showActual?: boolean; eventDate?: string }) {
   const W = 720, H = 268, L = 40, R = 16, T = 22, B = 34;
   const max = Math.max(10, ...days.map((d) => Math.max(d.p90, d.actual ?? 0, d.baseline_p50))) * 1.12;
   const x = (i: number) => L + ((W - L - R) * (i + 0.5)) / days.length;
@@ -31,7 +31,7 @@ export function ForecastChart({ days, showActual }: { days: ForecastDay[]; showA
         ))}
         {days.map((d, i) => (
           <text key={d.date} x={x(i)} y={H - 12} textAnchor="middle" fontSize="11.5"
-            fill={d.date === "2027-02-14" ? "#C026D3" : "#4A5B73"} fontWeight={d.date === "2027-02-14" ? 600 : 400}>
+            fill={d.date === eventDate ? "#C026D3" : "#4A5B73"} fontWeight={d.date === eventDate ? 600 : 400}>
             {dayShort(d.date)} {d.date.slice(8)}
           </text>
         ))}
