@@ -12,6 +12,7 @@ from rampcast_server.data import load_processed
 PROCESSED = C.ROOT / "data" / "processed"
 HOTEL_ZONES = {"Beverly Hills", "Santa Monica", "Downtown LA", "Inglewood", "Burbank"}
 SIZE_CLASSES = {"large", "super_mid", "mid", "light", "other"}
+SOURCES = {"opensky_2022_shifted", "reconstructed_2022"}  # a real pull, or the calibrated reconstruction
 BANNED_FIELDS = {"name", "passenger_name", "passenger", "vip", "tier", "payment", "price", "credit_card", "loyalty"}
 
 
@@ -58,7 +59,7 @@ def test_replay_contract():
         assert e["airport"] == "KVNY"
         assert e["size_class"] in SIZE_CLASSES
         assert len(e["tail_hash"]) == 16, "tail_hash must be 16-hex SHA-256"
-        assert e["source"] == "opensky_2022_shifted"
+        assert e["source"] in SOURCES
         assert e["t_utc"].startswith("2027-"), f"Replay times must be shifted to 2027: {e['t_utc']}"
 
         # Check chronological ordering
@@ -143,7 +144,8 @@ def test_daily_counts_contract():
 def test_load_processed_dataset_loader():
     ds = load_processed()
     assert ds is not None
-    assert ds.source == "opensky_2022_shifted"
+    assert ds.source in SOURCES
+    assert all(f.source == ds.source for f in ds.flights)
     assert len(ds.flights) > 0
     assert len(ds.bookings) > 0
     assert len(ds.stands) == 48
@@ -152,3 +154,13 @@ def test_load_processed_dataset_loader():
     for f in ds.flights:
         assert f.booking_code is not None
         assert f.booking_code in ds.bookings
+
+
+def test_reconstruction_matches_published_anchors(tmp_path):
+    """Without a real OpenSky pull the week is rebuilt from published 2022 counts; it must hit them."""
+    import sys
+    sys.path.insert(0, str(C.ROOT / "data" / "scripts"))
+    import build_processed as bp
+    r = bp.reconstruct_week(tmp_path)
+    assert r["friday_arrivals"] == 501
+    assert abs(r["monday_departures"] - bp.MONDAY_DEPARTURES_PUBLISHED) <= 0.05 * bp.MONDAY_DEPARTURES_PUBLISHED

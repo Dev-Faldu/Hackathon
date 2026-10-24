@@ -3,7 +3,7 @@ import { ForecastChart } from "../components/charts";
 import { TopBar } from "../components/Shell";
 import { Chip, ErrorNote, Kpi, Panel, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
-import { fmt } from "../lib/format";
+import { fmt, sourceOf } from "../lib/format";
 import { useApp } from "../lib/store";
 
 const NEVER = [
@@ -18,7 +18,7 @@ export default function AfterAction() {
   const { scenario, decisionsVersion } = useApp();
   const aa = useApi(() => api.afteraction(scenario), [scenario, decisionsVersion]);
   const d = aa.data;
-  const real = d?.source === "opensky_2022_shifted";
+  const real = d?.source && d.source !== "sample";
   return (
     <div>
       <TopBar title="After-action" subtitle="Did the forecast hold up, what did the plan change, and who approved what." />
@@ -35,7 +35,7 @@ export default function AfterAction() {
       </div>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.6fr_1fr]">
-        <Panel eyebrow="Backtest" title="Forecast vs what actually arrived" actions={<Chip tone={real ? "ok" : "watch"}>{real ? "Real 2022 week" : "Sample week"}</Chip>}>
+        <Panel eyebrow="Backtest" title="Forecast vs what actually arrived" actions={<Chip tone={real ? "ok" : "watch"}>{sourceOf(d?.source).chip}</Chip>}>
           {d ? <ForecastChart days={d.days} showActual /> : <Skeleton className="h-[260px]" />}
           <div className="mt-1 flex flex-wrap items-center gap-4 text-[11.5px] text-ink-2">
             <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rotate-45 rounded-[2px] bg-ink" /> Actual arrivals</span>

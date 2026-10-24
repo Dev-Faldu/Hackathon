@@ -7,6 +7,9 @@ Produces all files in data/processed/ according to contracts/README.md:
 4. bookings.json    - Synthetic passenger & ground transport bookings for our FBO
 5. stands.json      - Sepulveda Jet Center ramp configuration & stand layout
 
+Source: a real OpenSky pull in data/raw/opensky (make fetch) when present, labelled "opensky_2022_shifted";
+otherwise a reconstruction calibrated to the published 2022 counts, labelled "reconstructed_2022".
+
 Usage:
     python data/scripts/build_processed.py
     python data/scripts/build_processed.py --verify
@@ -23,6 +26,7 @@ import math
 import os
 import random
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -102,162 +106,129 @@ def hash_tail(icao24: str) -> str:
     return hashlib.sha256((icao24 or "").lower().encode()).hexdigest()[:16]
 
 
-def generate_fleet(n: int = 400) -> list[dict]:
-    """Generate realistic registry of aircraft with stable icao24 and size class."""
-    rng = random.Random(42)
-    fleet = []
-    for i in range(n):
-        icao24 = f"{i + 0xA00000:06x}"
-        tmpl = rng.choice(FLEET_TEMPLATES)
-        fleet.append({
-            "icao24": icao24,
-            "tail_hash": hash_tail(icao24),
-            "manufacturer": tmpl[1],
-            "model": tmpl[2],
-            "seats": str(tmpl[3]),
-            "size_class": tmpl[0],
-        })
-    return fleet
+# ---------- Calibrated reconstruction (only when no real OpenSky pull is on disk) ----------
+# Published anchors for Super Bowl LVI week in the LA basin (FlightAware and WingX via Business Jet Traveler):
+# 501 business-jet arrivals on Fri 11 Feb 2022 and 548 departures on Mon 14 Feb. WingX measured about 2x normal
+# arrivals in the days before a Super Bowl. Days between the anchors are interpolated on that shape, and the
+# ordinary January week sets the baseline. Labelled "reconstructed_2022" everywhere it appears.
+BASIN_ARRIVALS = {
+    dt.date(2022, 1, 15): 205, dt.date(2022, 1, 16): 196, dt.date(2022, 1, 17): 244, dt.date(2022, 1, 18): 252,
+    dt.date(2022, 1, 19): 258, dt.date(2022, 1, 20): 264, dt.date(2022, 1, 21): 268,
+    dt.date(2022, 2, 5): 214, dt.date(2022, 2, 6): 204, dt.date(2022, 2, 7): 262, dt.date(2022, 2, 8): 298,
+    dt.date(2022, 2, 9): 352, dt.date(2022, 2, 10): 431, dt.date(2022, 2, 11): 501, dt.date(2022, 2, 12): 438,
+    dt.date(2022, 2, 13): 286, dt.date(2022, 2, 14): 176, dt.date(2022, 2, 15): 232,
+}
+MONDAY = dt.date(2022, 2, 14)
+MONDAY_DEPARTURES_PUBLISHED = 548
+# Share of basin business-jet arrivals by airport; VNY is the busiest general-aviation field in the basin.
+AIRPORT_SHARE = {"KVNY": 0.27, "KBUR": 0.13, "KHHR": 0.12, "KSNA": 0.12, "KLGB": 0.09, "KSMO": 0.07,
+                 "KONT": 0.05, "KCMA": 0.05, "KTOA": 0.04, "KLAX": 0.04, "KWHP": 0.02}
+HOUR_WEIGHTS = [0, 0, 0, 0, 0, 0.5, 2, 4, 6, 8, 10, 11, 11, 10, 10, 9, 8, 6, 4, 3, 2, 1, 0.5, 0]
+SIZE_EVENT = {"large": 0.36, "super_mid": 0.26, "mid": 0.21, "light": 0.17}
+SIZE_ORDINARY = {"large": 0.28, "super_mid": 0.25, "mid": 0.24, "light": 0.23}
+COORDS = {  # origin airports, for block times
+    "KTEB": (40.850, -74.061), "KHPN": (41.067, -73.708), "KLAS": (36.084, -115.152), "KSJC": (37.363, -121.929),
+    "KDAL": (32.847, -96.852), "KHOU": (29.645, -95.279), "KOPF": (25.907, -80.278), "KSDL": (33.623, -111.911),
+    "KAPA": (39.570, -104.849), "KAUS": (30.194, -97.670), "KMDW": (41.786, -87.752), "KBED": (42.470, -71.289),
+    "KBFI": (47.530, -122.302), "KPDK": (33.875, -84.302), "KBNA": (36.124, -86.678), "MMTO": (19.337, -99.566),
+    "CYYZ": (43.677, -79.631), "EGGW": (51.875, -0.368), "MMSD": (23.152, -109.721), "CYVR": (49.194, -123.184),
+}
+LA_TZ = ZoneInfo("America/Los_Angeles")
+EVENT_DAYS = {dt.date(2022, 2, d) for d in range(9, 14)}   # Wed 9 - Sun 13
+GAME_DAY = GAME_DATE_2022
+THROUGH_GAME_MONDAY_SHARE = 0.505  # of jets staying through the game, the share leaving Monday (rest: Sunday night)
 
 
-def ensure_raw_data() -> None:
-    """Ensure raw OpenSky CSVs and FAA registry exist in data/raw."""
-    OPENSKY_RAW_DIR.mkdir(parents=True, exist_ok=True)
-    registry_file = RAW_DIR / "icao24_aircraft.csv"
+def _block_hours(origin: str, rng: random.Random) -> float:
+    lat, lon = COORDS.get(origin, (37.0, -110.0))
+    p1, p2, dl = math.radians(lat), math.radians(34.21), math.radians(-118.49 - lon)
+    nm = 3440.065 * math.acos(min(1.0, math.sin(p1) * math.sin(p2) + math.cos(p1) * math.cos(p2) * math.cos(dl)))
+    return nm / 440 + 0.35 + rng.uniform(-0.1, 0.2)
 
-    fleet = generate_fleet(450)
-    if not registry_file.exists():
-        print("Creating raw FAA aircraft registry lookup...")
-        with open(registry_file, "w", newline="") as f:
+
+def _local(day: dt.date, hour: int, minute: int) -> dt.datetime:
+    return dt.datetime(day.year, day.month, day.day, hour, minute, tzinfo=LA_TZ)
+
+
+def _allocate(total: int, shares: dict[str, float]) -> dict[str, int]:
+    """Largest-remainder split, so each day's basin total is kept exactly."""
+    raw = {k: total * v for k, v in shares.items()}
+    out = {k: int(v) for k, v in raw.items()}
+    for k in sorted(raw, key=lambda k: raw[k] - out[k], reverse=True)[: total - sum(out.values())]:
+        out[k] += 1
+    return out
+
+
+def reconstruct_week(out_dir: Path) -> dict:
+    """Write arrival/departure CSVs (OpenSky column layout) for the reconstructed weeks into out_dir/flights,
+    plus the fleet lookup out_dir/fleet.csv. Every arrival is paired with the same jet's departure."""
+    rng = random.Random(2022)
+    flights_dir = out_dir / "flights"
+    flights_dir.mkdir(parents=True, exist_ok=True)
+    for old in flights_dir.glob("*.csv"):
+        old.unlink()
+    fleet_rows, rows = [], {}  # rows[(airport, direction, local date)] -> list
+    origins, origin_w = [o[0] for o in ORIGINS], [o[3] for o in ORIGINS]
+    models = {}
+    for cls, mfr, model, seats in FLEET_TEMPLATES:
+        if cls != "other":
+            models.setdefault(cls, []).append((mfr, model, seats))
+    seq = 0
+    for day, total in sorted(BASIN_ARRIVALS.items()):
+        event = day in EVENT_DAYS
+        mix = SIZE_EVENT if event else SIZE_ORDINARY
+        hw = list(HOUR_WEIGHTS)
+        if day == GAME_DAY:  # game-day TFR afternoon: arrivals mostly before 14:30
+            hw = [w * (0.35 if 14 <= h < 21 else 1) for h, w in enumerate(hw)]
+        for ap, n in _allocate(total, AIRPORT_SHARE).items():
+            for _ in range(n):
+                seq += 1
+                icao24 = f"{0xA00000 + seq:06x}"
+                cls = rng.choices(list(mix), weights=list(mix.values()))[0]
+                mfr, model, seats = rng.choice(models[cls])
+                fleet_rows.append([icao24, mfr, model, seats, cls])
+                origin = rng.choices(origins, weights=origin_w)[0]
+                land = _local(day, rng.choices(range(24), weights=hw)[0], rng.randint(0, 59))
+                dep_origin = land - dt.timedelta(hours=_block_hours(origin, rng))
+                # How long it stays, the same rules the planning engine uses for a Super Bowl week.
+                if rng.random() < (0.38 if event else 0.30):
+                    dep = land + dt.timedelta(minutes=rng.randint(55, 130))
+                elif (event and day >= dt.date(2022, 2, 10) and rng.random() < 0.70) or (day == dt.date(2022, 2, 9) and rng.random() < 0.45):
+                    if rng.random() < THROUGH_GAME_MONDAY_SHARE:
+                        dep = _local(MONDAY, rng.randint(7, 17), rng.randint(0, 59))
+                    else:
+                        dep = _local(GAME_DAY, rng.randint(20, 23), rng.randint(0, 59))
+                else:
+                    dep = _local(day + dt.timedelta(days=rng.randint(1, 3)), rng.randint(8, 17), rng.randint(0, 59))
+                dep = max(dep, land + dt.timedelta(minutes=50))
+                th = hash_tail(icao24)
+                rows.setdefault((ap, "arrival", land.date()), []).append(
+                    [th, icao24, "", origin, ap, int(dep_origin.timestamp()), int(land.timestamp())])
+                rows.setdefault((ap, "departure", dep.date()), []).append(
+                    [th, icao24, "", ap, origin, int(dep.timestamp()), int((dep + dt.timedelta(hours=2)).timestamp())])
+    for (ap, direction, day), rs in rows.items():
+        with open(flights_dir / f"{ap}_{direction}_{day:%Y-%m-%d}.csv", "w", newline="") as f:
             w = csv.writer(f)
-            w.writerow(["icao24", "manufacturer", "model", "seats", "size_class"])
-            for a in fleet:
-                w.writerow([a["icao24"], a["manufacturer"], a["model"], a["seats"], a["size_class"]])
-        print(f"Wrote {len(fleet)} aircraft to {registry_file}")
-
-    # Check if raw opensky files already exist
-    existing = list(OPENSKY_RAW_DIR.glob("*.csv"))
-    if len(existing) >= 20:
-        print(f"Found {len(existing)} raw OpenSky CSVs in {OPENSKY_RAW_DIR}")
-        return
-
-    print("Generating calibrated analog & baseline OpenSky data...")
-    rng = random.Random(101)
-    airplanes_by_class = {}
-    for a in fleet:
-        airplanes_by_class.setdefault(a["size_class"], []).append(a)
-
-    # Traffic distribution across airports
-    ap_share = {
-        "KVNY": 0.30, "KBUR": 0.15, "KHHR": 0.12, "KLGB": 0.10, "KSNA": 0.10,
-        "KSMO": 0.06, "KONT": 0.05, "KTOA": 0.04, "KCMA": 0.03, "KWHP": 0.03, "KLAX": 0.02
-    }
-
-    # Daily arrivals across basin for analog week (Feb 5 - Feb 15, 2022)
-    daily_analog_arrivals = {
-        dt.date(2022, 2, 5): 55,
-        dt.date(2022, 2, 6): 60,
-        dt.date(2022, 2, 7): 65,
-        dt.date(2022, 2, 8): 75,
-        dt.date(2022, 2, 9): 110,
-        dt.date(2022, 2, 10): 190,
-        dt.date(2022, 2, 11): 501,  # Friday peak
-        dt.date(2022, 2, 12): 260,
-        dt.date(2022, 2, 13): 140,  # Game day (morning heavy)
-        dt.date(2022, 2, 14): 60,   # Monday departure day
-        dt.date(2022, 2, 15): 50,
-    }
-
-    # Daily departures across basin
-    daily_analog_departures = {
-        dt.date(2022, 2, 5): 40,
-        dt.date(2022, 2, 6): 45,
-        dt.date(2022, 2, 7): 50,
-        dt.date(2022, 2, 8): 55,
-        dt.date(2022, 2, 9): 70,
-        dt.date(2022, 2, 10): 90,
-        dt.date(2022, 2, 11): 180,  # Drop-and-go departures
-        dt.date(2022, 2, 12): 110,
-        dt.date(2022, 2, 13): 160,  # Post-game departures
-        dt.date(2022, 2, 14): 548,  # Monday departure exodus
-        dt.date(2022, 2, 15): 80,
-    }
-
-    # Generate dates: analog week + baseline week
-    all_dates = list(daily_analog_arrivals.keys())
-    # Baseline window (ordinary Jan days)
-    cur = BASELINE_WINDOW[0]
-    while cur <= dt.date(2022, 1, 21):
-        all_dates.append(cur)
-        cur += dt.timedelta(days=1)
-
-    for day in all_dates:
-        is_analog = day in daily_analog_arrivals
-        tot_arr = daily_analog_arrivals.get(day, 65)
-        tot_dep = daily_analog_departures.get(day, 60)
-
-        for ap in AIRPORTS:
-            share = ap_share[ap]
-            n_arr = max(1, int(round(tot_arr * share)))
-            n_dep = max(1, int(round(tot_dep * share)))
-
-            # Arrivals
-            arr_rows = []
-            for _ in range(n_arr):
-                # Pick aircraft
-                cls = rng.choices(["large", "super_mid", "mid", "light"], weights=[0.35, 0.25, 0.22, 0.18])[0]
-                ac = rng.choice(airplanes_by_class[cls])
-                # Pick origin
-                orig = rng.choices([o[0] for o in ORIGINS], weights=[o[3] for o in ORIGINS])[0]
-                # Flight time
-                hr = rng.choices(range(24), weights=[1, 1, 1, 1, 1, 2, 4, 6, 8, 10, 11, 11, 10, 10, 9, 8, 6, 4, 3, 2, 1, 1, 1, 1])[0]
-                minute = rng.randint(0, 59)
-                t_land = dt.datetime(day.year, day.month, day.day, hr, minute, tzinfo=dt.timezone.utc)
-                flight_dur = dt.timedelta(hours=rng.uniform(1.5, 5.0))
-                t_dep = t_land - flight_dur
-                first_seen = int(t_dep.timestamp())
-                last_seen = int(t_land.timestamp())
-                callsign = f"N{rng.randint(100, 999)}{ac['manufacturer'][:2]}"
-                arr_rows.append([ac["tail_hash"], ac["icao24"], callsign, orig, ap, first_seen, last_seen])
-
-            arr_path = OPENSKY_RAW_DIR / f"{ap}_arrival_{day:%Y-%m-%d}.csv"
-            with open(arr_path, "w", newline="") as f:
-                w = csv.writer(f)
-                w.writerow(["tail_hash", "icao24", "callsign", "dep", "arr", "first_seen", "last_seen"])
-                w.writerows(arr_rows)
-
-            # Departures
-            dep_rows = []
-            for _ in range(n_dep):
-                cls = rng.choices(["large", "super_mid", "mid", "light"], weights=[0.35, 0.25, 0.22, 0.18])[0]
-                ac = rng.choice(airplanes_by_class[cls])
-                dest = rng.choices([o[0] for o in ORIGINS], weights=[o[3] for o in ORIGINS])[0]
-                hr = rng.choices(range(24), weights=[1, 1, 1, 1, 1, 2, 4, 6, 8, 10, 11, 11, 10, 10, 9, 8, 6, 4, 3, 2, 1, 1, 1, 1])[0]
-                minute = rng.randint(0, 59)
-                t_dep = dt.datetime(day.year, day.month, day.day, hr, minute, tzinfo=dt.timezone.utc)
-                flight_dur = dt.timedelta(hours=rng.uniform(1.5, 5.0))
-                t_land = t_dep + flight_dur
-                first_seen = int(t_dep.timestamp())
-                last_seen = int(t_land.timestamp())
-                callsign = f"N{rng.randint(100, 999)}{ac['manufacturer'][:2]}"
-                dep_rows.append([ac["tail_hash"], ac["icao24"], callsign, ap, dest, first_seen, last_seen])
-
-            dep_path = OPENSKY_RAW_DIR / f"{ap}_departure_{day:%Y-%m-%d}.csv"
-            with open(dep_path, "w", newline="") as f:
-                w = csv.writer(f)
-                w.writerow(["tail_hash", "icao24", "callsign", "dep", "arr", "first_seen", "last_seen"])
-                w.writerows(dep_rows)
-
-    print(f"Generated raw data for {len(all_dates)} days across {len(AIRPORTS)} airports.")
+            w.writerow(["tail_hash", "icao24", "callsign", "dep", "arr", "first_seen", "last_seen"])
+            w.writerows(sorted(rs, key=lambda r: r[5]))
+    with open(out_dir / "fleet.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["icao24", "manufacturer", "model", "seats", "size_class"])
+        w.writerows(fleet_rows)
+    monday_deps = sum(len(rs) for (ap, d, day), rs in rows.items() if d == "departure" and day == MONDAY)
+    friday_arrs = sum(len(rs) for (ap, d, day), rs in rows.items() if d == "arrival" and day == dt.date(2022, 2, 11))
+    print(f"Reconstructed {seq} arrivals: Fri 11 Feb {friday_arrs} (published 501), "
+          f"Mon 14 Feb departures {monday_deps} (published {MONDAY_DEPARTURES_PUBLISHED})")
+    return {"arrivals": seq, "friday_arrivals": friday_arrs, "monday_departures": monday_deps}
 
 
-def build_replay(raw_dir: Path, out_path: Path) -> int:
-    """Build replay_2027.jsonl from raw KVNY OpenSky CSVs."""
+def build_replay(raw_dir: Path, out_path: Path, flights_dir: str, registry: str, source: str) -> int:
+    """Build replay_2027.jsonl from KVNY arrival/departure CSVs (real OpenSky or the reconstruction)."""
     import sys
     if str(HERE) not in sys.path:
         sys.path.insert(0, str(HERE))
     import build_replay as br
-    return br.build(str(raw_dir), str(out_path))
+    return br.build(str(raw_dir), str(out_path), flights_dir=flights_dir, registry=registry, source=source)
 
 
 def build_stands(out_path: Path) -> None:
@@ -331,12 +302,11 @@ def build_bookings(replay_path: Path, out_path: Path) -> int:
     return len(bookings)
 
 
-def build_flights_parquet_and_daily_counts(raw_dir: Path, out_parquet: Path, out_csv: Path) -> tuple[int, int]:
+def build_flights_parquet_and_daily_counts(flights_dir: Path, reg_path: Path, out_parquet: Path, out_csv: Path) -> tuple[int, int]:
     """Build flights.parquet and daily_counts.csv according to contracts/README.md."""
     # Load aircraft registry
     sizes = {}
     models = {}
-    reg_path = raw_dir / "icao24_aircraft.csv"
     if reg_path.exists():
         with open(reg_path, newline="") as f:
             for r in csv.DictReader(f):
@@ -344,8 +314,7 @@ def build_flights_parquet_and_daily_counts(raw_dir: Path, out_parquet: Path, out
                 sizes[ic] = r["size_class"]
                 models[ic] = f"{r['manufacturer']} {r['model']}".strip()
 
-    opensky_dir = raw_dir / "opensky"
-    csv_files = sorted(opensky_dir.glob("*.csv"))
+    csv_files = sorted(flights_dir.glob("*.csv"))
 
     rows = []
     seq_counter = {}
@@ -557,12 +526,19 @@ def main():
         verify_processed_data()
         return
 
-    print("Step 1: Checking raw datasets...")
-    ensure_raw_data()
+    # Real OpenSky pull (make fetch) wins; otherwise the calibrated reconstruction, labelled as such.
+    real = len(list(OPENSKY_RAW_DIR.glob("KVNY_arrival_*.csv"))) >= 5
+    if real:
+        print("Step 1: Using real OpenSky pull in data/raw/opensky")
+        raw_dir, flights_dir, registry, source = RAW_DIR, "opensky", "icao24_aircraft.csv", "opensky_2022_shifted"
+    else:
+        print("Step 1: No OpenSky pull found; reconstructing the 2022 week from published counts")
+        raw_dir, flights_dir, registry, source = RAW_DIR / "reconstruction", "flights", "fleet.csv", "reconstructed_2022"
+        reconstruct_week(raw_dir)
 
     print("\nStep 2: Building replay_2027.jsonl...")
     replay_file = PROCESSED_DIR / "replay_2027.jsonl"
-    build_replay(RAW_DIR, replay_file)
+    build_replay(raw_dir, replay_file, flights_dir, registry, source)
 
     print("\nStep 3: Building stands.json...")
     stands_file = PROCESSED_DIR / "stands.json"
@@ -575,7 +551,7 @@ def main():
     print("\nStep 5: Building flights.parquet & daily_counts.csv...")
     parquet_file = PROCESSED_DIR / "flights.parquet"
     counts_file = PROCESSED_DIR / "daily_counts.csv"
-    build_flights_parquet_and_daily_counts(RAW_DIR, parquet_file, counts_file)
+    build_flights_parquet_and_daily_counts(raw_dir / flights_dir, raw_dir / registry, parquet_file, counts_file)
 
     print("\nStep 6: Verifying contracts...")
     verify_processed_data()
