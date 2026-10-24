@@ -18,8 +18,9 @@ PROCESSED = ROOT / "data" / "processed"
 ASSUMPTIONS_PATH = ROOT / "contracts" / "assumptions.yaml"
 LA_TZ = "America/Los_Angeles"
 
-# Source labels that mean "not observed data".
-NOT_REAL = ("reconstructed", "synthetic", "sample", "assumption", "unknown")
+# Source labels that mean observed data. Everything else (reconstructed, synthetic, sample, published, assumed,
+# unknown, ...) counts as not real: a whitelist, so a new label can never be mistaken for real data.
+REAL_PREFIXES = ("faa_", "opensky", "observed", "real")
 
 
 @functools.lru_cache(maxsize=1)
@@ -33,7 +34,7 @@ def forecast_params() -> dict:
 
 
 def is_real(label: str) -> bool:
-    return not any(str(label).startswith(prefix) for prefix in NOT_REAL)
+    return str(label).startswith(REAL_PREFIXES)
 
 
 @functools.lru_cache(maxsize=1)
@@ -112,3 +113,34 @@ def size_mix() -> dict[str, float]:
         return {c: 1.0 / len(classes) for c in classes}
     share = a["size_class"].value_counts(normalize=True)
     return {c: float(share.get(c, 0.0)) for c in classes}
+
+
+# ---------- real FAA TFMSC counts (data/external/faa_tfmsc, see its README) ----------
+
+def _faa_path(key: str) -> Path:
+    return ROOT / forecast_params()["real_data"]["files"][key]
+
+
+def faa_available() -> bool:
+    return all(_faa_path(k).exists() for k in forecast_params()["real_data"]["files"])
+
+
+@functools.lru_cache(maxsize=2)
+def _faa(key: str) -> pd.DataFrame:
+    df = pd.read_csv(_faa_path(key))
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+    if "game_date" in df.columns:
+        df["game_date"] = pd.to_datetime(df["game_date"]).dt.date
+    return df
+
+
+def load_faa_airport_daily(airport: str | None = None) -> pd.DataFrame:
+    """Daily business-jet departures and arrivals per airport (TFMSC dates, probably UTC days: see the README)."""
+    df = _faa("airport_daily")
+    return (df[df["airport"] == airport] if airport else df).copy()
+
+
+def load_faa_event_daily(exclude_event: str | None = None) -> pd.DataFrame:
+    """Daily business-jet counts at each Super Bowl host region's airports; one event can be left out."""
+    df = _faa("event_daily")
+    return (df[df["event"] != exclude_event] if exclude_event else df).copy()
