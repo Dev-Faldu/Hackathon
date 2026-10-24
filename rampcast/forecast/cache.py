@@ -34,12 +34,14 @@ def load_or_simulate(scenario: str, refresh: bool = False) -> SimResult:
     if path.exists() and not refresh:
         z = np.load(path)
         return SimResult(scenario, window_days(), z["baseline_fbo"], z["expected_fbo"], z["multiplier"],
-                         z["daily_counts"], z["occupancy"], int(z["runs"]), int(z["seed"]))
+                         z["daily_counts"], z["occupancy"], int(z["runs"]), int(z["seed"]),
+                         z["aircraft"] if "aircraft" in z.files else None)
     r = simulate(scenario)
     try:
         CACHE_DIR.mkdir(exist_ok=True)
         np.savez_compressed(path, baseline_fbo=r.baseline_fbo, expected_fbo=r.expected_fbo, multiplier=r.multiplier,
-                            daily_counts=r.daily_counts, occupancy=r.occupancy, runs=r.runs, seed=r.seed)
+                            daily_counts=r.daily_counts, occupancy=r.occupancy, aircraft=r.aircraft,
+                            runs=r.runs, seed=r.seed)
     except OSError:
         pass  # a read-only checkout still works, just without the disk cache
     return r

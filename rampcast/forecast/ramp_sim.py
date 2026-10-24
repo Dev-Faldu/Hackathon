@@ -38,6 +38,7 @@ class SimResult:
     occupancy: np.ndarray       # (runs, hours) large-cabin equivalents at the middle of each hour
     runs: int
     seed: int
+    aircraft: np.ndarray | None = None  # (runs, hours) aircraft on the ramp at the middle of each hour
 
 
 def _game_day_profile(profile: np.ndarray) -> np.ndarray:
@@ -138,8 +139,13 @@ def simulate(scenario: str, runs: int | None = None, seed: int | None = None,
     keep = first < stop
     width = n_hours + 1
     size = runs * width
-    delta = (np.bincount(all_run[keep] * width + first[keep], weights=all_fp[keep], minlength=size)
-             - np.bincount(all_run[keep] * width + stop[keep], weights=all_fp[keep], minlength=size))
+    idx_in = all_run[keep] * width + first[keep]
+    idx_out = all_run[keep] * width + stop[keep]
+    delta = (np.bincount(idx_in, weights=all_fp[keep], minlength=size)
+             - np.bincount(idx_out, weights=all_fp[keep], minlength=size))
     occupancy = np.round(np.cumsum(delta.reshape(runs, width), axis=1)[:, :n_hours], 6).astype(np.float32)
+    # Same count in aircraft (each jet = 1), for comparison with FBO reports given in aircraft.
+    count_delta = np.bincount(idx_in, minlength=size) - np.bincount(idx_out, minlength=size)
+    aircraft = np.cumsum(count_delta.reshape(runs, width), axis=1)[:, :n_hours].astype(np.int16)
 
-    return SimResult(scenario, days, base, mu, mult, counts.astype(np.int32), occupancy, runs, seed)
+    return SimResult(scenario, days, base, mu, mult, counts.astype(np.int32), occupancy, runs, seed, aircraft)
