@@ -19,6 +19,8 @@ export interface Meta {
   live_source: "sample" | "opensky_2022_shifted" | "reconstructed_2022";
   notes: string[];
   claude_enabled: boolean;
+  local_llm_enabled?: boolean;
+  local_llm_model?: string | null;
   modules: Record<string, boolean>;
   stands: Stand[];
   demo_t: string;

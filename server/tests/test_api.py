@@ -3,6 +3,7 @@ import dataclasses
 import os
 
 os.environ["RAMPCAST_DISABLE_CLAUDE"] = "1"
+os.environ["RAMPCAST_DISABLE_LOCAL_LLM"] = "1"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -303,3 +304,75 @@ def test_exact_solver_never_double_books_a_slot(client):
 def test_afteraction_reports_the_out_of_sample_check(client):
     d = client.get("/afteraction").json()
     assert d["out_of_sample"]["model_pct"] < d["out_of_sample"]["naive_pct"]
+
+
+def test_local_llm_support(monkeypatch):
+    from rampcast_server import explain
+
+    # URL normalization
+    assert explain._normalize_local_url("http://localhost:11434") == "http://localhost:11434/v1/chat/completions"
+    assert explain._normalize_local_url("http://localhost:1234/v1") == "http://localhost:1234/v1/chat/completions"
+    assert explain._normalize_local_url("http://localhost:11434/api/chat") == "http://localhost:11434/api/chat"
+
+    # Availability flag
+    monkeypatch.delenv("RAMPCAST_DISABLE_LOCAL_LLM", raising=False)
+    monkeypatch.setenv("RAMPCAST_USE_LOCAL_LLM", "1")
+    assert explain.local_llm_available() is True
+
+    # Test call_local_llm parsing
+    mock_payload = {
+        "choices": [{"message": {"content": "Strategy B needs 4 empty legs [B.kpis.empty_legs]. FBO GM approves."}}],
+        "model": "llama3.2"
+    }
+
+    class MockResponse:
+        status_code = 200
+        def json(self):
+            return mock_payload
+
+    class MockClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def post(self, url, json):
+            return MockResponse()
+
+    monkeypatch.setattr(explain.httpx, "Client", MockClient)
+
+    facts = {
+        "recommended": "B",
+        "facts": [{"id": "B.kpis.empty_legs", "value": 4, "text": "empty legs"}]
+    }
+    res = explain.explain("briefing", facts, "cache_key_local_mock_1")
+    assert res["fallback"] is False
+    assert "local:llama3.2" in res["model"]
+    assert "B.kpis.empty_legs" in res["cited_ids"]
+    assert "[B.kpis.empty_legs]" in res["text"]
+
+    # Test error fallback to deterministic template
+    class MockErrorClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def post(self, url, json):
+            raise Exception("connection refused")
+
+    monkeypatch.setattr(explain.httpx, "Client", MockErrorClient)
+    res_err = explain.explain("briefing", facts, "cache_key_local_mock_err")
+    assert res_err["fallback"] is True
+    assert res_err["model"] == "template"
+
+
+def test_meta_reports_local_llm_status(client, monkeypatch):
+    monkeypatch.delenv("RAMPCAST_DISABLE_LOCAL_LLM", raising=False)
+    monkeypatch.setenv("RAMPCAST_USE_LOCAL_LLM", "1")
+    meta = client.get("/meta").json()
+    assert "local_llm_enabled" in meta
+    assert meta["local_llm_enabled"] is True
+

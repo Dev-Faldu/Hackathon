@@ -197,7 +197,8 @@ MODELS: list[dict] = [
         "automation": "suggests",
         "method": [
             "Every answer is built from fact ids the engine computed, and cites them.",
-            "With an Anthropic API key, Claude writes the text from those facts only; without one, built-in templates do.",
+            "A local model (Ollama, LM Studio, vLLM) or Claude can word those facts; with neither, or if one is down, built-in templates do.",
+            "The model only words the facts: it never adds a number, and the cited ids are checked against the facts given.",
         ],
         "inputs": [{"name": "Facts from the other models", "label": "live"}],
         "outputs": ["Briefings and answers with cited numbers"],

@@ -143,7 +143,7 @@ export default function WhatIf() {
               </div>
             </Panel>
             <Panel strong eyebrow="Explanation" title="What changed and who decides"
-              actions={<Chip tone="runway">{result.explanation.fallback ? "Built-in" : "Claude"}</Chip>}>
+              actions={<Chip tone="runway">{result.explanation.fallback ? "Built-in" : (result.explanation.model?.startsWith("local") ? "Local LLM" : "Claude")}</Chip>}>
               <CitedText text={result.explanation.text} />
               {result.new_alerts.length > 0 && (
                 <div className="mt-4 space-y-2">

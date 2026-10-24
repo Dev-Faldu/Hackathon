@@ -177,7 +177,10 @@ def meta():
     a = C.assumptions()
     return {"product": "RAMPCAST", "event": a["event"], "fbo": a["fbo"], "settings": store.get_settings(),
             "window": [d.isoformat() for d in C.window_days()], "live_source": ds.source, "notes": ds.notes,
-            "claude_enabled": explain.claude_available(), "modules": adapters.status(),
+            "claude_enabled": explain.claude_available(),
+            "local_llm_enabled": explain.local_llm_available(),
+            "local_llm_model": explain.get_local_model_name() if explain.local_llm_available() else None,
+            "modules": adapters.status(),
             "scenarios": list(C.SCENARIOS), "stands": ds.stands, "demo_t": demo_t(),
             "privacy": "Tail numbers hashed; people appear only as booking codes; bookings are synthetic."}
 
@@ -639,7 +642,8 @@ def get_ai_models(scenario: str = "medium", layout: str = "stands"):
         "priority": [{"label": "In the queue", "value": len(q["items"]), "detail": (q["items"][0]["reasons"][0] if q["items"] and q["items"][0]["reasons"] else "")}],
         "alerts": [{"label": "Alerts at the demo time", "value": len(al), "detail": ", ".join(f"{v} {k.replace('_', ' ')}" for k, v in kinds.items())}],
         "runway": [{"label": "Separation", "value": "90 s / 2 min", "detail": "arrivals / departures on 16R"}],
-        "explain": [{"label": "Writer", "value": "Claude" if explain.claude_available() else "Built-in templates",
+        "explain": [{"label": "Writer", "value": "Claude" if explain.claude_available()
+                     else f"Local LLM ({explain.get_local_model_name()})" if explain.local_llm_available() else "Built-in templates",
                      "detail": "every number cites a fact id"}],
     }
     status = {"forecast": "live" if mods["forecast"] else "fallback", "ramp_mc": "live" if mods["occupancy"] else "fallback",
