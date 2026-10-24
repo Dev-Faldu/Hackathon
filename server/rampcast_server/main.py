@@ -1,8 +1,11 @@
 """RAMPCAST API. Run: uvicorn rampcast_server.main:app --reload --port 8000 (from server/)."""
 from __future__ import annotations
 
+import copy
 import dataclasses
 import functools
+import json
+import logging
 import re
 import threading
 from contextlib import asynccontextmanager
@@ -21,14 +24,67 @@ from .replay import Replay
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Warm the slow caches (Monte Carlo, stand plan) in the background so the first screen loads fast.
-    threading.Thread(target=lambda: (replay(), forecast.occupancy("medium"), la28.report("medium")), daemon=True).start()
-    # The exact solver takes seconds: plan the default game-day layout up front so the co-pilot's benchmark is ready.
-    threading.Thread(target=_warm_benchmarks, daemon=True).start()
+    # Warm the slow caches in one background thread, in the order the screens need them (see _warm_up).
+    threading.Thread(target=_warm_up, daemon=True).start()
     yield
 
 
+log = logging.getLogger("rampcast.main")
 app = FastAPI(title="RAMPCAST API", version="1.0.0", lifespan=lifespan)
+
+# ---------- single flight: requests that need the same slow result wait for one computation ----------
+
+_sf_guard = threading.Lock()
+_sf_locks: dict[tuple, threading.Lock] = {}
+_memo: dict[tuple, object] = {}
+
+
+def _single(key: tuple) -> threading.Lock:
+    with _sf_guard:
+        return _sf_locks.setdefault(key, threading.Lock())
+
+
+def _memo_call(key: tuple, fn):
+    """fn() once per key, shared by concurrent callers; each caller gets its own copy to change."""
+    with _single(key):
+        if key not in _memo:
+            if len(_memo) > 64:
+                _memo.clear()
+            _memo[key] = fn()
+    return copy.deepcopy(_memo[key])
+
+
+def _settings_key() -> str:
+    return json.dumps(store.get_settings(), sort_keys=True, default=str)
+
+
+# ---------- warm-up: a slow laptop computes the week in about a minute; the app says so meanwhile ----------
+
+_warm = {"done": False, "step": "starting"}
+
+
+def _warm_up() -> None:
+    steps = [
+        ("the 2022 week", lambda: (live_dataset(), demo_t(), replay())),
+        ("the forecast", lambda: (get_forecast("medium"), get_occupancy("medium"))),
+        ("the parking plans", lambda: [parking_plan(m, t, lay) for lay in ("tandem", "stands")
+                                       for m in ("optimized", "first_come") for t in (False, True)]),
+        ("the three strategies", lambda: (_strategies("medium", {}), _plan_strategies("medium", {}))),
+        ("the AI co-pilot", lambda: (get_ai_models("medium", "tandem"), get_ai_recommendations(None, "medium", "tandem"))),
+    ]
+    for name, fn in steps:
+        _warm["step"] = name
+        try:
+            fn()
+        except Exception as e:  # warm-up only; each route still computes on demand
+            log.warning("warm-up step %s failed: %s", name, e)
+    _warm["done"] = True
+    # Slower extras, after every screen has its numbers: booking-desk ramp risk, LA28, the exact-solver benchmark.
+    for fn in (lambda: forecast.occupancy("medium"), lambda: la28.report("medium"), lambda: get_ai_benchmark("tandem", False)):
+        try:
+            fn()
+        except Exception as e:
+            log.warning("warm-up extra failed: %s", e)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 router = APIRouter()
 
@@ -182,30 +238,43 @@ def meta():
             "local_llm_model": explain.get_local_model_name() if explain.local_llm_available() else None,
             "modules": adapters.status(),
             "scenarios": list(C.SCENARIOS), "stands": ds.stands, "demo_t": demo_t(),
+            "warming": not _warm["done"], "warming_step": _warm["step"],
             "privacy": "Tail numbers hashed; people appear only as booking codes; bookings are synthetic."}
 
 
 @router.get("/forecast")
 def get_forecast(scenario: str = "medium"):
-    return adapters.call("rampcast.forecast.api", "get_forecast", forecast.forecast, check_scenario(scenario))
+    scenario = check_scenario(scenario)
+    with _single(("simulation", scenario)):  # forecast and occupancy share one Monte Carlo run
+        return adapters.call("rampcast.forecast.api", "get_forecast", forecast.forecast, scenario)
 
 
 @router.get("/ramp/occupancy")
 def get_occupancy(scenario: str = "medium"):
-    return adapters.call("rampcast.forecast.api", "get_occupancy", forecast.occupancy, check_scenario(scenario))
+    scenario = check_scenario(scenario)
+    with _single(("simulation", scenario)):
+        return adapters.call("rampcast.forecast.api", "get_occupancy", forecast.occupancy, scenario)
 
 
 def _strategies(scenario: str, modifiers: dict) -> dict:
-    ds = plan_dataset(scenario, modifiers.get("demand_multiplier", 1.0))
-    if modifiers.get("runway_closed"):
-        ds, _ = engine.apply_runway_closure(ds, modifiers["runway_closed"])
-    return engine.strategies(ds)
+    def run():
+        ds = plan_dataset(scenario, modifiers.get("demand_multiplier", 1.0))
+        if modifiers.get("runway_closed"):
+            ds, _ = engine.apply_runway_closure(ds, modifiers["runway_closed"])
+        return engine.strategies(ds)
+    return _memo_call(("strategies", scenario, json.dumps(modifiers, sort_keys=True, default=str), _settings_key()), run)
+
+
+def _plan_strategies(scenario: str, mods: dict) -> dict:
+    """POST /plan/strategies' answer (Role 3's CP-SAT plans), computed once per scenario, modifiers and settings."""
+    return _memo_call(("plan_strategies", scenario, json.dumps(mods, sort_keys=True, default=str), _settings_key()),
+                      lambda: adapters.call("rampcast.engine.api", "get_strategies", _strategies, scenario, mods))
 
 
 @router.post("/plan/strategies", response_model=M.StrategiesResponse)
 def post_strategies(req: PlanRequest):
     mods = req.modifiers.model_dump(by_alias=True, exclude_none=True)
-    out = adapters.call("rampcast.engine.api", "get_strategies", _strategies, check_scenario(req.scenario), mods)
+    out = _plan_strategies(check_scenario(req.scenario), mods)
     for c in out["strategies"]:
         k = c["kpis"]
         audit.propose(f"strategy:{c['id']}", f"{c['name']}: {k['overflow_aircraft']} overflow, {k['co2_t']} t CO2",
@@ -415,7 +484,9 @@ def parking_plan(method: str, temp: bool, layout: str = "stands") -> parking.Pla
     if method not in parking.METHODS:
         raise HTTPException(422, f"method must be one of {', '.join(parking.METHODS)}")
     check_layout(layout)
-    return _parking_plan(method, temp, layout, f"{parking.pins_key(_pins[layout])}-{_accepted_v[0]}")
+    key = f"{parking.pins_key(_pins[layout])}-{_accepted_v[0]}"
+    with _single(("parking_plan", method, temp, layout, key)):
+        return _parking_plan(method, temp, layout, key)
 
 
 @router.get("/parking/plan")
@@ -566,19 +637,6 @@ _bench_guard = threading.Lock()
 
 def _bench_key(layout: str, temp: bool) -> tuple:
     return (layout, temp, parking.pins_key(_pins[layout]), _accepted_v[0])
-
-
-def _warm_benchmarks() -> None:
-    try:  # the co-pilot is the first screen: its own answers first, then the slow solver runs
-        get_ai_models("medium", "tandem")
-        get_ai_recommendations(None, "medium", "tandem")
-    except Exception:
-        pass
-    for layout, temp in (("tandem", False), ("tandem", True), ("stands", False)):
-        try:
-            get_ai_benchmark(layout, temp)
-        except Exception:  # warm-up only; the route computes on demand
-            pass
 
 
 @router.get("/ai/benchmark")

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { MobileNav, Sidebar } from "./components/Shell";
+import { MobileNav, Sidebar, WarmupBanner } from "./components/Shell";
 import { Toasts } from "./components/ui";
 import { useApp } from "./lib/store";
 import AfterAction from "./screens/AfterAction";
@@ -23,6 +23,7 @@ export default function App() {
       <MobileNav />
       <Sidebar />
       <main className="relative z-10 min-w-0 flex-1 px-3 pb-10 pt-3 md:px-6 md:pt-6">
+        <WarmupBanner />
         <AnimatePresence mode="wait">
           <motion.div key={screen} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.22, ease: "easeOut" }}>

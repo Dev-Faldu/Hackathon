@@ -23,6 +23,19 @@ const NAV: { id: Screen; label: string; icon: ReactNode; hint: string }[] = [
   { id: "la28", label: "LA28 stretch", icon: <Medal size={17} />, hint: "Olympics opening week" },
 ];
 
+/** First start on a slow machine: say the server is still computing, so an empty page never reads as "no data". */
+export function WarmupBanner() {
+  const { meta } = useApp();
+  if (!meta?.warming) return null;
+  return (
+    <div role="status" className="glass-strong mb-3 flex items-center gap-3 border border-runway/25 px-4 py-2.5 text-[13px]">
+      <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-runway/25 border-t-runway" />
+      <span className="min-w-0"><b>Starting up:</b> computing {meta.warming_step ?? "the week"}. The first start takes about a minute;
+        numbers fill in by themselves.</span>
+    </div>
+  );
+}
+
 /** Phones and small tablets: the same screens as a scrolling strip under a slim header. */
 export function MobileNav() {
   const { screen, go } = useApp();
