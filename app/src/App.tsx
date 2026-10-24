@@ -8,8 +8,9 @@ import LiveOps from "./screens/LiveOps";
 import Parking from "./screens/Parking";
 import PlanBoard from "./screens/PlanBoard";
 import WhatIf from "./screens/WhatIf";
+import World3D from "./screens/World3D";
 
-const SCREENS = { setup: EventSetup, parking: Parking, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction };
+const SCREENS = { setup: EventSetup, parking: Parking, world: World3D, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction };
 
 export default function App() {
   const { screen } = useApp();

@@ -27,11 +27,21 @@ Optional: `export ANTHROPIC_API_KEY=...` before `make dev` turns on Claude-writt
 | Screen | What it shows | Demo beat |
 |---|---|---|
 | **Parking control** (home) | Schematic FBO apron at VNY (48 stacked stands, drop-and-go hot spots, temporary taxiway zone, hangar, car staging) with jets drawn to wingspan; RAMPCAST arrangement vs whiteboard; tow sheet; stand allocation chart for the week; reservation board; click a jet to move it, with validation and tow impact | Toggle to "Whiteboard" (420 tows) and back (104); open the temp zone (20 tows); move a jet and approve |
+| **Airport 3D** | Live 3D world of the field driven by the same parking plan: every flight flies the approach, lands, taxis to its assigned stand, gets towed, pushes back and departs on the replay clock. Sun, sky and floodlights follow the time of day; the Valley street grid, freeway traffic, approach-light rabbit and the game-day SoFi TFR curtain set the scene | Press "Follow next arrival"; switch Tower cab / Ramp level / Final approach; scrub to Sunday 16:50 to see the TFR go live, then to night |
 | Event setup | Event facts, FBO capacity, staff, fuel trucks, need-based priority weights, the data-certainty ladder | "The manager sets the rules; the AI never uses name, status or price" |
 | Plan board | Ordinary week vs Super Bowl week (P10–P90), hour-by-day ramp heatmap, strategies A/B/C with approvers, briefing | Switch Low/Medium/High; approve Strategy B |
 | Live ops | Replay clock, inbound map with an LA-basin inset and the SoFi TFR rings, stand map with boxed-in flags, alerts, ground-handling priority queue | Press play at 600x; open the #1 queue item and approve the car |
 | What-if | Runway closure, demand +20%, early customs close; before/after KPIs; option cards for operators' dispatchers | Run "Runway 16R/34L closed"; show that the pilot decides |
 | After-action | Forecast error vs the naive rule, interval coverage, hours over capacity avoided, CO2 avoided, the audit trail | Close on "what the AI never decides" |
+
+### Airport 3D
+
+| Game day, TFR active | Night, final approach |
+|---|---|
+| ![Overview on game day with the SoFi TFR curtain](docs/screenshots/world3d-overview.png) | ![Night view up the approach lights](docs/screenshots/world3d-approach-night.png) |
+| ![Following an arrival on final](docs/screenshots/world3d-follow.png) | ![Floodlit ramp at night](docs/screenshots/world3d-night.png) |
+
+Built with three.js through React Three Fiber, all procedural (no model or texture files): instanced jets sized per class, merged airfield geometry, canvas-painted concrete, asphalt and grass, an art-directed sky dome, N8AO ambient occlusion and bloom. The 3D code loads only when the screen opens. "Fast mode" turns off AO and lowers resolution for laptops on battery.
 
 ## Why this angle
 
