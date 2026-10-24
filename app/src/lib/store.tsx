@@ -73,6 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const fromUrl = new URLSearchParams(window.location.search).get("t");
         setTMs(Date.parse(fromUrl && !Number.isNaN(Date.parse(fromUrl)) ? fromUrl : m.demo_t));
       }
+      if (m.warming) setTimeout(refreshMeta, 2500);  // the server is still computing the week: check again
     }).catch(() => setTimeout(refreshMeta, 1500));
   }, []);
   useEffect(refreshMeta, [refreshMeta]);

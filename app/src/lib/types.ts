@@ -24,6 +24,8 @@ export interface Meta {
   modules: Record<string, boolean>;
   stands: Stand[];
   demo_t: string;
+  warming?: boolean;
+  warming_step?: string;
   privacy: string;
 }
 

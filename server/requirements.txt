@@ -11,3 +11,4 @@ ortools==9.15.6755
 eval_type_backport
 pyarrow
 matplotlib
+tzdata            # time zones on Windows, where Python has no system database
