@@ -4,6 +4,8 @@
 
 RAMPCAST is an AI ramp-capacity planner for a fictional FBO, *Sepulveda Jet Center*, at Van Nuys Airport (KVNY) during Super Bowl LXI week (Sun Feb 14 2027, SoFi Stadium). It forecasts parking demand, shows which hours the ramp overflows under low, medium and high demand, and drafts a plan (reservation caps, overflow partners, stand arrangement, fuel and crews) that a human FBO manager approves. The stretch goal runs the same engine on the LA28 Olympics opening week.
 
+It also answers a parking request the moment it arrives (from FlightBridge, a scheduler, email or the phone) instead of weeks later, and shows game-day ramp operations in 3D the way a pilot would see them: jets packed wingtip to wingtip, wing walkers on every tow, and a departure queue at the hold short line.
+
 **The AI, in one line:** a probabilistic demand forecast (P10–P90, 120-run Monte Carlo of the ramp) plus an optimizer (departure-aware stand assignment with local search, three overflow strategies scored on capacity, risk, CO₂ and staff), with every sentence in the briefings generated from the engine's facts. It runs fully offline: no API keys, no external model.
 
 Visual blueprint: [`docs/rampcast-blueprint.html`](docs/rampcast-blueprint.html)
@@ -30,8 +32,9 @@ No keys or accounts are needed: briefings, what-if explanations and answers to t
 
 | Screen | What it shows | Demo beat |
 |---|---|---|
+| **Booking desk** | Instant answer to a trip request from the live parking plan and forecast: a position, the price, a 15-minute hold, customs, curfew and TFR checks, or alternatives (shift the time, drop-and-go, partner airport, temp zone) when full. One inbox for FlightBridge, scheduler exports, email, phone and the portal: small ETA moves re-plan automatically; overbooked stays, duplicates, aircraft swaps and customs problems go to a person. Connections to FlightBridge, schedulers, FBO systems and FlightAware are labelled with exactly what works today | Try "Game weekend, large cabin" (full: here are the options), then "Quiet Wednesday night" (confirmed in milliseconds); open "Why operators book months ahead" |
 | **Parking control** (home) | Schematic FBO apron at VNY (48 stacked stands, drop-and-go hot spots, temporary taxiway zone, hangar, car staging) with jets drawn to wingspan; RAMPCAST arrangement vs whiteboard; tow sheet; stand allocation chart for the week; reservation board; click a jet to move it, with validation and tow impact | Toggle to "Whiteboard" (546 tows) and back (148, −73%); open the temp zone (82 tows); move a jet and approve |
-| **Airport 3D** | Live 3D world of the field driven by the same parking plan: every flight flies the approach, lands, taxis to its assigned stand, gets towed, pushes back and departs on the replay clock. Sun, sky and floodlights follow the time of day; the Valley street grid, freeway traffic, approach-light rabbit and the game-day SoFi TFR curtain set the scene | Press "Follow next arrival"; switch Tower cab / Ramp level / Final approach; scrub to Sunday 16:50 to see the TFR go live, then to night |
+| **Airport 3D** | Live 3D world of the field driven by the same parking plan. Game-day packing: tandem rows with 3 m between wingtips, jets in front towed aside so a deeper jet can leave, wing walkers, marshallers with lit wands, cones, staged equipment and the curb queue. All of VNY's traffic shares runway 16R: arrivals 90 s apart, departures 2 min apart, and a departure queue at the hold short line. Pilot details: 16R/34L and 16L/34R with designators, FAA-style signs, distance-remaining boards, windsock, non-movement boundary; the sun and the SoFi bearing follow the real runway heading | Press "Show the chaos": Game day, After the game (night queue), Morning after; open the packing summary; switch to Final 16R |
 | Event setup | Event facts, FBO capacity, staff, fuel trucks, need-based priority weights, the data-certainty ladder | "The manager sets the rules; the AI never uses name, status or price" |
 | Plan board | Ordinary week vs Super Bowl week (P10–P90), hour-by-day ramp heatmap, strategies A/B/C with approvers, briefing | Switch Low/Medium/High; approve Strategy B |
 | Live ops | Replay clock, inbound map with an LA-basin inset and the SoFi TFR rings, stand map with boxed-in flags, alerts, ground-handling priority queue | Press play at 600x; open the #1 queue item and approve the car |
@@ -41,12 +44,31 @@ No keys or accounts are needed: briefings, what-if explanations and answers to t
 
 ### Airport 3D
 
+| Game day: tandem packing, 3 m wingtip clearance | After the game: departure queue at the hold short line |
+|---|---|
+| ![Game-day packing on the apron](docs/screenshots/world3d-gameday.png) | ![Night departure queue on taxiway A](docs/screenshots/world3d-exodus.png) |
+| ![Final approach to runway 16R](docs/screenshots/world3d-final16r.png) | ![Booking desk: full weekend with alternatives](docs/screenshots/bookings.png) |
+
 | Game day, TFR active | Night, final approach |
 |---|---|
 | ![Overview on game day with the SoFi TFR curtain](docs/screenshots/world3d-overview.png) | ![Night view up the approach lights](docs/screenshots/world3d-approach-night.png) |
 | ![Following an arrival on final](docs/screenshots/world3d-follow.png) | ![Floodlit ramp at night](docs/screenshots/world3d-night.png) |
 
 Built with three.js through React Three Fiber, all procedural (no model or texture files): instanced jets sized per class, merged airfield geometry, canvas-painted concrete, asphalt and grass, an art-directed sky dome, N8AO ambient occlusion and bloom. The 3D code loads only when the screen opens. "Fast mode" turns off AO and lowers resolution for laptops on battery.
+
+### Built for a first-time user
+
+Every screen opens in the **Simple** view: one "In short" sentence with the next steps, the three numbers that matter, and an (i) on each number that says what it means and where it comes from. Secondary panels fold to one line; **Detailed** shows everything. "What the numbers mean" in the sidebar is a searchable glossary with sources.
+
+![Plan board in the simple view](docs/screenshots/simple-view.png)
+
+### What changed after the judges' review
+
+| Feedback | What we built |
+|---|---|
+| On the event day FBOs park jets very close together, and it is chaos | Game-day packing in 3D with real tow logic (275 visits placed, no overlaps, 110 tows), ramp crews, the whole field's traffic on one runway, and three "Show the chaos" moments |
+| Private jet parking must be booked months ahead; FlightBridge and the other tools don't connect | The booking desk: the missing check of live ramp space, answered in milliseconds, with one inbox and honest connection status |
+| Too many numbers and too much text for a first-time user | The simple view, explanations on every key number, folding panels and the glossary |
 
 ## Why this angle
 

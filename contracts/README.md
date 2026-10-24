@@ -127,6 +127,23 @@ Response: `{"kpi_diff":{"A":{"hours_over_capacity":[0,3]}},"new_alerts":[...],"s
 {"text":"Friday peak: medium scenario puts the ramp at 107% from 13:00 to 17:00 (A.kpis...).","cited_ids":["A.kpis.hours_over_capacity"],"model":"claude-opus-5-5","fallback":false}
 ```
 
+### `POST /bookings/quote` and `POST /bookings/inbound` (booking desk)
+
+Request (trip-sheet fields; give `aircraft_type` as an ICAO designator or `size_class`):
+`{"aircraft_type":"CL35","tail":"N350RC","origin":"KTEB","international":false,"arrive_local":"2027-02-10T16:00","depart_local":"2027-02-11T10:00","services":["Fuel","GPU"],"channel":"FlightBridge"}`
+
+Response: `{"decision":"confirmed|approval|full","position":{...}|null,"price_usd":700,"hold_expires_local":"...","checks":[{"ok":true,"label":"Ramp space","detail":"..."}],"alternatives":[...],"trip_sheet":{...},"answer_ms":0.6}`.
+`/bookings/inbound` is the open endpoint for schedulers and trip-services tools; same answer plus `received_via`.
+`POST /bookings/accept` with `{"trip_sheet":{...}}` confirms, logs to the audit trail and returns the trip sheet to send back.
+
+### `GET /bookings/inbox?t=...` and `GET /bookings/connections`
+
+Inbox: every request received by `t` from every channel, each with `status` (`auto` or `look`), `issues` and `notes`. Requests are rebuilt from the replay week; channel mix, lead times, duplicates and aircraft swaps are assumptions (`bookings` in `assumptions.yaml`).
+
+### `GET /airfield/movements`
+
+The other FBOs' business-jet visits at VNY in the replay (`id, size_class, landed, departed, origin`), so the 3D runway carries the whole field's traffic.
+
 ### Audit log (`logs/audit.jsonl`, Role 3)
 
 ```json
