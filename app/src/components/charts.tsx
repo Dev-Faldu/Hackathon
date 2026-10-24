@@ -98,7 +98,7 @@ function fullStretches(day: OccupancyHour[], capacity: number): string[] {
 }
 
 /** One row per day: a 24-hour strip in three plain colors, and a sentence saying when the ramp is full. */
-export function RampDays({ hours, capacity }: { hours: OccupancyHour[]; capacity: number }) {
+export function RampDays({ hours, capacity, runs }: { hours: OccupancyHour[]; capacity: number; runs?: number }) {
   const rows: OccupancyHour[][] = [];
   for (let i = 0; i < hours.length; i += 24) rows.push(hours.slice(i, i + 24));
   const [tip, setTip] = useState<OccupancyHour | null>(null);
@@ -162,7 +162,7 @@ export function RampDays({ hours, capacity }: { hours: OccupancyHour[]; capacity
         ) : <span>Hover an hour for details</span>}
       </div>
       <p className="mt-2 text-[11px] text-ink-2">
-        Each square is one hour, showing the typical result of {fmt(120)} simulated weeks. One space fits one large jet; smaller jets take less.
+        Each square is one hour, showing the typical result of {runs ? fmt(runs) : "many"} simulated weeks. One space fits one large jet; smaller jets take less.
       </p>
     </div>
   );
