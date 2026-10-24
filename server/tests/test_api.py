@@ -380,3 +380,24 @@ def test_meta_reports_local_llm_status(client, monkeypatch):
     assert "local_llm_enabled" in meta
     assert meta["local_llm_enabled"] is True
 
+
+
+def test_shipped_snapshot_matches_live_answers(client):
+    """The snapshot a fresh start answers from must say exactly what the live engine says."""
+    import gzip
+    import json as _json
+    from rampcast_server import snapshot
+    p = snapshot.path()
+    if not p.exists():
+        pytest.skip("no snapshot for this code yet: run `make snapshot`")
+    with gzip.open(p, "rt", encoding="utf-8") as f:
+        saved = _json.load(f)["entries"]
+    assert client.get("/forecast?scenario=medium").json() == saved["forecast:medium"]
+    assert client.get("/ramp/occupancy?scenario=medium").json() == saved["occupancy:medium"]
+    live = client.post("/plan/strategies", json={"scenario": "medium"}).json()
+    assert [c["kpis"] for c in live["strategies"]] == [c["kpis"] for c in saved["plan_strategies:medium"]["strategies"]]
+    # LA28's strategy solver stops at a time limit on that harder week, so its plans may differ a little run to run;
+    # the forecast side is deterministic and must match exactly.
+    la, sv = client.get("/la28?scenario=medium").json(), saved["la28:medium"]
+    for k in ("arrivals", "parked_at_week_end", "hours_over_capacity", "median_stay_h"):
+        assert la["la28"][k] == sv["la28"][k]

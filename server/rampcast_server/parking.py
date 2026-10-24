@@ -201,6 +201,14 @@ def _cpsat(told: list[Flight], pos: list[Position], temp_zone: bool, layout: str
     return sol.assignment, sol.method, sol.solve_s
 
 
+def prime_cpsat(ds: Dataset, layout: str, temp_zone: bool, assignment: dict[str, str | None], method: str) -> None:
+    """Seed the CP-SAT cache with a saved plan for this exact week (no pins), so it is not solved again."""
+    told = [_as_told(f) for f in ds.flights]
+    times = {f.flight_id: (f.landed, f.departed_vny, f.size_class) for f in told}
+    if set(times) == set(assignment):
+        _last[(layout, temp_zone)] = (times, {}, dict(assignment), method)
+
+
 def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins: dict[str, str] | None = None,
           layout: str = "stands") -> Plan:
     pins = pins or {}
