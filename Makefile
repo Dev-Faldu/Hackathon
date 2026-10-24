@@ -25,6 +25,9 @@ build:            ## production build of the app
 data:             ## build all processed data files for Role 1 (contracts/README.md)
 	server/.venv/bin/python3 data/scripts/build_processed.py
 
+data-10gb:        ## generate 10 GB of synthetic high-frequency ADS-B state vector telemetry
+	server/.venv/bin/python3 data/scripts/generate_10gb_telemetry.py
+
 fetch:            ## pull raw data from OpenSky + FAA registry (needs network + free OpenSky account)
 	python3 data/scripts/fetch_opensky.py --preset analog
 	python3 data/scripts/fetch_opensky.py --preset baseline
