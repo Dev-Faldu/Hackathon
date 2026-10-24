@@ -46,10 +46,12 @@ def iso(t):
     return (t + SHIFT).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def build(raw=RAW, out=OUT):
-    sizes = size_lookup(os.path.join(raw, "icao24_aircraft.csv"))
-    arrivals = sorted(read(os.path.join(raw, "opensky", "KVNY_arrival_*.csv")), key=lambda r: int(r["last_seen"]))
-    departures = sorted(read(os.path.join(raw, "opensky", "KVNY_departure_*.csv")), key=lambda r: int(r["first_seen"]))
+def build(raw=RAW, out=OUT, flights_dir="opensky", registry="icao24_aircraft.csv", source="opensky_2022_shifted"):
+    """`source` labels every event: real OpenSky pulls are "opensky_2022_shifted"; the calibrated
+    reconstruction in build_processed.py passes "reconstructed_2022"."""
+    sizes = size_lookup(os.path.join(raw, registry))
+    arrivals = sorted(read(os.path.join(raw, flights_dir, "KVNY_arrival_*.csv")), key=lambda r: int(r["last_seen"]))
+    departures = sorted(read(os.path.join(raw, flights_dir, "KVNY_departure_*.csv")), key=lambda r: int(r["first_seen"]))
     deps_by_tail = {}
     for d in departures:
         deps_by_tail.setdefault(d["tail_hash"], []).append(d)
@@ -64,7 +66,7 @@ def build(raw=RAW, out=OUT):
         meta = {"flight_id": fid, "tail_hash": a["tail_hash"], "airport": "KVNY", "origin": origin,
                 "size_class": sizes.get((a.get("icao24") or "").lower(), "other"),
                 "is_international": bool(origin) and not origin.startswith(US_PREFIXES),
-                "source": "opensky_2022_shifted"}
+                "source": source}
         events.append({"t_utc": iso(utc(a["first_seen"])), "event": "departed_origin", **meta})
         events.append({"t_utc": iso(landed), "event": "landed", **meta})
         # The same tail's next departure from VNY after it landed.

@@ -16,7 +16,7 @@ export interface Meta {
   event: { name: string; game_date: string; kickoff_local: string; window: string[] };
   settings: Settings;
   window: string[];
-  live_source: "sample" | "opensky_2022_shifted";
+  live_source: "sample" | "opensky_2022_shifted" | "reconstructed_2022";
   notes: string[];
   claude_enabled: boolean;
   modules: Record<string, boolean>;

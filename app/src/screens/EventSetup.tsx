@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { TopBar } from "../components/Shell";
 import { Chip, Panel } from "../components/ui";
 import { api } from "../lib/api";
-import { cx } from "../lib/format";
+import { cx, sourceOf } from "../lib/format";
 import { useApp } from "../lib/store";
 import type { Settings } from "../lib/types";
 
@@ -126,7 +126,7 @@ export default function EventSetup() {
           ))}
         </div>
         <p className="mt-3 text-[12px] text-ink-2">
-          In this demo, Live ops replays {meta?.live_source === "opensky_2022_shifted" ? "the real Super Bowl LVI week (2022, same stadium) shifted to 2027 dates" : "a seeded sample week until the real 2022 replay is loaded"}.
+          In this demo, Live ops replays {sourceOf(meta?.live_source).sentence}.
         </p>
       </Panel>
     </div>

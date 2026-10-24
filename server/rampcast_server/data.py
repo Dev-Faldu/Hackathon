@@ -268,6 +268,18 @@ def _booking(rng: np.random.Generator, code: str, f: Flight) -> Booking:
     return Booking(code, f.flight_id, int(rng.integers(1, 13)), ctype, deadline, str(rng.choice(zones, p=zp)))
 
 
+SOURCE_NOTES = {
+    "opensky_2022_shifted": "Real Super Bowl LVI (2022) flights from OpenSky, shifted +1827 days.",
+    "reconstructed_2022": "Super Bowl LVI week (2022) rebuilt from published counts (501 Friday arrivals, "
+                          "548 Monday departures across the LA basin), shifted +1827 days.",
+}
+
+
+def _short_id(fid: str) -> str:
+    """Contract ids (F2022021112KVNY0042) shown as VNY-0042: the replay's arrival sequence is unique."""
+    return f"VNY-{fid[-4:]}" if fid.startswith("F") and fid[-4:].isdigit() else fid
+
+
 def load_processed() -> Dataset | None:
     """Build our FBO's flights from the real replay if the data pipeline has produced it."""
     replay = C.PROCESSED / "replay_2027.jsonl"
@@ -307,18 +319,22 @@ def load_processed() -> Dataset | None:
             size = "other"
         o = ORIGIN_BY_ICAO.get(m.get("origin") or "", (m.get("origin") or "UNKN", m.get("origin") or "Unknown",
                                                          *KVNY, 0, bool(m.get("is_international"))))
-        stay = "drop_and_go" if (dep_v - landed) < timedelta(hours=3) else "overnight"
-        flights.append(Flight(fid, m.get("tail_hash", fid[:16]), size, o[0], o[1], o[2],
+        stay = ("pre_window" if landed < C.window_start_local()
+                else "drop_and_go" if (dep_v - landed) < timedelta(hours=3) else "overnight")
+        flights.append(Flight(_short_id(fid), m.get("tail_hash", fid[:16]), size, o[0], o[1], o[2],
                               o[3], bool(m.get("is_international")), dep_o, landed, dep_v, stay,
                               "opensky_2022_shifted"))
     if not flights:
         return None
+    source = next(iter(events.values()))["meta"].get("source", "opensky_2022_shifted")
+    for f in flights:
+        f.source = source
     bookings: dict[str, Booking] = {}
     bpath = C.PROCESSED / "bookings.json"
     if bpath.exists():
         for b in json.loads(bpath.read_text()):
             bookings[b["booking_code"]] = Booking(
-                b["booking_code"], b["flight_id"], b["party_size"], b["commitment_type"],
+                b["booking_code"], _short_id(b["flight_id"]), b["party_size"], b["commitment_type"],
                 C.parse_t(b["deadline_local"]) if b.get("deadline_local") else None, b["hotel_zone"], True,
                 b.get("car_staged_at", "KVNY"))
     by_flight = {b.flight_id: b.booking_code for b in bookings.values()}
@@ -331,11 +347,11 @@ def load_processed() -> Dataset | None:
             bookings[code] = _booking(rng, code, f)
     spath = C.PROCESSED / "stands.json"
     stands = normalize_stands(json.loads(spath.read_text())["stands"]) if spath.exists() else default_stands()
-    notes = ["Real Super Bowl LVI (2022) flights from OpenSky, shifted +1827 days. Bookings are synthetic."]
+    notes = [(SOURCE_NOTES.get(source) or SOURCE_NOTES["opensky_2022_shifted"]) + " Bookings are synthetic."]
     if any(fixes.values()):
         notes.append("Data checks: " + ", ".join(f"{n} {k.replace('_', ' ')}" for k, n in fixes.items() if n)
                      + " (bad lines skipped; impossible times replaced with defaults; unknown sizes treated as 'other').")
-    return Dataset("opensky_2022_shifted", "actual", sorted(flights, key=lambda f: f.landed), bookings, stands, notes)
+    return Dataset(source, "actual", sorted(flights, key=lambda f: f.landed), bookings, stands, notes)
 
 
 def normalize_stands(stands: list[dict]) -> list[dict]:

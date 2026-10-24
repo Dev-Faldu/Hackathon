@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BarChart3, Box, Database, FlaskConical, Medal, Pause, Play, Plane, Radar, Settings2, ShieldCheck, Sparkles, SquareParking } from "lucide-react";
 import type { ReactNode } from "react";
-import { cx, dayLabel, hhmm } from "../lib/format";
+import { cx, dayLabel, hhmm, sourceOf } from "../lib/format";
 import { useApp, type Screen } from "../lib/store";
 import { Chip, Segmented } from "./ui";
 
@@ -50,8 +50,8 @@ export function Sidebar() {
         <div className="rounded-control border border-hairline bg-white/50 p-3">
           <div className="label mb-1.5">Data</div>
           <div className="flex items-center gap-1.5 text-[12px] font-medium">
-            <Database size={13} className={meta?.live_source === "opensky_2022_shifted" ? "text-ok" : "text-watch"} />
-            {meta?.live_source === "opensky_2022_shifted" ? "Real 2022 replay (OpenSky)" : "Sample week (seeded)"}
+            <Database size={13} className={meta?.live_source === "sample" ? "text-watch" : "text-ok"} />
+            {sourceOf(meta?.live_source).label}
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-[12px] font-medium">
             <Sparkles size={13} className="text-runway" />
