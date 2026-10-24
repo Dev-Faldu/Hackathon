@@ -1,0 +1,4223 @@
+[
+  {
+    "booking_code": "RC-SU4K",
+    "flight_id": "F2022020506KVNY0001",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NCR9",
+    "flight_id": "F2022020506KVNY0002",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YWMQ",
+    "flight_id": "F2022020507KVNY0003",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-06T04:00:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Z5QK",
+    "flight_id": "F2022020508KVNY0004",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FZJP",
+    "flight_id": "F2022020508KVNY0005",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-06T02:00:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AN59",
+    "flight_id": "F2022020508KVNY0006",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ZPDM",
+    "flight_id": "F2022020508KVNY0007",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QPEP",
+    "flight_id": "F2022020508KVNY0008",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-06T05:15:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WP8N",
+    "flight_id": "F2022020509KVNY0009",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-489S",
+    "flight_id": "F2022020509KVNY0010",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Z4FV",
+    "flight_id": "F2022020512KVNY0011",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-J2RK",
+    "flight_id": "F2022020513KVNY0012",
+    "party_size": 3,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-06T08:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PE68",
+    "flight_id": "F2022020515KVNY0013",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XEDF",
+    "flight_id": "F2022020515KVNY0014",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HR7U",
+    "flight_id": "F2022020516KVNY0015",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3235",
+    "flight_id": "F2022020522KVNY0016",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GEWV",
+    "flight_id": "F2022020604KVNY0017",
+    "party_size": 6,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-07T00:00:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-36T8",
+    "flight_id": "F2022020607KVNY0018",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UJTX",
+    "flight_id": "F2022020608KVNY0019",
+    "party_size": 12,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-07T03:15:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-U8HV",
+    "flight_id": "F2022020608KVNY0020",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SJ2D",
+    "flight_id": "F2022020610KVNY0021",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NRGN",
+    "flight_id": "F2022020611KVNY0022",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-V2CR",
+    "flight_id": "F2022020611KVNY0023",
+    "party_size": 1,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FCTA",
+    "flight_id": "F2022020611KVNY0024",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FNVV",
+    "flight_id": "F2022020612KVNY0025",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3ASF",
+    "flight_id": "F2022020613KVNY0026",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VUXK",
+    "flight_id": "F2022020613KVNY0027",
+    "party_size": 6,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KENW",
+    "flight_id": "F2022020615KVNY0028",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GVGW",
+    "flight_id": "F2022020615KVNY0029",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QM7P",
+    "flight_id": "F2022020617KVNY0030",
+    "party_size": 4,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-07T11:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FWC4",
+    "flight_id": "F2022020619KVNY0031",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-6HR9",
+    "flight_id": "F2022020621KVNY0032",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-E46A",
+    "flight_id": "F2022020621KVNY0033",
+    "party_size": 11,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-E9ST",
+    "flight_id": "F2022020622KVNY0034",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KBHG",
+    "flight_id": "F2022020702KVNY0035",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VWAC",
+    "flight_id": "F2022020705KVNY0036",
+    "party_size": 6,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-07T23:15:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XEVZ",
+    "flight_id": "F2022020706KVNY0037",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UHC3",
+    "flight_id": "F2022020706KVNY0038",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GHD6",
+    "flight_id": "F2022020707KVNY0039",
+    "party_size": 4,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-08T03:30:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HM5C",
+    "flight_id": "F2022020707KVNY0040",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JNFM",
+    "flight_id": "F2022020708KVNY0041",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-MYJJ",
+    "flight_id": "F2022020711KVNY0042",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GURQ",
+    "flight_id": "F2022020711KVNY0043",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-D9B6",
+    "flight_id": "F2022020711KVNY0044",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CQ8W",
+    "flight_id": "F2022020711KVNY0045",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2GDS",
+    "flight_id": "F2022020711KVNY0046",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RS7V",
+    "flight_id": "F2022020713KVNY0047",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-6WC7",
+    "flight_id": "F2022020713KVNY0048",
+    "party_size": 9,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9NFD",
+    "flight_id": "F2022020713KVNY0049",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-6ADC",
+    "flight_id": "F2022020714KVNY0050",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WQ4K",
+    "flight_id": "F2022020716KVNY0051",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PWE3",
+    "flight_id": "F2022020716KVNY0052",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QUZZ",
+    "flight_id": "F2022020719KVNY0053",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WXDZ",
+    "flight_id": "F2022020720KVNY0054",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-7QAW",
+    "flight_id": "F2022020802KVNY0055",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XYK7",
+    "flight_id": "F2022020802KVNY0056",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-APGB",
+    "flight_id": "F2022020806KVNY0057",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QP7G",
+    "flight_id": "F2022020806KVNY0058",
+    "party_size": 3,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-09T01:30:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WQHM",
+    "flight_id": "F2022020808KVNY0059",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EYSP",
+    "flight_id": "F2022020808KVNY0060",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ZUJW",
+    "flight_id": "F2022020809KVNY0061",
+    "party_size": 2,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AGZN",
+    "flight_id": "F2022020809KVNY0062",
+    "party_size": 4,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-09T04:00:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KUV2",
+    "flight_id": "F2022020810KVNY0063",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HVU6",
+    "flight_id": "F2022020810KVNY0064",
+    "party_size": 10,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VD9K",
+    "flight_id": "F2022020812KVNY0065",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8AA5",
+    "flight_id": "F2022020812KVNY0066",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FQ2S",
+    "flight_id": "F2022020812KVNY0067",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NFNK",
+    "flight_id": "F2022020812KVNY0068",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3RM3",
+    "flight_id": "F2022020813KVNY0069",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-X3HS",
+    "flight_id": "F2022020814KVNY0070",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BD4P",
+    "flight_id": "F2022020814KVNY0071",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9GNH",
+    "flight_id": "F2022020814KVNY0072",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DSHP",
+    "flight_id": "F2022020814KVNY0073",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BKDP",
+    "flight_id": "F2022020816KVNY0074",
+    "party_size": 9,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-09T12:00:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XFD3",
+    "flight_id": "F2022020816KVNY0075",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4P22",
+    "flight_id": "F2022020823KVNY0076",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9HN7",
+    "flight_id": "F2022020903KVNY0077",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2FHE",
+    "flight_id": "F2022020906KVNY0078",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-85AM",
+    "flight_id": "F2022020908KVNY0079",
+    "party_size": 4,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T03:30:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-6X7S",
+    "flight_id": "F2022020908KVNY0080",
+    "party_size": 12,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T04:15:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9VA2",
+    "flight_id": "F2022020909KVNY0081",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-THUK",
+    "flight_id": "F2022020909KVNY0082",
+    "party_size": 1,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T03:45:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HEY4",
+    "flight_id": "F2022020909KVNY0083",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RYV2",
+    "flight_id": "F2022020910KVNY0084",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-F75B",
+    "flight_id": "F2022020910KVNY0085",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-C9VC",
+    "flight_id": "F2022020910KVNY0086",
+    "party_size": 10,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T04:45:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YV25",
+    "flight_id": "F2022020910KVNY0087",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PS4H",
+    "flight_id": "F2022020911KVNY0088",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VKST",
+    "flight_id": "F2022020911KVNY0089",
+    "party_size": 1,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CEQ3",
+    "flight_id": "F2022020911KVNY0090",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BRUT",
+    "flight_id": "F2022020911KVNY0091",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-W9FR",
+    "flight_id": "F2022020911KVNY0092",
+    "party_size": 11,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T05:45:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-G4WC",
+    "flight_id": "F2022020912KVNY0093",
+    "party_size": 5,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-R4D5",
+    "flight_id": "F2022020913KVNY0094",
+    "party_size": 10,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T07:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KC59",
+    "flight_id": "F2022020913KVNY0095",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NDA3",
+    "flight_id": "F2022020913KVNY0096",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4YCR",
+    "flight_id": "F2022020913KVNY0097",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VX4K",
+    "flight_id": "F2022020913KVNY0098",
+    "party_size": 4,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T09:00:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SCX9",
+    "flight_id": "F2022020913KVNY0099",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NAKM",
+    "flight_id": "F2022020914KVNY0100",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-N4TK",
+    "flight_id": "F2022020914KVNY0101",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-F69E",
+    "flight_id": "F2022020914KVNY0102",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EU88",
+    "flight_id": "F2022020914KVNY0103",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PDC7",
+    "flight_id": "F2022020914KVNY0104",
+    "party_size": 3,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T10:30:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-MUUZ",
+    "flight_id": "F2022020915KVNY0105",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EZT3",
+    "flight_id": "F2022020915KVNY0106",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DUZV",
+    "flight_id": "F2022020917KVNY0107",
+    "party_size": 3,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T13:30:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8K2C",
+    "flight_id": "F2022020918KVNY0108",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3WYJ",
+    "flight_id": "F2022020918KVNY0109",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9YUJ",
+    "flight_id": "F2022021000KVNY0110",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-6E2W",
+    "flight_id": "F2022021001KVNY0111",
+    "party_size": 3,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-10T20:15:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EGUW",
+    "flight_id": "F2022021006KVNY0112",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-484Z",
+    "flight_id": "F2022021008KVNY0113",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SXN5",
+    "flight_id": "F2022021008KVNY0114",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-7KZ5",
+    "flight_id": "F2022021008KVNY0115",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CJ2V",
+    "flight_id": "F2022021008KVNY0116",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-D9DT",
+    "flight_id": "F2022021009KVNY0117",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-84ZB",
+    "flight_id": "F2022021009KVNY0118",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KQ45",
+    "flight_id": "F2022021009KVNY0119",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T05:45:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3DR8",
+    "flight_id": "F2022021009KVNY0120",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DTPW",
+    "flight_id": "F2022021009KVNY0121",
+    "party_size": 9,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T06:00:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-N2JK",
+    "flight_id": "F2022021009KVNY0122",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YGWF",
+    "flight_id": "F2022021010KVNY0123",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WZ9E",
+    "flight_id": "F2022021010KVNY0124",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-APJE",
+    "flight_id": "F2022021010KVNY0125",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-X89N",
+    "flight_id": "F2022021010KVNY0126",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GG2E",
+    "flight_id": "F2022021010KVNY0127",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EUB7",
+    "flight_id": "F2022021010KVNY0128",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-H36J",
+    "flight_id": "F2022021010KVNY0129",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AK7S",
+    "flight_id": "F2022021010KVNY0130",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Z747",
+    "flight_id": "F2022021010KVNY0131",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4MEG",
+    "flight_id": "F2022021010KVNY0132",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JPWV",
+    "flight_id": "F2022021011KVNY0133",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3WVA",
+    "flight_id": "F2022021011KVNY0134",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-U2H2",
+    "flight_id": "F2022021011KVNY0135",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FDTE",
+    "flight_id": "F2022021011KVNY0136",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SFEE",
+    "flight_id": "F2022021011KVNY0137",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WKVU",
+    "flight_id": "F2022021011KVNY0138",
+    "party_size": 12,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T07:45:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KX3M",
+    "flight_id": "F2022021012KVNY0139",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-X8GH",
+    "flight_id": "F2022021012KVNY0140",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T08:00:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UTY9",
+    "flight_id": "F2022021012KVNY0141",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T08:30:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PHW7",
+    "flight_id": "F2022021012KVNY0142",
+    "party_size": 12,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T07:00:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RAT8",
+    "flight_id": "F2022021012KVNY0143",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2UNB",
+    "flight_id": "F2022021013KVNY0144",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TZFN",
+    "flight_id": "F2022021014KVNY0145",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VRPT",
+    "flight_id": "F2022021014KVNY0146",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-7R5X",
+    "flight_id": "F2022021014KVNY0147",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YGH7",
+    "flight_id": "F2022021014KVNY0148",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T08:15:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-X2JP",
+    "flight_id": "F2022021014KVNY0149",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DFPY",
+    "flight_id": "F2022021014KVNY0150",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2EZ7",
+    "flight_id": "F2022021014KVNY0151",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EDRR",
+    "flight_id": "F2022021015KVNY0152",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-6BMQ",
+    "flight_id": "F2022021015KVNY0153",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PRWR",
+    "flight_id": "F2022021016KVNY0154",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8ACE",
+    "flight_id": "F2022021016KVNY0155",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YSZF",
+    "flight_id": "F2022021016KVNY0156",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2JZ2",
+    "flight_id": "F2022021016KVNY0157",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ENBP",
+    "flight_id": "F2022021017KVNY0158",
+    "party_size": 10,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T13:00:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5QJA",
+    "flight_id": "F2022021017KVNY0159",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2NPV",
+    "flight_id": "F2022021018KVNY0160",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KZRU",
+    "flight_id": "F2022021019KVNY0161",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SR7U",
+    "flight_id": "F2022021019KVNY0162",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HXJQ",
+    "flight_id": "F2022021022KVNY0163",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-E23B",
+    "flight_id": "F2022021022KVNY0164",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-73WA",
+    "flight_id": "F2022021022KVNY0165",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-U26K",
+    "flight_id": "F2022021023KVNY0166",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PJGW",
+    "flight_id": "F2022021100KVNY0167",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NKTK",
+    "flight_id": "F2022021101KVNY0168",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8RF9",
+    "flight_id": "F2022021101KVNY0169",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-11T19:45:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FY7Y",
+    "flight_id": "F2022021101KVNY0170",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SQFB",
+    "flight_id": "F2022021103KVNY0171",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QKEZ",
+    "flight_id": "F2022021105KVNY0172",
+    "party_size": 9,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T00:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SPX7",
+    "flight_id": "F2022021105KVNY0173",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-7TF3",
+    "flight_id": "F2022021106KVNY0174",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-S7U6",
+    "flight_id": "F2022021106KVNY0175",
+    "party_size": 3,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T01:30:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CWH7",
+    "flight_id": "F2022021106KVNY0176",
+    "party_size": 11,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T02:00:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ZF5X",
+    "flight_id": "F2022021106KVNY0177",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XZ9M",
+    "flight_id": "F2022021106KVNY0178",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VZZU",
+    "flight_id": "F2022021106KVNY0179",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TXBF",
+    "flight_id": "F2022021107KVNY0180",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-M5AA",
+    "flight_id": "F2022021107KVNY0181",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-V2TD",
+    "flight_id": "F2022021107KVNY0182",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FZQ4",
+    "flight_id": "F2022021107KVNY0183",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GKTQ",
+    "flight_id": "F2022021107KVNY0184",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CC9Z",
+    "flight_id": "F2022021107KVNY0185",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ZAJ5",
+    "flight_id": "F2022021107KVNY0186",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4M4B",
+    "flight_id": "F2022021107KVNY0187",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T01:30:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-MHAG",
+    "flight_id": "F2022021107KVNY0188",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-X5J9",
+    "flight_id": "F2022021107KVNY0189",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QFKA",
+    "flight_id": "F2022021107KVNY0190",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DHJC",
+    "flight_id": "F2022021108KVNY0191",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T04:00:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WXQ9",
+    "flight_id": "F2022021108KVNY0192",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-S5GS",
+    "flight_id": "F2022021108KVNY0193",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8NRJ",
+    "flight_id": "F2022021108KVNY0194",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DGQU",
+    "flight_id": "F2022021108KVNY0195",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-77VD",
+    "flight_id": "F2022021108KVNY0196",
+    "party_size": 12,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JWVE",
+    "flight_id": "F2022021108KVNY0197",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3WJA",
+    "flight_id": "F2022021108KVNY0198",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AFZG",
+    "flight_id": "F2022021108KVNY0199",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BRCQ",
+    "flight_id": "F2022021108KVNY0200",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T05:15:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-R9H2",
+    "flight_id": "F2022021108KVNY0201",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YAPS",
+    "flight_id": "F2022021109KVNY0202",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HYZS",
+    "flight_id": "F2022021109KVNY0203",
+    "party_size": 8,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RR3A",
+    "flight_id": "F2022021109KVNY0204",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9S53",
+    "flight_id": "F2022021109KVNY0205",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NGZU",
+    "flight_id": "F2022021109KVNY0206",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-R4PW",
+    "flight_id": "F2022021109KVNY0207",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3BW4",
+    "flight_id": "F2022021109KVNY0208",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BVHH",
+    "flight_id": "F2022021109KVNY0209",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AQSR",
+    "flight_id": "F2022021109KVNY0210",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SZ2N",
+    "flight_id": "F2022021110KVNY0211",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9B5A",
+    "flight_id": "F2022021110KVNY0212",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2GPM",
+    "flight_id": "F2022021110KVNY0213",
+    "party_size": 10,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QSNF",
+    "flight_id": "F2022021110KVNY0214",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DVSZ",
+    "flight_id": "F2022021110KVNY0215",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-48DC",
+    "flight_id": "F2022021110KVNY0216",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-F2ZK",
+    "flight_id": "F2022021110KVNY0217",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QRES",
+    "flight_id": "F2022021110KVNY0218",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T04:45:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SFFT",
+    "flight_id": "F2022021110KVNY0219",
+    "party_size": 9,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T04:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-7S4M",
+    "flight_id": "F2022021110KVNY0220",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QCH4",
+    "flight_id": "F2022021110KVNY0221",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-X4ME",
+    "flight_id": "F2022021110KVNY0222",
+    "party_size": 5,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RN9U",
+    "flight_id": "F2022021110KVNY0223",
+    "party_size": 11,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T07:45:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-K8PW",
+    "flight_id": "F2022021110KVNY0224",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-7HJG",
+    "flight_id": "F2022021110KVNY0225",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5QXW",
+    "flight_id": "F2022021111KVNY0226",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3NT9",
+    "flight_id": "F2022021111KVNY0227",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CSEF",
+    "flight_id": "F2022021111KVNY0228",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-77E3",
+    "flight_id": "F2022021111KVNY0229",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SW3A",
+    "flight_id": "F2022021111KVNY0230",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T06:45:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8WHX",
+    "flight_id": "F2022021111KVNY0231",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-MUGF",
+    "flight_id": "F2022021111KVNY0232",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KVY3",
+    "flight_id": "F2022021111KVNY0233",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GHNT",
+    "flight_id": "F2022021111KVNY0234",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5GYV",
+    "flight_id": "F2022021111KVNY0235",
+    "party_size": 3,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T07:45:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9U2P",
+    "flight_id": "F2022021111KVNY0236",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T07:45:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-J2KH",
+    "flight_id": "F2022021111KVNY0237",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HQ5C",
+    "flight_id": "F2022021111KVNY0238",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GAP8",
+    "flight_id": "F2022021111KVNY0239",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UJQP",
+    "flight_id": "F2022021111KVNY0240",
+    "party_size": 4,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T08:45:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Y9RU",
+    "flight_id": "F2022021111KVNY0241",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KVC7",
+    "flight_id": "F2022021112KVNY0242",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HJM3",
+    "flight_id": "F2022021112KVNY0243",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PA6V",
+    "flight_id": "F2022021112KVNY0244",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-K2TG",
+    "flight_id": "F2022021112KVNY0245",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SF3C",
+    "flight_id": "F2022021112KVNY0246",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T06:15:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-28PJ",
+    "flight_id": "F2022021112KVNY0247",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Y9C9",
+    "flight_id": "F2022021112KVNY0248",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TR5T",
+    "flight_id": "F2022021112KVNY0249",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JPGT",
+    "flight_id": "F2022021112KVNY0250",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VM8Z",
+    "flight_id": "F2022021112KVNY0251",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-MB8A",
+    "flight_id": "F2022021112KVNY0252",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-44KV",
+    "flight_id": "F2022021112KVNY0253",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FK9J",
+    "flight_id": "F2022021113KVNY0254",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T07:45:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TH99",
+    "flight_id": "F2022021113KVNY0255",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-N8EM",
+    "flight_id": "F2022021113KVNY0256",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-W8XZ",
+    "flight_id": "F2022021113KVNY0257",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4RUE",
+    "flight_id": "F2022021113KVNY0258",
+    "party_size": 6,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T07:30:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-83D8",
+    "flight_id": "F2022021113KVNY0259",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FDZY",
+    "flight_id": "F2022021113KVNY0260",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RXV8",
+    "flight_id": "F2022021113KVNY0261",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AXZF",
+    "flight_id": "F2022021113KVNY0262",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-R4G3",
+    "flight_id": "F2022021113KVNY0263",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-P825",
+    "flight_id": "F2022021113KVNY0264",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VF8D",
+    "flight_id": "F2022021113KVNY0265",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-URR7",
+    "flight_id": "F2022021113KVNY0266",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GRHJ",
+    "flight_id": "F2022021113KVNY0267",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SQGP",
+    "flight_id": "F2022021113KVNY0268",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8H2Y",
+    "flight_id": "F2022021114KVNY0269",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HHGW",
+    "flight_id": "F2022021114KVNY0270",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T09:00:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-S4GC",
+    "flight_id": "F2022021114KVNY0271",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HV6X",
+    "flight_id": "F2022021114KVNY0272",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WJXE",
+    "flight_id": "F2022021114KVNY0273",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UCPQ",
+    "flight_id": "F2022021114KVNY0274",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AT43",
+    "flight_id": "F2022021114KVNY0275",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8ZNH",
+    "flight_id": "F2022021114KVNY0276",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5FGZ",
+    "flight_id": "F2022021114KVNY0277",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UCKN",
+    "flight_id": "F2022021114KVNY0278",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-M78T",
+    "flight_id": "F2022021114KVNY0279",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CCAQ",
+    "flight_id": "F2022021114KVNY0280",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8WXN",
+    "flight_id": "F2022021115KVNY0281",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FCVX",
+    "flight_id": "F2022021115KVNY0282",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5MGG",
+    "flight_id": "F2022021115KVNY0283",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-URRZ",
+    "flight_id": "F2022021115KVNY0284",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-P6YD",
+    "flight_id": "F2022021115KVNY0285",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-36KK",
+    "flight_id": "F2022021115KVNY0286",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CAQZ",
+    "flight_id": "F2022021115KVNY0287",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HEPW",
+    "flight_id": "F2022021115KVNY0288",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3XAK",
+    "flight_id": "F2022021115KVNY0289",
+    "party_size": 1,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T12:30:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JW6X",
+    "flight_id": "F2022021116KVNY0290",
+    "party_size": 12,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NWJ7",
+    "flight_id": "F2022021116KVNY0291",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NE5Z",
+    "flight_id": "F2022021116KVNY0292",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-E82G",
+    "flight_id": "F2022021116KVNY0293",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-854U",
+    "flight_id": "F2022021116KVNY0294",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-S535",
+    "flight_id": "F2022021116KVNY0295",
+    "party_size": 2,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T12:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8SW7",
+    "flight_id": "F2022021116KVNY0296",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QWS4",
+    "flight_id": "F2022021116KVNY0297",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FQGD",
+    "flight_id": "F2022021117KVNY0298",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JJVF",
+    "flight_id": "F2022021117KVNY0299",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ED9G",
+    "flight_id": "F2022021117KVNY0300",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SF96",
+    "flight_id": "F2022021118KVNY0301",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T15:00:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CNQ5",
+    "flight_id": "F2022021118KVNY0302",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HGGU",
+    "flight_id": "F2022021118KVNY0303",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CRBY",
+    "flight_id": "F2022021118KVNY0304",
+    "party_size": 8,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-B6NE",
+    "flight_id": "F2022021118KVNY0305",
+    "party_size": 6,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T14:45:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-D9YG",
+    "flight_id": "F2022021118KVNY0306",
+    "party_size": 2,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-12T13:15:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-H55F",
+    "flight_id": "F2022021118KVNY0307",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CCMY",
+    "flight_id": "F2022021118KVNY0308",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CAXF",
+    "flight_id": "F2022021118KVNY0309",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DKJU",
+    "flight_id": "F2022021119KVNY0310",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UDZU",
+    "flight_id": "F2022021119KVNY0311",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-53QR",
+    "flight_id": "F2022021120KVNY0312",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-62QW",
+    "flight_id": "F2022021120KVNY0313",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3A5G",
+    "flight_id": "F2022021121KVNY0314",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3G8W",
+    "flight_id": "F2022021123KVNY0315",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KKKZ",
+    "flight_id": "F2022021123KVNY0316",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TXS2",
+    "flight_id": "F2022021202KVNY0317",
+    "party_size": 5,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KC8N",
+    "flight_id": "F2022021205KVNY0318",
+    "party_size": 10,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T00:30:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NG27",
+    "flight_id": "F2022021205KVNY0319",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DRGN",
+    "flight_id": "F2022021206KVNY0320",
+    "party_size": 10,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T01:45:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3PWF",
+    "flight_id": "F2022021206KVNY0321",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RWUP",
+    "flight_id": "F2022021206KVNY0322",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AQ2Z",
+    "flight_id": "F2022021206KVNY0323",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TNXV",
+    "flight_id": "F2022021207KVNY0324",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-38R5",
+    "flight_id": "F2022021207KVNY0325",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SH44",
+    "flight_id": "F2022021207KVNY0326",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SNQR",
+    "flight_id": "F2022021207KVNY0327",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-U4W2",
+    "flight_id": "F2022021207KVNY0328",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PZK8",
+    "flight_id": "F2022021208KVNY0329",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-V3ZK",
+    "flight_id": "F2022021208KVNY0330",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PJWM",
+    "flight_id": "F2022021208KVNY0331",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ZGHT",
+    "flight_id": "F2022021208KVNY0332",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-MP7H",
+    "flight_id": "F2022021208KVNY0333",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WBNF",
+    "flight_id": "F2022021208KVNY0334",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WJVX",
+    "flight_id": "F2022021208KVNY0335",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TMB6",
+    "flight_id": "F2022021208KVNY0336",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-T5JA",
+    "flight_id": "F2022021208KVNY0337",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VG8R",
+    "flight_id": "F2022021209KVNY0338",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BDSG",
+    "flight_id": "F2022021209KVNY0339",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2BAN",
+    "flight_id": "F2022021209KVNY0340",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-W8XN",
+    "flight_id": "F2022021209KVNY0341",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JST4",
+    "flight_id": "F2022021209KVNY0342",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Z623",
+    "flight_id": "F2022021209KVNY0343",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-W7HG",
+    "flight_id": "F2022021210KVNY0344",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XGUC",
+    "flight_id": "F2022021210KVNY0345",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-A2PV",
+    "flight_id": "F2022021210KVNY0346",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-43TU",
+    "flight_id": "F2022021210KVNY0347",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Y382",
+    "flight_id": "F2022021210KVNY0348",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GPY5",
+    "flight_id": "F2022021210KVNY0349",
+    "party_size": 1,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T06:30:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-W5VC",
+    "flight_id": "F2022021210KVNY0350",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-ARJS",
+    "flight_id": "F2022021210KVNY0351",
+    "party_size": 9,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T07:15:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FKPB",
+    "flight_id": "F2022021210KVNY0352",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5X2S",
+    "flight_id": "F2022021211KVNY0353",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-85F3",
+    "flight_id": "F2022021211KVNY0354",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KTE2",
+    "flight_id": "F2022021211KVNY0355",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VVB7",
+    "flight_id": "F2022021211KVNY0356",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5WW7",
+    "flight_id": "F2022021211KVNY0357",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T07:45:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NGZF",
+    "flight_id": "F2022021211KVNY0358",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T06:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QNWS",
+    "flight_id": "F2022021212KVNY0359",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-A6X3",
+    "flight_id": "F2022021212KVNY0360",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T06:00:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-F2A5",
+    "flight_id": "F2022021212KVNY0361",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PKBT",
+    "flight_id": "F2022021212KVNY0362",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T09:00:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SGYH",
+    "flight_id": "F2022021212KVNY0363",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JVEH",
+    "flight_id": "F2022021212KVNY0364",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YCWY",
+    "flight_id": "F2022021212KVNY0365",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CEX4",
+    "flight_id": "F2022021212KVNY0366",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-G5NW",
+    "flight_id": "F2022021213KVNY0367",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DGGR",
+    "flight_id": "F2022021213KVNY0368",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GHUP",
+    "flight_id": "F2022021214KVNY0369",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-9DQW",
+    "flight_id": "F2022021214KVNY0370",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HGKT",
+    "flight_id": "F2022021214KVNY0371",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CT6X",
+    "flight_id": "F2022021214KVNY0372",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T08:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EJ9W",
+    "flight_id": "F2022021214KVNY0373",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5A2C",
+    "flight_id": "F2022021214KVNY0374",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8FXY",
+    "flight_id": "F2022021214KVNY0375",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-NCXV",
+    "flight_id": "F2022021214KVNY0376",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KXFQ",
+    "flight_id": "F2022021215KVNY0377",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-76DH",
+    "flight_id": "F2022021215KVNY0378",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UXZV",
+    "flight_id": "F2022021215KVNY0379",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4NAS",
+    "flight_id": "F2022021215KVNY0380",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-VK5P",
+    "flight_id": "F2022021215KVNY0381",
+    "party_size": 12,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T09:45:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2AD8",
+    "flight_id": "F2022021215KVNY0382",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-Q4DP",
+    "flight_id": "F2022021215KVNY0383",
+    "party_size": 12,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T11:15:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HU4R",
+    "flight_id": "F2022021215KVNY0384",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BS8N",
+    "flight_id": "F2022021215KVNY0385",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-F4P3",
+    "flight_id": "F2022021215KVNY0386",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-A9SP",
+    "flight_id": "F2022021215KVNY0387",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3R2K",
+    "flight_id": "F2022021216KVNY0388",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DABJ",
+    "flight_id": "F2022021216KVNY0389",
+    "party_size": 5,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-13T12:45:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-H9PA",
+    "flight_id": "F2022021216KVNY0390",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-W5FP",
+    "flight_id": "F2022021216KVNY0391",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-78PK",
+    "flight_id": "F2022021223KVNY0392",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5GVB",
+    "flight_id": "F2022021223KVNY0393",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DPVD",
+    "flight_id": "F2022021223KVNY0394",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-7XB7",
+    "flight_id": "F2022021305KVNY0395",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-14T01:15:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5Q8S",
+    "flight_id": "F2022021305KVNY0396",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PYE3",
+    "flight_id": "F2022021305KVNY0397",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UBUG",
+    "flight_id": "F2022021305KVNY0398",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FTWU",
+    "flight_id": "F2022021307KVNY0399",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RKYK",
+    "flight_id": "F2022021308KVNY0400",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DDJ2",
+    "flight_id": "F2022021308KVNY0401",
+    "party_size": 12,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DFFU",
+    "flight_id": "F2022021309KVNY0402",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-N5VG",
+    "flight_id": "F2022021309KVNY0403",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-X5DA",
+    "flight_id": "F2022021309KVNY0404",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CDCK",
+    "flight_id": "F2022021309KVNY0405",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-D682",
+    "flight_id": "F2022021310KVNY0406",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FKV7",
+    "flight_id": "F2022021310KVNY0407",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DDNF",
+    "flight_id": "F2022021310KVNY0408",
+    "party_size": 1,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-UFBG",
+    "flight_id": "F2022021310KVNY0409",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BC33",
+    "flight_id": "F2022021310KVNY0410",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XFSD",
+    "flight_id": "F2022021311KVNY0411",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GUXU",
+    "flight_id": "F2022021311KVNY0412",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-B28T",
+    "flight_id": "F2022021311KVNY0413",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WM3S",
+    "flight_id": "F2022021312KVNY0414",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4C59",
+    "flight_id": "F2022021313KVNY0415",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-3W8S",
+    "flight_id": "F2022021313KVNY0416",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JQ97",
+    "flight_id": "F2022021313KVNY0417",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TTYW",
+    "flight_id": "F2022021313KVNY0418",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QWED",
+    "flight_id": "F2022021314KVNY0419",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SRQ3",
+    "flight_id": "F2022021314KVNY0420",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-T9Z7",
+    "flight_id": "F2022021314KVNY0421",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-EDPE",
+    "flight_id": "F2022021314KVNY0422",
+    "party_size": 8,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4HJK",
+    "flight_id": "F2022021314KVNY0423",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FHK2",
+    "flight_id": "F2022021314KVNY0424",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FY2C",
+    "flight_id": "F2022021314KVNY0425",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4NAG",
+    "flight_id": "F2022021314KVNY0426",
+    "party_size": 7,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-14T10:30:00-08:00",
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-QPW3",
+    "flight_id": "F2022021315KVNY0427",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-65JM",
+    "flight_id": "F2022021316KVNY0428",
+    "party_size": 12,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-14T10:00:00-08:00",
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-PNHU",
+    "flight_id": "F2022021316KVNY0429",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-AZ66",
+    "flight_id": "F2022021316KVNY0430",
+    "party_size": 11,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-14T12:30:00-08:00",
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-DVNF",
+    "flight_id": "F2022021317KVNY0431",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-XR5G",
+    "flight_id": "F2022021317KVNY0432",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-KZAG",
+    "flight_id": "F2022021318KVNY0433",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2HUT",
+    "flight_id": "F2022021318KVNY0434",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-BJJV",
+    "flight_id": "F2022021319KVNY0435",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-HVK2",
+    "flight_id": "F2022021323KVNY0436",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-P93X",
+    "flight_id": "F2022021405KVNY0437",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-57U2",
+    "flight_id": "F2022021409KVNY0438",
+    "party_size": 1,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-W7FP",
+    "flight_id": "F2022021410KVNY0439",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-GUEM",
+    "flight_id": "F2022021410KVNY0440",
+    "party_size": 8,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-8DA4",
+    "flight_id": "F2022021411KVNY0441",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2ZPZ",
+    "flight_id": "F2022021411KVNY0442",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-RUWZ",
+    "flight_id": "F2022021411KVNY0443",
+    "party_size": 5,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-K3B5",
+    "flight_id": "F2022021411KVNY0444",
+    "party_size": 9,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-2WP4",
+    "flight_id": "F2022021412KVNY0445",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JQ87",
+    "flight_id": "F2022021413KVNY0446",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5C4T",
+    "flight_id": "F2022021413KVNY0447",
+    "party_size": 5,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-T7HV",
+    "flight_id": "F2022021414KVNY0448",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-CV4G",
+    "flight_id": "F2022021415KVNY0449",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-U59A",
+    "flight_id": "F2022021415KVNY0450",
+    "party_size": 11,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-WD3C",
+    "flight_id": "F2022021416KVNY0451",
+    "party_size": 8,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-15T11:15:00-08:00",
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FPQ6",
+    "flight_id": "F2022021416KVNY0452",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-29XV",
+    "flight_id": "F2022021417KVNY0453",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-4KJZ",
+    "flight_id": "F2022021421KVNY0454",
+    "party_size": 10,
+    "commitment_type": "fixed_time",
+    "deadline_local": "2027-02-15T18:30:00-08:00",
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-TAV5",
+    "flight_id": "F2022021507KVNY0455",
+    "party_size": 3,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-FVEN",
+    "flight_id": "F2022021508KVNY0456",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JFBE",
+    "flight_id": "F2022021508KVNY0457",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JHWQ",
+    "flight_id": "F2022021509KVNY0458",
+    "party_size": 6,
+    "commitment_type": "medical_access",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-S83E",
+    "flight_id": "F2022021509KVNY0459",
+    "party_size": 7,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-V2CU",
+    "flight_id": "F2022021510KVNY0460",
+    "party_size": 10,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-H2XM",
+    "flight_id": "F2022021511KVNY0461",
+    "party_size": 2,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-43QN",
+    "flight_id": "F2022021511KVNY0462",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-5PKF",
+    "flight_id": "F2022021511KVNY0463",
+    "party_size": 12,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-JP28",
+    "flight_id": "F2022021513KVNY0464",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-SQBP",
+    "flight_id": "F2022021513KVNY0465",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Downtown LA",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-MHMQ",
+    "flight_id": "F2022021514KVNY0466",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Inglewood",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-85SC",
+    "flight_id": "F2022021514KVNY0467",
+    "party_size": 4,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Beverly Hills",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-YFV6",
+    "flight_id": "F2022021514KVNY0468",
+    "party_size": 6,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Burbank",
+    "synthetic": true
+  },
+  {
+    "booking_code": "RC-47J5",
+    "flight_id": "F2022021515KVNY0469",
+    "party_size": 1,
+    "commitment_type": "none",
+    "deadline_local": null,
+    "hotel_zone": "Santa Monica",
+    "synthetic": true
+  }
+]
