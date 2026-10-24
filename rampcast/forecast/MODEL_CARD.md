@@ -124,8 +124,40 @@ server/.venv/bin/python -m rampcast.forecast.validate   # reports/ CSVs and char
 server/.venv/bin/python -m pytest -q rampcast/forecast/tests
 ```
 
-## Real-data mode (P2, pending)
+## P2: blind backtest on real FAA data
 
-When Role 1 delivers real counts (`daily_counts.csv` with a `source` column and more years or host airports),
-`data_io.data_source()` turns `real`. Then: widen `forecast.baseline_dates`, add host-airport daily counts per event,
-and run a true leave-one-event-out daily backtest with no data from the held-out week in any fit.
+Data: FAA TFMSC daily business-jet counts (`data/external/faa_tfmsc/`, README there): KVNY every day Jan-Mar of
+2019, 2020, 2022-2026, and the airports around 7 Super Bowl host regions (2019-2026, no 2021). Real, public, checksummed.
+Run: `server/.venv/bin/python -m rampcast.forecast.backtest` (writes `reports/backtest_daily.csv`, `backtest_summary.csv`).
+
+Rules followed: leave one event out; the held-out event's rows and multipliers never enter its fit; each baseline uses
+only ordinary days 40..8 days before that game (holidays and listed anomalies excluded); no model selection.
+Method tested: same-weekday baseline x day-offset multipliers from the other host regions (low/medium/high =
+min/mean/max). Intervals: the simulation's noise model (week factor + negative binomial), target 80% for P10-P90.
+
+| Test | Method | n days | MAPE | P10-P90 coverage |
+|---|---|---|---|---|
+| KVNY, Super Bowl LVI 2022 | other regions' multipliers, medium | 7 | 97.3% | 28.6% |
+| KVNY, Super Bowl LVI 2022 | naive: ordinary week | 7 | 17.8% | 42.9% |
+| KVNY, Super Bowl LVI 2022 | naive: previous host (Miami 2020) | 7 | 11.6% | 100% |
+| 7 host regions | other regions' multipliers, medium | 49 | 41.2% | 32.7% |
+| 7 host regions | same, low-to-high envelope | 49 | 41.1% | 85.7% |
+| 7 host regions | naive: ordinary week | 49 | 40.7% | 20.4% |
+
+What it shows:
+- Host-region multipliers do not transfer to KVNY. In 2022 KVNY arrivals were about 1.25x normal Thu-Sat and 0.77x on
+  game day; the LA basin as a whole was 1.4-1.7x; other host regions reached 2.5-6.8x. VNY is a secondary airport
+  for a SoFi game, so a region-level ratio over-forecasts it.
+- Across regions, the method is no better than "ordinary week": event uplift varies too much between host cities.
+- The medium P10-P90 band is too narrow (33% coverage); only the low-to-high envelope reaches the 80% target.
+- Implication for the served v1 forecast (decision 2026-10-24: v1 stays as served): its medium Thu-Sun multiplier
+  (1.75, from WingX region-level ratios) is probably high for KVNY. Its baseline (Role 1's reconstructed January days)
+  is lower than real February KVNY days (about 84 arrivals a day on average, 2023-2026), and the two partly offset:
+  a real-data variant using KVNY's own 2022 multipliers gives the same medium week total (199 FBO arrivals) and a
+  lower peak occupancy (P50 61 vs 68 large-cabin equivalents; 30 vs 34 hours at >=50% chance of exceeding 48).
+  The overflow conclusion holds either way. Read the low-to-high range, not the medium line alone.
+- `validation.mape_pct` / `interval_coverage_pct` in `/forecast` stay null: they would describe the tested method,
+  not the served v1 model.
+
+Caveats: n=1 Super Bowl at KVNY; TFMSC dates are probably UTC days; airport lists per region are an assumption;
+TFMSC counts only flights with a flight plan or radar track.
