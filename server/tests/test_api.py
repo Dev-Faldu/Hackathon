@@ -277,10 +277,11 @@ def test_ai_model_cards_are_complete_and_label_their_inputs(client):
     assert len(d["models"]) >= 10
     for m in d["models"]:
         assert m["question"] and m["method"] and m["outputs"] and m["limits"] and m["code"]
-        assert {i["label"] for i in m["inputs"]} <= {"published", "reconstructed", "assumption", "live"}
+        assert {i["label"] for i in m["inputs"]} <= {"real", "published", "reconstructed", "assumption", "live"}
     fc = next(m for m in d["models"] if m["id"] == "forecast")
     assert fc["evidence"] and fc["status"] == "live"
     assert any(r["check"] == "leave_one_event_out" for r in d["validation"])
+    assert d["real_backtest"]["range_coverage_pct"] >= 80 and any(i["label"] == "real" for i in fc["inputs"])
 
 
 def test_benchmark_runs_three_parking_methods_on_one_week(client):
@@ -301,9 +302,12 @@ def test_exact_solver_never_double_books_a_slot(client):
             assert all(a["end"] <= b["start"] for a, b in zip(bars, bars[1:])), f"double-booked {row['position']}"
 
 
-def test_afteraction_reports_the_out_of_sample_check(client):
+def test_afteraction_reports_the_real_data_backtest(client):
     d = client.get("/afteraction").json()
-    assert d["out_of_sample"]["model_pct"] < d["out_of_sample"]["naive_pct"]
+    rb = d["real_backtest"]
+    assert rb["days"] == 49 and rb["events"] == 7
+    assert rb["range_coverage_pct"] >= 80          # the low-to-high range holds on real FAA counts
+    assert rb["medium_mape_pct"] >= rb["naive_mape_pct"]  # and the medium line alone does not beat naive: say so
 
 
 def test_local_llm_support(monkeypatch):

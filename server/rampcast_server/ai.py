@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 
 from . import config as C
 
-# label: published (a cited figure), reconstructed (rebuilt from published counts), assumption (team choice),
-# live (computed by the app from the week being run)
+# label: real (observed counts, e.g. FAA TFMSC), published (a cited figure), reconstructed (rebuilt from published
+# counts), assumption (team choice), live (computed by the app from the week being run)
 MODELS: list[dict] = [
     {
         "id": "forecast", "name": "Arrivals forecast", "family": "Forecasting", "owner": "Role 2 · forecasting",
@@ -27,15 +27,18 @@ MODELS: list[dict] = [
             "Event uplift: the 2022 LA week's day-by-day shape, scaled so Thu-Sun matches the scenario level.",
             "Scenario levels from published Super Bowl ratios: low 1.5x (Las Vegas 2024), medium 1.75x, high 2.0x (Bay Area 2026).",
             "Spread: negative-binomial daily counts (variance 1.5x the mean) and a week-wide demand factor.",
+            "Checked blind on real FAA counts from 7 Super Bowls: the low-to-high range holds; the medium line alone does not beat 'ordinary week'.",
         ],
         "inputs": [
             {"name": "KVNY ordinary days and event-week shape, 2022", "label": "reconstructed"},
             {"name": "WingX arrival ratios, Super Bowl LVIII and LX", "label": "published"},
+            {"name": "FAA TFMSC daily business-jet counts: KVNY 2019-2026, 7 host regions (blind test)", "label": "real"},
             {"name": "Our FBO's share of KVNY arrivals (0.30)", "label": "assumption"},
         ],
         "outputs": ["P10 / P50 / P90 arrivals per day", "Baseline for an ordinary week"],
         "limits": ["Never accept, deny or rank a specific aircraft or customer", "Never promise a parking slot",
-                   "No daily accuracy claim: the 2022 week is reconstructed, so a backtest on it would be circular"],
+                   "Plan on the low-to-high range: on real data the medium line alone is no better than 'ordinary week'",
+                   "Host-city surges over-forecast VNY, a secondary airport for a SoFi game"],
         "code": "rampcast/forecast/ (uplift.py, baseline.py)", "card": "rampcast/forecast/MODEL_CARD.md",
     },
     {
@@ -219,12 +222,39 @@ def validation_summary() -> list[dict]:
         return list(csv.DictReader(f))
 
 
+def backtest_summary() -> list[dict]:
+    """Role 2's blind leave-one-event-out backtest on real FAA TFMSC counts (reports/backtest_summary.csv)."""
+    path = C.ROOT / "reports" / "backtest_summary.csv"
+    if not path.exists():
+        return []
+    with open(path) as f:
+        return list(csv.DictReader(f))
+
+
+def real_backtest() -> dict | None:
+    """The headline numbers of the real-data test: does the range hold, and does the medium line beat naive?"""
+    rows = {(r["test"], r["subject"], r["method"]): r for r in backtest_summary()}
+    env = rows.get(("host_regions", "all events", "rampcast_low_high_envelope"))
+    med = rows.get(("host_regions", "all events", "rampcast_medium"))
+    naive = rows.get(("host_regions", "all events", "naive_ordinary_week"))
+    kv_med = rows.get(("kvny_2022", "KVNY SB_LVI_2022", "rampcast_medium"))
+    kv_naive = rows.get(("kvny_2022", "KVNY SB_LVI_2022", "naive_ordinary_week"))
+    if not (env and med and naive):
+        return None
+    out = {"range_coverage_pct": float(env["interval_coverage_pct"]), "days": int(env["n_days"]),
+           "events": int(env["n_days"]) // 7, "medium_mape_pct": float(med["mape_pct"]),
+           "naive_mape_pct": float(naive["mape_pct"]), "medium_coverage_pct": float(med["interval_coverage_pct"])}
+    if kv_med and kv_naive:
+        out.update(kvny_medium_mape_pct=float(kv_med["mape_pct"]), kvny_naive_mape_pct=float(kv_naive["mape_pct"]))
+    return out
+
+
 def models(evidence: dict[str, list[dict]], status: dict[str, str]) -> dict:
     """Model cards with live evidence (numbers computed from the running week) and where each one runs."""
     out = []
     for m in MODELS:
         out.append({**m, "evidence": evidence.get(m["id"], []), "status": status.get(m["id"], "live")})
-    return {"models": out, "validation": validation_summary(),
+    return {"models": out, "validation": validation_summary(), "backtest": backtest_summary(), "real_backtest": real_backtest(),
             "note": "Evidence is computed from the week the app is running: the 2022 Super Bowl week, reconstructed from "
                     "published counts and replayed in 2027. No model here takes an action; people approve."}
 
@@ -236,15 +266,15 @@ def forecast_evidence(fc: dict, occ: dict) -> tuple[list[dict], list[dict]]:
     hours = occ.get("hours", [])
     over = [h for h in hours if h["p_over_capacity"] >= 0.5]
     peak_h = max(hours, key=lambda h: h["p50"]) if hours else None
-    loo = [r for r in validation_summary() if r["check"] == "leave_one_event_out" and r["metric"] == "arrivals_ratio"]
-    model_err = [float(r["abs_pct_error"]) for r in loo if r["method"] == "analog_mean_leave_one_out"]
-    naive_err = [float(r["abs_pct_error"]) for r in loo if r["method"] == "naive_ordinary_week"]
+    rb = real_backtest()
     f_ev = [{"label": "Arrivals this week (P50)", "value": week, "detail": f"vs {base} in an ordinary week"}]
     if peak:
         f_ev.append({"label": "Busiest day", "value": peak["p50"], "detail": f"{peak['date']} · P10-P90 {peak['p10']}-{peak['p90']}"})
-    if model_err and naive_err:
-        f_ev.append({"label": "Leave-one-event-out error", "value": round(sum(model_err) / len(model_err), 1), "unit": "%",
-                     "detail": f"arrival ratio, vs {round(sum(naive_err) / len(naive_err), 1)}% for 'same as an ordinary week' (2 published events)"})
+    if rb:
+        f_ev.append({"label": "Range held, real FAA data", "value": round(rb["range_coverage_pct"]), "unit": "%",
+                     "detail": f"of {rb['days']} days in {rb['events']} Super Bowls inside low-to-high (target 80%)"})
+        f_ev.append({"label": "Medium line, real data", "value": round(rb["medium_mape_pct"]), "unit": "%",
+                     "detail": f"daily error vs {round(rb['naive_mape_pct'])}% for 'ordinary week': no better"})
     f_ev.append({"label": "Model", "value": fc.get("model", "reference"), "detail": f"data: {fc.get('data_source', 'unknown')}"})
     r_ev = [{"label": "Simulated weeks", "value": occ.get("runs", 0), "detail": "Monte Carlo runs"},
             {"label": "Hours likely over capacity", "value": len(over), "detail": f"P(over) >= 50% against capacity {occ.get('capacity')}"}]
