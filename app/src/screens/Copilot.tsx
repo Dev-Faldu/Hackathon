@@ -9,7 +9,7 @@ import { Chip, Disclosure, ErrorNote, Fold, Glance, Panel, Segmented, Skeleton }
 import { api, useApi } from "../lib/api";
 import { cx, dayLabel, fmt, hhmm } from "../lib/format";
 import { useApp, useReplayTick, type Screen } from "../lib/store";
-import type { AiBenchmark, AiModel, AiRec, Layout, Urgency } from "../lib/types";
+import type { AiBacktestRow, AiBenchmark, AiModel, AiRec, Layout, RealBacktest, Urgency } from "../lib/types";
 
 const URGENCY: Record<Urgency, { label: string; tone: "alert" | "watch" | "runway"; bar: string }> = {
   now: { label: "Now", tone: "alert", bar: "bg-alert" },
@@ -23,8 +23,8 @@ const FAMILY_ICON: Record<string, ReactNode> = {
   Language: <MessageSquareText size={14} />,
 };
 
-const LABEL_TONE = { published: "ok", reconstructed: "watch", assumption: "neutral", live: "runway" } as const;
-const LABEL_TEXT = { published: "Published", reconstructed: "Reconstructed", assumption: "Assumption", live: "Live" } as const;
+const LABEL_TONE = { real: "ok", published: "runway", reconstructed: "watch", assumption: "neutral", live: "tfr" } as const;
+const LABEL_TEXT = { real: "Real data", published: "Published", reconstructed: "Reconstructed", assumption: "Assumption", live: "Live" } as const;
 const AUTOMATION = {
   automatic: { text: "Runs by itself", icon: <Bot size={12} /> },
   suggests: { text: "Suggests", icon: <Sparkles size={12} /> },
@@ -108,9 +108,18 @@ export default function Copilot() {
         </div>
       ) : <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{[0, 1, 2, 3, 4, 5].map((k) => <Skeleton key={k} className="h-[260px]" />)}</div>}
 
+      {models.data && models.data.backtest.length > 0 && (
+        <Fold className="mt-5" title="Blind test on real FAA data"
+          summary={models.data.real_backtest ? `The low-to-high range held on ${Math.round(models.data.real_backtest.range_coverage_pct)}% of real days; the medium line alone is no better than “ordinary week”` : "Leave one Super Bowl out, compare with FAA counts"}>
+          <Panel className="mt-5" eyebrow="Forecast · blind leave-one-event-out on FAA TFMSC counts · reports/backtest_summary.csv" title="Blind test on real FAA data">
+            <Backtest rows={models.data.backtest} rb={models.data.real_backtest} />
+          </Panel>
+        </Fold>
+      )}
+
       {models.data && models.data.validation.length > 0 && (
-        <Fold className="mt-5" title="How the forecast was checked" summary="Leave-one-event-out on the published Super Bowl ratios, and plausibility against FBO reports">
-          <Panel className="mt-5" eyebrow="Forecast validation · reports/validation_summary.csv" title="How the forecast was checked">
+        <Fold className="mt-5" title="Checks on published figures" summary="Leave-one-event-out on the published Super Bowl ratios, and plausibility against FBO reports">
+          <Panel className="mt-5" eyebrow="Forecast validation · reports/validation_summary.csv" title="Checks on published figures">
             <Validation rows={models.data.validation} />
             <p className="mt-3 text-[11.5px] leading-relaxed text-ink-2">{models.data.note} A daily backtest is not reported: the 2022 week in the data is
               reconstructed from published counts, so scoring the model on it would test its own assumptions.</p>
@@ -293,6 +302,55 @@ function ModelCard({ m, lit, simple }: { m: AiModel; lit: boolean; simple: boole
       </div>
       <div className="mt-auto pt-3 text-[11px] text-ink-3">{m.owner}</div>
     </article>
+  );
+}
+
+function Backtest({ rows, rb }: { rows: AiBacktestRow[]; rb: RealBacktest | null }) {
+  const METHOD: Record<string, string> = {
+    rampcast_medium: "RAMPCAST, medium line", rampcast_low_high_envelope: "RAMPCAST, low-to-high range",
+    naive_ordinary_week: "Same as an ordinary week", naive_previous_host: "Same as the last host",
+  };
+  const shown = rows.filter((r) => r.subject === "all events" || r.test === "kvny_2022");
+  return (
+    <>
+      {rb && (
+        <div className="mb-3 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-[12px] border border-ok/30 bg-ok/[0.06] px-3 py-2"><div className="label">Range held</div>
+            <div className="num text-[22px] font-semibold text-ok">{Math.round(rb.range_coverage_pct)}%</div>
+            <div className="text-[11.5px] text-ink-2">of {rb.days} real days in {rb.events} Super Bowls (target 80%)</div></div>
+          <div className="rounded-[12px] border border-watch/30 bg-watch/[0.06] px-3 py-2"><div className="label">Medium line alone</div>
+            <div className="num text-[22px] font-semibold text-[#B45309]">{Math.round(rb.medium_mape_pct)}% vs {Math.round(rb.naive_mape_pct)}%</div>
+            <div className="text-[11.5px] text-ink-2">daily error vs “ordinary week”: no better, so we show the range</div></div>
+          {rb.kvny_medium_mape_pct != null && (
+            <div className="rounded-[12px] border border-alert/25 bg-alert/[0.05] px-3 py-2"><div className="label">Van Nuys, 2022</div>
+              <div className="num text-[22px] font-semibold text-alert">{Math.round(rb.kvny_medium_mape_pct)}% vs {Math.round(rb.kvny_naive_mape_pct ?? 0)}%</div>
+              <div className="text-[11.5px] text-ink-2">host-city surges over-forecast a secondary airport</div></div>
+          )}
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] text-left text-[12.5px]">
+          <thead className="text-[11px] uppercase tracking-[0.04em] text-ink-3">
+            <tr><th className="py-1.5 pr-3 font-medium">Test</th><th className="pr-3 font-medium">Method</th><th className="pr-3 text-right font-medium">Days</th>
+              <th className="pr-3 text-right font-medium">Daily error</th><th className="text-right font-medium">Inside P10–P90</th></tr>
+          </thead>
+          <tbody>
+            {shown.map((r, k) => (
+              <tr key={k} className={cx("border-t border-hairline", r.method.startsWith("rampcast") ? "font-medium text-ink" : "text-ink-2")}>
+                <td className="py-1.5 pr-3">{r.test === "kvny_2022" ? "Van Nuys, Super Bowl LVI" : "7 host regions, 2019–2026"}</td>
+                <td className="pr-3">{METHOD[r.method] ?? r.method}</td>
+                <td className="num pr-3 text-right">{r.n_days}</td>
+                <td className="num pr-3 text-right">{r.mape_pct}%</td>
+                <td className="num text-right">{r.interval_coverage_pct}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-[11.5px] leading-relaxed text-ink-2">FAA TFMSC daily business-jet counts (public, checksummed; data/external/faa_tfmsc). Each Super Bowl is forecast
+        only from the others; its own week never enters the fit. A version fitted on Van Nuys's own 2022 surge gives the same week total and a lower peak
+        (61 vs 68 large-cabin equivalents; 30 vs 34 hours likely over capacity): the overflow conclusion holds either way. One Super Bowl at Van Nuys is a small sample.</p>
+    </>
   );
 }
 

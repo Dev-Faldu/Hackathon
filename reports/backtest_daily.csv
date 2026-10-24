@@ -1,0 +1,218 @@
+test,subject,date,day_offset,method,n_events_used,predicted,p10,p90,actual,abs_pct_error,in_p10_p90
+kvny_2022,KVNY SB_LVI_2022,2022-02-08,-5,rampcast_medium,6,92.0,73.0,112.0,95,3.2,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-09,-4,rampcast_medium,6,93.0,75.0,113.0,82,13.4,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-10,-3,rampcast_medium,6,162.0,135.0,192.0,113,43.4,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-11,-2,rampcast_medium,6,286.0,244.0,334.0,128,123.4,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-12,-1,rampcast_medium,6,209.0,176.0,247.0,93,124.7,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-13,0,rampcast_medium,6,307.0,262.0,359.0,90,241.1,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-14,1,rampcast_medium,6,225.0,191.0,266.0,97,132.0,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-08,-5,rampcast_low_high_envelope,6,92.0,56.0,135.0,95,3.2,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-09,-4,rampcast_low_high_envelope,6,93.0,46.0,159.0,82,13.4,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-10,-3,rampcast_low_high_envelope,6,163.0,103.0,248.0,113,44.2,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-11,-2,rampcast_low_high_envelope,6,287.0,119.0,608.0,128,124.2,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-12,-1,rampcast_low_high_envelope,6,210.0,70.0,351.0,93,125.8,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-13,0,rampcast_low_high_envelope,6,307.0,78.0,626.0,90,241.1,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-14,1,rampcast_low_high_envelope,6,226.0,95.0,657.0,97,133.0,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-08,-5,naive_ordinary_week,0,80.0,64.0,99.0,95,15.8,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-09,-4,naive_ordinary_week,0,79.0,62.0,97.0,82,3.7,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-10,-3,naive_ordinary_week,0,89.0,72.0,109.0,113,21.2,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-11,-2,naive_ordinary_week,0,101.0,82.0,122.0,128,21.1,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-12,-1,naive_ordinary_week,0,75.0,59.0,92.0,93,19.4,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-13,0,naive_ordinary_week,0,116.0,95.0,140.0,90,28.9,False
+kvny_2022,KVNY SB_LVI_2022,2022-02-14,1,naive_ordinary_week,0,83.0,66.0,102.0,97,14.4,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-08,-5,naive_previous_host,1,88.0,71.0,107.0,95,7.4,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-09,-4,naive_previous_host,1,86.0,69.0,105.0,82,4.9,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-10,-3,naive_previous_host,1,137.0,113.0,164.0,113,21.2,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-11,-2,naive_previous_host,1,144.0,119.0,172.0,128,12.5,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-12,-1,naive_previous_host,1,87.0,70.0,107.0,93,6.5,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-13,0,naive_previous_host,1,98.0,79.0,118.0,90,8.9,True
+kvny_2022,KVNY SB_LVI_2022,2022-02-14,1,naive_previous_host,1,116.0,96.0,140.0,97,19.6,True
+host_regions,SB_LIII_2019,2019-01-29,-5,rampcast_medium,6,122.0,100.0,148.0,92,32.6,False
+host_regions,SB_LIII_2019,2019-01-30,-4,rampcast_medium,6,144.0,119.0,172.0,86,67.4,False
+host_regions,SB_LIII_2019,2019-01-31,-3,rampcast_medium,6,188.0,158.0,224.0,177,6.2,True
+host_regions,SB_LIII_2019,2019-02-01,-2,rampcast_medium,6,276.0,234.0,322.0,278,0.7,True
+host_regions,SB_LIII_2019,2019-02-02,-1,rampcast_medium,6,141.0,116.0,169.0,219,35.6,False
+host_regions,SB_LIII_2019,2019-02-03,0,rampcast_medium,6,161.0,134.0,191.0,262,38.5,False
+host_regions,SB_LIII_2019,2019-02-04,1,rampcast_medium,6,209.0,175.0,246.0,191,9.4,True
+host_regions,SB_LIII_2019,2019-01-29,-5,rampcast_low_high_envelope,6,122.5,79.0,172.0,92,33.2,True
+host_regions,SB_LIII_2019,2019-01-30,-4,rampcast_low_high_envelope,6,143.5,84.0,230.0,86,66.9,True
+host_regions,SB_LIII_2019,2019-01-31,-3,rampcast_low_high_envelope,6,188.0,121.0,295.0,177,6.2,True
+host_regions,SB_LIII_2019,2019-02-01,-2,rampcast_low_high_envelope,6,275.0,121.9,621.0,278,1.1,True
+host_regions,SB_LIII_2019,2019-02-02,-1,rampcast_low_high_envelope,6,141.0,53.0,274.0,219,35.6,True
+host_regions,SB_LIII_2019,2019-02-03,0,rampcast_low_high_envelope,6,160.0,47.0,393.0,262,38.9,True
+host_regions,SB_LIII_2019,2019-02-04,1,rampcast_low_high_envelope,6,208.0,93.0,639.0,191,8.9,True
+host_regions,SB_LIII_2019,2019-01-29,-5,naive_ordinary_week,0,104.0,84.0,127.0,92,13.0,True
+host_regions,SB_LIII_2019,2019-01-30,-4,naive_ordinary_week,0,115.0,93.0,138.0,86,33.7,False
+host_regions,SB_LIII_2019,2019-01-31,-3,naive_ordinary_week,0,106.0,86.0,129.0,177,40.1,False
+host_regions,SB_LIII_2019,2019-02-01,-2,naive_ordinary_week,0,103.0,83.0,125.0,278,62.9,False
+host_regions,SB_LIII_2019,2019-02-02,-1,naive_ordinary_week,0,58.0,45.0,73.0,219,73.5,False
+host_regions,SB_LIII_2019,2019-02-03,0,naive_ordinary_week,0,72.0,57.0,90.0,262,72.5,False
+host_regions,SB_LIII_2019,2019-02-04,1,naive_ordinary_week,0,81.0,64.0,99.0,191,57.6,False
+host_regions,SB_LIV_2020,2020-01-28,-5,rampcast_medium,6,308.0,262.9,359.0,297,3.7,True
+host_regions,SB_LIV_2020,2020-01-29,-4,rampcast_medium,6,348.0,298.9,406.0,321,8.4,True
+host_regions,SB_LIV_2020,2020-01-30,-3,rampcast_medium,6,687.0,596.0,786.0,590,16.4,False
+host_regions,SB_LIV_2020,2020-01-31,-2,rampcast_medium,6,1127.0,986.0,1292.1,558,102.0,False
+host_regions,SB_LIV_2020,2020-02-01,-1,rampcast_medium,6,775.0,671.0,888.0,316,145.3,False
+host_regions,SB_LIV_2020,2020-02-02,0,rampcast_medium,6,913.0,795.0,1046.0,286,219.2,False
+host_regions,SB_LIV_2020,2020-02-03,1,rampcast_medium,6,849.0,738.0,974.1,435,95.2,False
+host_regions,SB_LIV_2020,2020-01-28,-5,rampcast_low_high_envelope,6,308.0,201.0,434.0,297,3.7,True
+host_regions,SB_LIV_2020,2020-01-29,-4,rampcast_low_high_envelope,6,348.0,184.0,570.0,321,8.4,True
+host_regions,SB_LIV_2020,2020-01-30,-3,rampcast_low_high_envelope,6,687.0,457.0,1038.1,590,16.4,True
+host_regions,SB_LIV_2020,2020-01-31,-2,rampcast_low_high_envelope,6,1131.0,568.0,2329.1,558,102.7,False
+host_regions,SB_LIV_2020,2020-02-01,-1,rampcast_low_high_envelope,6,773.0,343.0,1240.0,316,144.6,False
+host_regions,SB_LIV_2020,2020-02-02,0,rampcast_low_high_envelope,6,915.0,308.0,1815.1,286,219.9,False
+host_regions,SB_LIV_2020,2020-02-03,1,rampcast_low_high_envelope,6,849.0,393.0,2418.0,435,95.2,True
+host_regions,SB_LIV_2020,2020-01-28,-5,naive_ordinary_week,0,272.0,230.0,317.0,297,8.4,True
+host_regions,SB_LIV_2020,2020-01-29,-4,naive_ordinary_week,0,293.0,249.0,342.0,321,8.7,True
+host_regions,SB_LIV_2020,2020-01-30,-3,naive_ordinary_week,0,382.0,328.0,443.0,590,35.3,False
+host_regions,SB_LIV_2020,2020-01-31,-2,naive_ordinary_week,0,392.0,336.0,454.0,558,29.7,False
+host_regions,SB_LIV_2020,2020-02-01,-1,naive_ordinary_week,0,270.0,228.0,315.0,316,14.6,False
+host_regions,SB_LIV_2020,2020-02-02,0,naive_ordinary_week,0,341.0,291.0,396.0,286,19.2,False
+host_regions,SB_LIV_2020,2020-02-03,1,naive_ordinary_week,0,309.0,265.0,361.0,435,29.0,False
+host_regions,SB_LIV_2020,2020-01-28,-5,naive_previous_host,1,239.0,201.0,281.0,297,19.5,False
+host_regions,SB_LIV_2020,2020-01-29,-4,naive_previous_host,1,218.0,183.0,256.0,321,32.1,False
+host_regions,SB_LIV_2020,2020-01-30,-3,naive_previous_host,1,636.0,550.0,731.0,590,7.8,True
+host_regions,SB_LIV_2020,2020-01-31,-2,naive_previous_host,1,1054.0,918.0,1206.0,558,88.9,False
+host_regions,SB_LIV_2020,2020-02-01,-1,naive_previous_host,1,1013.0,882.0,1162.0,316,220.6,False
+host_regions,SB_LIV_2020,2020-02-02,0,naive_previous_host,1,1230.0,1071.0,1406.0,286,330.1,False
+host_regions,SB_LIV_2020,2020-02-03,1,naive_previous_host,1,729.0,631.0,840.0,435,67.6,False
+host_regions,SB_LVI_2022,2022-02-08,-5,rampcast_medium,6,234.0,197.0,276.0,226,3.5,True
+host_regions,SB_LVI_2022,2022-02-09,-4,rampcast_medium,6,244.0,206.0,285.0,239,2.1,True
+host_regions,SB_LVI_2022,2022-02-10,-3,rampcast_medium,6,439.0,376.0,508.0,335,31.0,False
+host_regions,SB_LVI_2022,2022-02-11,-2,rampcast_medium,6,721.0,621.0,829.0,426,69.2,False
+host_regions,SB_LVI_2022,2022-02-12,-1,rampcast_medium,6,519.0,446.0,599.0,274,89.4,False
+host_regions,SB_LVI_2022,2022-02-13,0,rampcast_medium,6,754.0,651.0,866.0,302,149.7,False
+host_regions,SB_LVI_2022,2022-02-14,1,rampcast_medium,6,592.5,510.9,684.0,328,80.6,False
+host_regions,SB_LVI_2022,2022-02-08,-5,rampcast_low_high_envelope,6,234.0,152.0,330.0,226,3.5,True
+host_regions,SB_LVI_2022,2022-02-09,-4,rampcast_low_high_envelope,6,243.0,128.0,403.0,239,1.7,True
+host_regions,SB_LVI_2022,2022-02-10,-3,rampcast_low_high_envelope,6,438.0,288.0,657.0,335,30.7,True
+host_regions,SB_LVI_2022,2022-02-11,-2,rampcast_low_high_envelope,6,718.0,309.0,1507.0,426,68.5,True
+host_regions,SB_LVI_2022,2022-02-12,-1,rampcast_low_high_envelope,6,515.0,182.0,850.0,274,88.0,True
+host_regions,SB_LVI_2022,2022-02-13,0,rampcast_low_high_envelope,6,750.0,202.0,1515.0,302,148.3,True
+host_regions,SB_LVI_2022,2022-02-14,1,rampcast_low_high_envelope,6,590.0,260.0,1695.0,328,79.9,True
+host_regions,SB_LVI_2022,2022-02-08,-5,naive_ordinary_week,0,206.0,173.0,243.0,226,8.8,True
+host_regions,SB_LVI_2022,2022-02-09,-4,naive_ordinary_week,0,207.0,173.0,244.0,239,13.4,True
+host_regions,SB_LVI_2022,2022-02-10,-3,naive_ordinary_week,0,242.0,204.0,283.0,335,27.8,False
+host_regions,SB_LVI_2022,2022-02-11,-2,naive_ordinary_week,0,253.0,215.0,297.0,426,40.6,False
+host_regions,SB_LVI_2022,2022-02-12,-1,naive_ordinary_week,0,184.0,155.0,218.0,274,32.8,False
+host_regions,SB_LVI_2022,2022-02-13,0,naive_ordinary_week,0,286.0,243.0,334.0,302,5.3,True
+host_regions,SB_LVI_2022,2022-02-14,1,naive_ordinary_week,0,217.0,183.9,254.0,328,33.8,False
+host_regions,SB_LVI_2022,2022-02-08,-5,naive_previous_host,1,225.0,190.0,264.0,226,0.4,True
+host_regions,SB_LVI_2022,2022-02-09,-4,naive_previous_host,1,227.0,191.0,266.0,239,5.0,True
+host_regions,SB_LVI_2022,2022-02-10,-3,naive_previous_host,1,373.0,318.0,433.0,335,11.3,True
+host_regions,SB_LVI_2022,2022-02-11,-2,naive_previous_host,1,361.0,311.0,419.0,426,15.3,False
+host_regions,SB_LVI_2022,2022-02-12,-1,naive_previous_host,1,216.0,181.0,252.0,274,21.2,False
+host_regions,SB_LVI_2022,2022-02-13,0,naive_previous_host,1,239.0,202.0,279.0,302,20.9,False
+host_regions,SB_LVI_2022,2022-02-14,1,naive_previous_host,1,305.0,261.0,355.0,328,7.0,True
+host_regions,SB_LVII_2023,2023-02-07,-5,rampcast_medium,6,129.0,106.0,155.0,164,21.3,False
+host_regions,SB_LVII_2023,2023-02-08,-4,rampcast_medium,6,158.0,131.0,188.0,202,21.8,False
+host_regions,SB_LVII_2023,2023-02-09,-3,rampcast_medium,6,231.0,194.0,271.0,330,30.0,False
+host_regions,SB_LVII_2023,2023-02-10,-2,rampcast_medium,6,320.0,271.0,371.0,417,23.3,False
+host_regions,SB_LVII_2023,2023-02-11,-1,rampcast_medium,6,262.0,221.0,306.0,242,8.3,True
+host_regions,SB_LVII_2023,2023-02-12,0,rampcast_medium,6,265.0,225.0,310.0,347,23.6,False
+host_regions,SB_LVII_2023,2023-02-13,1,rampcast_medium,6,311.0,265.0,364.0,273,13.9,True
+host_regions,SB_LVII_2023,2023-02-07,-5,rampcast_low_high_envelope,6,130.0,85.0,192.0,164,20.7,True
+host_regions,SB_LVII_2023,2023-02-08,-4,rampcast_low_high_envelope,6,158.0,85.0,275.0,202,21.8,True
+host_regions,SB_LVII_2023,2023-02-09,-3,rampcast_low_high_envelope,6,231.0,161.0,326.0,330,30.0,False
+host_regions,SB_LVII_2023,2023-02-10,-2,rampcast_low_high_envelope,6,319.0,148.0,747.0,417,23.5,True
+host_regions,SB_LVII_2023,2023-02-11,-1,rampcast_low_high_envelope,6,262.0,94.0,462.0,242,8.3,True
+host_regions,SB_LVII_2023,2023-02-12,0,rampcast_low_high_envelope,6,266.0,78.0,619.0,347,23.3,True
+host_regions,SB_LVII_2023,2023-02-13,1,rampcast_low_high_envelope,6,313.0,140.0,946.0,273,14.7,True
+host_regions,SB_LVII_2023,2023-02-07,-5,naive_ordinary_week,0,119.0,98.0,144.0,164,27.4,False
+host_regions,SB_LVII_2023,2023-02-08,-4,naive_ordinary_week,0,140.0,115.0,167.0,202,30.7,False
+host_regions,SB_LVII_2023,2023-02-09,-3,naive_ordinary_week,0,139.0,115.0,167.0,330,57.9,False
+host_regions,SB_LVII_2023,2023-02-10,-2,naive_ordinary_week,0,124.0,102.0,149.1,417,70.3,False
+host_regions,SB_LVII_2023,2023-02-11,-1,naive_ordinary_week,0,99.0,80.0,120.0,242,59.1,False
+host_regions,SB_LVII_2023,2023-02-12,0,naive_ordinary_week,0,115.0,93.9,138.0,347,66.9,False
+host_regions,SB_LVII_2023,2023-02-13,1,naive_ordinary_week,0,120.0,99.0,146.0,273,56.0,False
+host_regions,SB_LVII_2023,2023-02-07,-5,naive_previous_host,1,131.0,107.0,156.0,164,20.1,False
+host_regions,SB_LVII_2023,2023-02-08,-4,naive_previous_host,1,162.0,135.0,191.0,202,19.8,False
+host_regions,SB_LVII_2023,2023-02-09,-3,naive_previous_host,1,194.0,163.0,228.0,330,41.2,False
+host_regions,SB_LVII_2023,2023-02-10,-2,naive_previous_host,1,209.0,176.0,245.0,417,49.9,False
+host_regions,SB_LVII_2023,2023-02-11,-1,naive_previous_host,1,147.0,122.0,174.0,242,39.3,False
+host_regions,SB_LVII_2023,2023-02-12,0,naive_previous_host,1,122.0,100.0,147.0,347,64.8,False
+host_regions,SB_LVII_2023,2023-02-13,1,naive_previous_host,1,181.0,151.0,215.0,273,33.7,False
+host_regions,SB_LVIII_2024,2024-02-06,-5,rampcast_medium,6,139.0,115.0,166.0,113,23.0,False
+host_regions,SB_LVIII_2024,2024-02-07,-4,rampcast_medium,6,130.0,107.0,156.0,132,1.5,True
+host_regions,SB_LVIII_2024,2024-02-08,-3,rampcast_medium,6,199.0,167.0,235.0,231,13.9,True
+host_regions,SB_LVIII_2024,2024-02-09,-2,rampcast_medium,6,375.0,322.0,432.0,335,11.9,True
+host_regions,SB_LVIII_2024,2024-02-10,-1,rampcast_medium,6,232.0,197.0,273.0,270,14.1,True
+host_regions,SB_LVIII_2024,2024-02-11,0,rampcast_medium,6,250.0,212.0,292.1,191,30.9,False
+host_regions,SB_LVIII_2024,2024-02-12,1,rampcast_medium,6,317.0,270.0,368.0,234,35.5,False
+host_regions,SB_LVIII_2024,2024-02-06,-5,rampcast_low_high_envelope,6,138.0,85.0,195.0,113,22.1,True
+host_regions,SB_LVIII_2024,2024-02-07,-4,rampcast_low_high_envelope,6,129.0,65.0,220.0,132,2.3,True
+host_regions,SB_LVIII_2024,2024-02-08,-3,rampcast_low_high_envelope,6,198.0,132.0,319.0,231,14.3,True
+host_regions,SB_LVIII_2024,2024-02-09,-2,rampcast_low_high_envelope,6,373.0,165.0,825.0,335,11.3,True
+host_regions,SB_LVIII_2024,2024-02-10,-1,rampcast_low_high_envelope,6,232.0,87.0,422.0,270,14.1,True
+host_regions,SB_LVIII_2024,2024-02-11,0,rampcast_low_high_envelope,6,249.0,66.0,535.0,191,30.4,True
+host_regions,SB_LVIII_2024,2024-02-12,1,rampcast_low_high_envelope,6,317.0,139.0,938.0,234,35.5,True
+host_regions,SB_LVIII_2024,2024-02-06,-5,naive_ordinary_week,0,119.0,98.0,143.0,113,5.3,True
+host_regions,SB_LVIII_2024,2024-02-07,-4,naive_ordinary_week,0,111.0,90.0,133.0,132,15.9,True
+host_regions,SB_LVIII_2024,2024-02-08,-3,naive_ordinary_week,0,116.0,95.0,139.0,231,49.8,False
+host_regions,SB_LVIII_2024,2024-02-09,-2,naive_ordinary_week,0,138.0,114.0,164.0,335,58.8,False
+host_regions,SB_LVIII_2024,2024-02-10,-1,naive_ordinary_week,0,91.0,73.0,110.0,270,66.3,False
+host_regions,SB_LVIII_2024,2024-02-11,0,naive_ordinary_week,0,99.0,81.0,121.0,191,48.2,False
+host_regions,SB_LVIII_2024,2024-02-12,1,naive_ordinary_week,0,119.0,98.0,143.0,234,49.1,False
+host_regions,SB_LVIII_2024,2024-02-06,-5,naive_previous_host,1,164.0,137.0,195.0,113,45.1,False
+host_regions,SB_LVIII_2024,2024-02-07,-4,naive_previous_host,1,160.0,134.0,189.0,132,21.2,False
+host_regions,SB_LVIII_2024,2024-02-08,-3,naive_previous_host,1,274.0,233.0,318.0,231,18.6,False
+host_regions,SB_LVIII_2024,2024-02-09,-2,naive_previous_host,1,461.0,400.0,531.0,335,37.6,False
+host_regions,SB_LVIII_2024,2024-02-10,-1,naive_previous_host,1,221.0,186.0,259.0,270,18.1,False
+host_regions,SB_LVIII_2024,2024-02-11,0,naive_previous_host,1,301.0,256.0,352.0,191,57.6,False
+host_regions,SB_LVIII_2024,2024-02-12,1,naive_previous_host,1,270.0,230.0,316.0,234,15.4,True
+host_regions,SB_LIX_2025,2025-02-04,-5,rampcast_medium,6,30.0,21.0,40.0,31,3.2,True
+host_regions,SB_LIX_2025,2025-02-05,-4,rampcast_medium,6,30.0,21.0,40.0,47,36.2,False
+host_regions,SB_LIX_2025,2025-02-06,-3,rampcast_medium,6,118.0,96.0,142.0,132,10.6,True
+host_regions,SB_LIX_2025,2025-02-07,-2,rampcast_medium,6,92.0,73.0,112.0,213,56.8,False
+host_regions,SB_LIX_2025,2025-02-08,-1,rampcast_medium,6,81.0,65.0,100.1,138,41.3,False
+host_regions,SB_LIX_2025,2025-02-09,0,rampcast_medium,6,69.0,54.0,86.0,158,56.3,False
+host_regions,SB_LIX_2025,2025-02-10,1,rampcast_medium,6,46.0,34.0,59.0,171,73.1,False
+host_regions,SB_LIX_2025,2025-02-04,-5,rampcast_low_high_envelope,6,30.0,15.0,48.0,31,3.2,True
+host_regions,SB_LIX_2025,2025-02-05,-4,rampcast_low_high_envelope,6,30.0,14.0,52.0,47,36.2,True
+host_regions,SB_LIX_2025,2025-02-06,-3,rampcast_low_high_envelope,6,118.0,76.0,192.0,132,10.6,True
+host_regions,SB_LIX_2025,2025-02-07,-2,rampcast_low_high_envelope,6,92.0,45.0,164.0,213,56.8,False
+host_regions,SB_LIX_2025,2025-02-08,-1,rampcast_low_high_envelope,6,82.0,30.0,156.0,138,40.6,True
+host_regions,SB_LIX_2025,2025-02-09,0,rampcast_low_high_envelope,6,69.0,20.0,149.0,158,56.3,False
+host_regions,SB_LIX_2025,2025-02-10,1,rampcast_low_high_envelope,6,45.0,25.0,74.0,171,73.7,False
+host_regions,SB_LIX_2025,2025-02-04,-5,naive_ordinary_week,0,26.0,18.0,36.0,31,16.1,True
+host_regions,SB_LIX_2025,2025-02-05,-4,naive_ordinary_week,0,28.0,19.0,38.0,47,40.4,False
+host_regions,SB_LIX_2025,2025-02-06,-3,naive_ordinary_week,0,68.0,53.0,85.0,132,48.5,False
+host_regions,SB_LIX_2025,2025-02-07,-2,naive_ordinary_week,0,41.0,30.0,53.0,213,80.8,False
+host_regions,SB_LIX_2025,2025-02-08,-1,naive_ordinary_week,0,34.0,25.0,45.0,138,75.4,False
+host_regions,SB_LIX_2025,2025-02-09,0,naive_ordinary_week,0,34.0,24.0,44.0,158,78.5,False
+host_regions,SB_LIX_2025,2025-02-10,1,naive_ordinary_week,0,25.0,17.0,34.0,171,85.4,False
+host_regions,SB_LIX_2025,2025-02-04,-5,naive_previous_host,1,25.0,17.0,34.0,31,19.4,True
+host_regions,SB_LIX_2025,2025-02-05,-4,naive_previous_host,1,33.0,24.0,43.0,47,29.8,False
+host_regions,SB_LIX_2025,2025-02-06,-3,naive_previous_host,1,135.0,112.0,162.0,132,2.3,True
+host_regions,SB_LIX_2025,2025-02-07,-2,naive_previous_host,1,99.0,80.0,120.0,213,53.5,False
+host_regions,SB_LIX_2025,2025-02-08,-1,naive_previous_host,1,102.0,82.0,123.0,138,26.1,False
+host_regions,SB_LIX_2025,2025-02-09,0,naive_previous_host,1,64.0,51.0,81.0,158,59.5,False
+host_regions,SB_LIX_2025,2025-02-10,1,naive_previous_host,1,48.0,37.0,62.0,171,71.9,False
+host_regions,SB_LX_2026,2026-02-03,-5,rampcast_medium,6,125.0,102.0,149.0,154,18.8,False
+host_regions,SB_LX_2026,2026-02-04,-4,rampcast_medium,6,161.0,134.0,191.0,120,34.2,False
+host_regions,SB_LX_2026,2026-02-05,-3,rampcast_medium,6,253.0,215.0,297.0,196,29.1,False
+host_regions,SB_LX_2026,2026-02-06,-2,rampcast_medium,6,395.0,338.0,458.0,267,47.9,False
+host_regions,SB_LX_2026,2026-02-07,-1,rampcast_medium,6,275.0,233.9,322.0,257,7.0,True
+host_regions,SB_LX_2026,2026-02-08,0,rampcast_medium,6,371.0,319.0,430.1,264,40.5,False
+host_regions,SB_LX_2026,2026-02-09,1,rampcast_medium,6,385.0,331.0,447.0,209,84.2,False
+host_regions,SB_LX_2026,2026-02-03,-5,rampcast_low_high_envelope,6,124.0,81.0,186.0,154,19.5,True
+host_regions,SB_LX_2026,2026-02-04,-4,rampcast_low_high_envelope,6,161.0,79.0,262.0,120,34.2,True
+host_regions,SB_LX_2026,2026-02-05,-3,rampcast_low_high_envelope,6,254.0,162.0,387.0,196,29.6,True
+host_regions,SB_LX_2026,2026-02-06,-2,rampcast_low_high_envelope,6,394.0,168.0,846.0,267,47.6,True
+host_regions,SB_LX_2026,2026-02-07,-1,rampcast_low_high_envelope,6,276.0,100.0,485.0,257,7.4,True
+host_regions,SB_LX_2026,2026-02-08,0,rampcast_low_high_envelope,6,372.0,102.0,793.0,264,40.9,True
+host_regions,SB_LX_2026,2026-02-09,1,rampcast_low_high_envelope,6,384.0,166.0,1116.0,209,83.7,True
+host_regions,SB_LX_2026,2026-02-03,-5,naive_ordinary_week,0,113.0,92.9,137.0,154,26.6,False
+host_regions,SB_LX_2026,2026-02-04,-4,naive_ordinary_week,0,132.0,109.0,158.0,120,10.0,True
+host_regions,SB_LX_2026,2026-02-05,-3,naive_ordinary_week,0,140.0,115.0,167.0,196,28.6,False
+host_regions,SB_LX_2026,2026-02-06,-2,naive_ordinary_week,0,140.0,116.0,168.0,267,47.6,False
+host_regions,SB_LX_2026,2026-02-07,-1,naive_ordinary_week,0,104.0,84.0,126.0,257,59.5,False
+host_regions,SB_LX_2026,2026-02-08,0,naive_ordinary_week,0,148.0,123.0,176.0,264,43.9,False
+host_regions,SB_LX_2026,2026-02-09,1,naive_ordinary_week,0,142.0,116.9,169.0,209,32.1,False
+host_regions,SB_LX_2026,2026-02-03,-5,naive_previous_host,1,132.0,109.0,158.0,154,14.3,True
+host_regions,SB_LX_2026,2026-02-04,-4,naive_previous_host,1,222.0,187.0,261.0,120,85.0,False
+host_regions,SB_LX_2026,2026-02-05,-3,naive_previous_host,1,271.0,229.0,315.1,196,38.3,False
+host_regions,SB_LX_2026,2026-02-06,-2,naive_previous_host,1,733.0,637.0,846.0,267,174.5,False
+host_regions,SB_LX_2026,2026-02-07,-1,naive_previous_host,1,417.0,360.0,485.1,257,62.3,False
+host_regions,SB_LX_2026,2026-02-08,0,naive_previous_host,1,687.0,594.0,793.0,264,160.2,False
+host_regions,SB_LX_2026,2026-02-09,1,naive_previous_host,1,967.0,842.0,1108.0,209,362.7,False

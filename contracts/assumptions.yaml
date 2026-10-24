@@ -198,3 +198,16 @@ forecast:                           # Role 2 forecast (rampcast/forecast). Each 
   game_day_arrival_damping: 0.35    # assumption: arrival rate during the game-day TFR window relative to normal
   pre_window_aircraft: 18           # assumption (engine default): transient aircraft already parked at 2027-02-09 00:00
   pre_window_departure_days: [0, 1] # they leave on window day 0 or 1, between ordinary_departure_hours
+  real_data:                        # P2 blind backtest on FAA TFMSC counts (see data/external/faa_tfmsc/README.md)
+    source: faa_tfmsc
+    files:
+      airport_daily: data/external/faa_tfmsc/vny_bizjet_daily.csv
+      event_daily: data/external/faa_tfmsc/super_bowl_hosts_bizjet_daily.csv
+    baseline_offsets: [-40, -8]     # assumption: ordinary days 40..8 days before each game form that event's baseline
+    exclude:                        # never used as ordinary days; scope = airport code, event name, or all
+      - {scope: all, from: "2020-03-14", to: "2020-12-31", reason: "COVID-19 traffic collapse"}
+      - {scope: VNY, from: "2025-01-07", to: "2025-01-31", reason: "Los Angeles wildfires"}
+      - {scope: VNY, from: "2026-01-06", to: "2026-01-08", reason: "near-zero TFMSC counts, treated as a data gap"}
+      - {scope: VNY, from: "2026-01-12", to: "2026-01-14", reason: "near-zero TFMSC counts, treated as a data gap"}
+      - {scope: VNY, from: "2026-01-19", to: "2026-01-21", reason: "near-zero TFMSC counts, treated as a data gap"}
+      - {scope: SB_LIX_2025, from: "2025-01-21", to: "2025-01-22", reason: "Gulf Coast snowstorm, airports closed"}

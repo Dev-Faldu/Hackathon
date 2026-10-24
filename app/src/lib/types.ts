@@ -109,6 +109,7 @@ export interface AfterAction {
   scenario: Scenario; source: string; notes: string[]; days: ForecastDay[]; mape_pct: number | null;
   naive_mape_pct: number | null; interval_coverage_pct: number; hours_over_capacity_no_plan: number;
   out_of_sample?: { model_pct: number; naive_pct: number; events: number } | null; validation_note?: string | null;
+  real_backtest?: RealBacktest | null;
   hours_over_capacity_with_plan: number; strategy: string; strategy_kpis: Kpis; peak_occupancy: number;
   capacity: number; stand_conflicts_week: number; audit: AuditRow[];
 }
@@ -205,10 +206,12 @@ export interface AiRecs { t_local: string; scenario: Scenario; layout: Layout; i
 export interface AiEvidence { label: string; value: number | string; unit?: string; detail?: string }
 export interface AiModel {
   id: string; name: string; family: string; owner: string; question: string; automation: "suggests" | "automatic" | "human approves";
-  method: string[]; inputs: { name: string; label: "published" | "reconstructed" | "assumption" | "live" }[]; outputs: string[];
+  method: string[]; inputs: { name: string; label: "real" | "published" | "reconstructed" | "assumption" | "live" }[]; outputs: string[];
   limits: string[]; code: string; card?: string; evidence: AiEvidence[]; status: "live" | "fallback" | "unavailable";
 }
 export interface AiValidationRow { check: string; metric: string; subject: string; method: string; predicted: string; reference: string; abs_pct_error: string; note: string; status: string }
-export interface AiModels { models: AiModel[]; validation: AiValidationRow[]; note: string }
+export interface RealBacktest { range_coverage_pct: number; days: number; events: number; medium_mape_pct: number; naive_mape_pct: number; medium_coverage_pct: number; kvny_medium_mape_pct?: number; kvny_naive_mape_pct?: number }
+export interface AiBacktestRow { test: string; subject: string; method: string; n_days: string; mape_pct: string; interval_coverage_pct: string }
+export interface AiModels { models: AiModel[]; validation: AiValidationRow[]; backtest: AiBacktestRow[]; real_backtest: RealBacktest | null; note: string }
 export interface AiBenchRow { method: ParkingMethod; name: string; tows: number; overflow: number; boxed_in: number; pad: number; temp: number; hot: number; solver?: string; solve_s: number }
 export interface AiBenchmark { layout: Layout; temp_zone: boolean; rows: AiBenchRow[]; best: ParkingMethod | null; cut_vs_whiteboard_pct: number | null; how: string }

@@ -24,13 +24,13 @@ export default function AfterAction() {
       <TopBar title="After-action" subtitle="Did the forecast hold up, what did the plan change, and who approved what." />
       {aa.error && <ErrorNote error={aa.error} onRetry={aa.reload} />}
       <Glance>
-        {d ? <>{d.out_of_sample ? <>Left out of the fit, a Super Bowl's arrival surge was predicted within <b className="num">{d.out_of_sample.model_pct}%</b>,
-          against <b className="num">{d.out_of_sample.naive_pct}%</b> for “same as an ordinary week”. </> : null}
+        {d ? <>{d.real_backtest ? <>Tested blind on real FAA counts from <b className="num">{d.real_backtest.events}</b> Super Bowls, the low-to-high range held on
+          {" "}<b className="num">{Math.round(d.real_backtest.range_coverage_pct)}%</b> of days (target 80%); the medium line alone is no better than “same as an ordinary week”, so plan on the range. </> : null}
           The plan cut hours over capacity from <b className="num">{d.hours_over_capacity_no_plan}</b> to <b className="num">{d.hours_over_capacity_with_plan}</b>, and every decision is in the audit trail.</> : "Loading the backtest…"}
       </Glance>
       <KpiRow keep={3}>
-        <Kpi label="Out-of-sample error" value={d?.out_of_sample?.model_pct ?? 0} digits={1} unit="%" tone="runway"
-          sub={d?.out_of_sample ? <>vs <span className="num">{d.out_of_sample.naive_pct}%</span> for "ordinary week" rule · {d.out_of_sample.events} events</> : "…"} info={g("out_of_sample")} />
+        <Kpi label="Range held on real data" value={d?.real_backtest?.range_coverage_pct ?? 0} digits={0} unit="%" tone="runway"
+          sub={d?.real_backtest ? <>of <span className="num">{d.real_backtest.days}</span> real days inside low–high (target 80%) · medium line <span className="num">{Math.round(d.real_backtest.medium_mape_pct)}%</span> error vs <span className="num">{Math.round(d.real_backtest.naive_mape_pct)}%</span> naive</> : "…"} info={g("out_of_sample")} />
         <Kpi label="Hours over capacity" value={d?.hours_over_capacity_with_plan ?? 0} unit="h" tone="ok"
           sub={<>with Strategy {d?.strategy ?? "–"} · <span className="num">{d?.hours_over_capacity_no_plan ?? "–"}</span> h without a plan</>} info={g("hours_with_plan")} />
         <Kpi label="CO₂ avoided" value={d?.strategy_kpis.co2_saved_vs_adhoc_t ?? 0} digits={1} unit="t" tone="ok"

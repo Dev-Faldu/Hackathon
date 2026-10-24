@@ -77,7 +77,10 @@ def get_forecast(scenario: str) -> dict:
             "event_held_out": None, "mape_pct": None, "interval_coverage_pct": None,
             "validation_note": ("Daily accuracy is not reported: the 2022 week in data/processed is reconstructed "
                                 "from published counts, so a backtest on it would test assumptions, not the model."
-                                if not real else "Real data detected; run rampcast.forecast validation."),
+                                if not real else "Real data detected; run rampcast.forecast validation.")
+                               + " A blind leave-one-event-out backtest on real FAA TFMSC counts is in "
+                               "reports/backtest_summary.csv (see MODEL_CARD.md): it tests the method, not this "
+                               "served model, and suggests the medium multiplier is high for KVNY.",
         },
         "notes": _notes(),
     }

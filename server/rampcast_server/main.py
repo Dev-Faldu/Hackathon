@@ -310,7 +310,8 @@ def get_afteraction(scenario: str = "medium"):
             "strategy": chosen, "strategy_kpis": card["kpis"],
             "peak_occupancy": round(float(occ.max()), 1), "capacity": engine.capacity(),
             "stand_conflicts_week": replay().conflicts, "audit": store.audit_list()[-50:],
-            "out_of_sample": _out_of_sample(), "validation_note": fc.get("validation", {}).get("validation_note")}
+            "out_of_sample": _out_of_sample(), "real_backtest": ai.real_backtest(),
+            "validation_note": fc.get("validation", {}).get("validation_note")}
 
 
 def _out_of_sample() -> dict | None:
