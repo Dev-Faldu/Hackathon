@@ -1,8 +1,10 @@
 import { motion, AnimatePresence, animate, useMotionValue, useTransform } from "framer-motion";
-import { Check, CheckCircle2, Info, Pencil, X, AlertTriangle } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { Check, CheckCircle2, ChevronDown, Info, Lightbulb, Pencil, X, AlertTriangle } from "lucide-react";
+import { Children, useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { cx } from "../lib/format";
+import { GLOSSARY } from "../lib/glossary";
 import { useApp } from "../lib/store";
 
 export function Panel({ title, eyebrow, actions, children, className, strong, bodyClass }: {
@@ -35,17 +37,18 @@ export function CountUp({ value, digits = 0, className }: { value: number; digit
   return <motion.span className={cx("num", className)}>{text}</motion.span>;
 }
 
-export function Kpi({ label, value, digits = 0, unit, sub, tone, children }: {
-  label: string; value: number; digits?: number; unit?: string; sub?: ReactNode;
-  tone?: "ok" | "watch" | "alert" | "runway"; children?: ReactNode;
+export function Kpi({ label, value, digits = 0, unit, rel, sub, tone, children, info }: {
+  label: string; value: number; digits?: number; unit?: string; rel?: string; sub?: ReactNode;
+  tone?: "ok" | "watch" | "alert" | "runway"; children?: ReactNode; info?: { what: ReactNode; source?: ReactNode };
 }) {
   const toneCls = { ok: "text-ok", watch: "text-watch", alert: "text-alert", runway: "text-runway" };
   return (
     <div className="glass flex min-w-0 flex-col gap-1 px-4 py-3.5">
-      <div className="label truncate">{label}</div>
-      <div className={cx("flex items-baseline gap-1.5 text-[28px] font-semibold leading-none tracking-[-0.02em]", tone && toneCls[tone])}>
+      <div className="flex min-w-0 items-center gap-1"><div className="label truncate">{label}</div>{info && <InfoTip what={info.what} source={info.source} />}</div>
+      <div className={cx("flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[28px] font-semibold leading-none tracking-[-0.02em]", tone && toneCls[tone])}>
         <CountUp value={value} digits={digits} />
         {unit && <span className="text-[13px] font-medium text-ink-2">{unit}</span>}
+        {rel && <span className="num">({rel})</span>}
       </div>
       {sub && <div className="text-[12px] leading-snug text-ink-2">{sub}</div>}
       {children}
@@ -164,11 +167,13 @@ export function ErrorNote({ error, onRetry }: { error: string; onRetry?: () => v
 
 /** Renders Claude/template text and turns [fact.id] citations into small chips. */
 export function CitedText({ text }: { text: string }) {
+  const { simple } = useApp();
   const parts = text.split(/(\[[A-Za-z0-9_.\-]+\])/g);
   return (
     <p className="text-[14px] leading-[1.6] text-ink">
       {parts.map((p, i) =>
         /^\[[A-Za-z0-9_.\-]+\]$/.test(p) ? (
+          simple ? <sup key={i} title={`From engine fact ${p.slice(1, -1)}`} className="ml-px text-[9px] text-runway">●</sup> :
           <span key={i} title={p.slice(1, -1)}
             className="mx-0.5 inline-flex -translate-y-px items-center rounded-md bg-runway/10 px-1 py-px align-middle font-mono text-[10px] text-runway">
             {p.slice(1, -1).replace(".kpis.", " · ").replace("status_quo.", "")}
@@ -178,5 +183,125 @@ export function CitedText({ text }: { text: string }) {
         ),
       )}
     </p>
+  );
+}
+
+/** A summary line that opens to the full detail. First-time users read the summary; experts open it. */
+export function Disclosure({ summary, children, defaultOpen = false, className, tone }: {
+  summary: ReactNode; children: ReactNode; defaultOpen?: boolean; className?: string; tone?: "look";
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={cx("rounded-[14px] border bg-white/60", tone === "look" ? "border-watch/30" : "border-hairline", className)}>
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 rounded-[14px] px-3.5 py-2.5 text-left transition hover:bg-white/60">
+        <div className="min-w-0 flex-1">{summary}</div>
+        <ChevronDown size={16} className={cx("shrink-0 text-ink-2 transition-transform", open && "rotate-180")} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18 }} className="overflow-hidden">
+            <div className="border-t border-hairline px-3.5 py-3 text-[12.5px] leading-relaxed text-ink-2">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** An (i) next to a number: what it means in plain words, and where it comes from. */
+export function InfoTip({ what, source, label = "What this number means" }: { what: ReactNode; source?: ReactNode; label?: string }) {
+  const btn = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const show = () => {
+    const r = btn.current?.getBoundingClientRect();
+    if (r) setPos({ x: Math.min(window.innerWidth - 300, Math.max(12, r.left - 140)), y: r.bottom + 8 });
+  };
+  return (
+    <>
+      <button ref={btn} type="button" aria-label={label} onMouseEnter={show} onMouseLeave={() => setPos(null)} onFocus={show} onBlur={() => setPos(null)}
+        onClick={(e) => { e.stopPropagation(); if (pos) setPos(null); else show(); }}
+        className="inline-grid h-4 w-4 shrink-0 place-items-center rounded-full text-ink-3 transition hover:bg-runway/10 hover:text-runway focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-runway/40">
+        <Info size={12} />
+      </button>
+      {pos && createPortal(
+        <div role="tooltip" style={{ left: pos.x, top: pos.y }}
+          className="glass-strong pointer-events-none fixed z-[100] w-[288px] px-3.5 py-2.5 text-[12px] normal-case leading-snug tracking-normal text-ink">
+          <div>{what}</div>
+          {source && <div className="mt-1.5 border-t border-hairline pt-1.5 text-[11px] text-ink-2"><span className="font-medium">Source:</span> {source}</div>}
+        </div>, document.body)}
+    </>
+  );
+}
+
+/** The (i) for a glossary term, as the `info` prop of a Kpi. */
+export const g = (key: keyof typeof GLOSSARY) => ({ what: GLOSSARY[key].what, source: GLOSSARY[key].source });
+
+/** The screen in one sentence, and what to do next. Shown first so a new user knows where to look. */
+export function Glance({ children, steps }: { children: ReactNode; steps?: ReactNode[] }) {
+  return (
+    <div className="glass-strong mb-4 flex flex-wrap items-start gap-3 px-4 py-3">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-runway/10 text-runway"><Lightbulb size={16} /></span>
+      <div className="min-w-0 flex-1">
+        <div className="label">In short</div>
+        <div className="text-[14px] leading-snug text-ink">{children}</div>
+      </div>
+      {steps && steps.length > 0 && (
+        <ol className="flex flex-wrap items-center gap-1.5 self-center">
+          {steps.map((st, i) => (
+            <li key={i} className="flex items-center gap-1.5 rounded-full border border-hairline bg-white/75 px-2.5 py-1 text-[12px] text-ink">
+              <span className="num grid h-4 w-4 place-items-center rounded-full bg-runway text-[10px] font-semibold text-white">{i + 1}</span>{st}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/** A row of numbers. In the simple view only the first few show; the rest wait behind "More numbers". */
+export function KpiRow({ children, keep = 3, className }: { children: ReactNode; keep?: number; className?: string }) {
+  const { simple } = useApp();
+  const all = Children.toArray(children);
+  const [open, setOpen] = useState(false);
+  const shown = simple && !open ? all.slice(0, keep) : all;
+  const hidden = all.length - shown.length;
+  return (
+    <div className={className}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${shown.length > 4 ? 180 : 220}px, 1fr))` }}>{shown}</div>
+      {simple && (hidden > 0 || open) && (
+        <button onClick={() => setOpen(!open)} className="mt-2 flex items-center gap-1 text-[12px] font-medium text-runway hover:underline">
+          <ChevronDown size={14} className={cx("transition-transform", open && "rotate-180")} /> {open ? "Fewer numbers" : `${hidden} more number${hidden > 1 ? "s" : ""}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** A secondary panel: shown in the detailed view; one line that opens it in the simple view. */
+export function Fold({ title, summary, children, className }: { title: ReactNode; summary?: ReactNode; children: ReactNode; className?: string }) {
+  const { simple } = useApp();
+  const [open, setOpen] = useState(false);
+  if (!simple) return <>{children}</>;
+  if (open) {
+    return (
+      <div className={className}>
+        <button onClick={() => setOpen(false)} className="mb-1 flex items-center gap-1 text-[12px] font-medium text-runway hover:underline">
+          <ChevronDown size={14} className="rotate-180" /> Hide {typeof title === "string" ? title.toLowerCase() : "detail"}
+        </button>
+        <div className="[&>*]:!mt-0">{children}</div>
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => setOpen(true)} aria-expanded={false}
+      className={cx("glass flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition hover:bg-white/70", className)}>
+      <div className="min-w-0">
+        <div className="text-[14px] font-semibold text-ink">{title}</div>
+        {summary && <div className="text-[12.5px] text-ink-2">{summary}</div>}
+      </div>
+      <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-runway">Show <ChevronDown size={15} /></span>
+    </button>
   );
 }

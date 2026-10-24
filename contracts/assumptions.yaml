@@ -35,7 +35,11 @@ overflow:
   partner_airports: [KWHP, KCMA, KBUR]
   empty_legs_per_overflow_aircraft: 2
   adhoc_reposition_nm: 150          # assumption: unmanaged overflow distance
-  partner_reposition_nm: 40         # assumption: nearest partner distance
+  partner_reposition_nm: 40         # assumption: nearest partner distance (used only when no partner is modelled)
+  partner_spaces:                   # assumption: large-cabin equivalents each partner FBO holds for us; distances are great-circle from KVNY
+    KWHP: 6
+    KBUR: 8
+    KCMA: 12
 
 customs_kvny:                       # CBP KVNY GA fact sheet, June 2024 (verify for 2027)
   facility: Signature West GAF only
@@ -53,11 +57,18 @@ curfew_kvny:                        # VNY noise ordinance; departures only
   stage2_jets: ["22:00", "07:00"]
   older_stage3_jets: ["23:00", "07:00"]
   quieter_nights_voluntary: ["23:00", "07:00"]
+  flagged_share_assumption:         # assumption: share of visiting jets each rule binds, until the registry join supplies noise stage
+    stage2_jets: 0.02
+    older_stage3_jets: 0.08
+  curfew_alert_lookahead_h: 10
 
 tfr_game_day:                       # 2022 / 2026 precedent; LXI NOTAM not yet published
   window_local: ["14:30", "20:30"]
   inner_core_nm: 10
   outer_ring_nm: 30
+
+priority_rules:
+  tight_slack_min: 60               # assumption: a fixed-time commitment counts as urgent once its slack is this small (or negative)
 
 priority_weights_default:           # manager-editable; need-based only
   fixed_time: 0.4
@@ -98,6 +109,18 @@ parking:                            # parking positions beyond the 48 stands (as
   hot_spot_max_hours: 3
   temp_zone_stands: 12              # taxiway closed for parking (strategy C), needs airport + FAA approval
   tows_per_block: 2                 # out and back for each boxed-in event
+  departure_uncertainty_h:          # assumption: how far actual departures drift from the time the owner gave (1 sigma)
+    over_20h: 3                     # long stays: owners leave when the party ends
+    over_3h: 1
+  cpsat:                            # Role 3 exact solver (rampcast/engine/stands.py), method=cpsat on the parking routes
+    drift_margin_sigma: 1.0         # assumption: margin between jets in a column, in departure_uncertainty_h sigmas
+    budget: 0.3                     # OR-Tools deterministic time per daily window; ~7 s per week, more is slower
+  tandem:                           # game-day packing layout (assumptions; slot sizes = largest jet allowed + 3 m)
+    hot_spots: 6
+    temp_rows: 13                   # temporary taxiway zone, 3 deep, only if strategy C is approved
+    temp_depth: 3
+    pad_columns: 8                  # overflow pad west of the apron, 5 deep
+    pad_depth: 5
 
 parking_fees_usd:                   # assumption: per night, before event surcharge; drop-and-go is a flat handling fee
   light: 150
@@ -107,3 +130,71 @@ parking_fees_usd:                   # assumption: per night, before event surcha
   other: 250
   drop_and_go_flat: 150
   event_multiplier: 2.0
+
+bookings:                           # instant booking desk and the shared inbox (assumptions; replace with the FBO's own numbers)
+  hold_minutes: 15                  # an instant answer holds the slot this long for the operator to accept
+  stay_buffer_min: 15               # gap kept between one jet leaving a position and the next arriving
+  auto_confirm_max_p_over: 0.2      # auto-confirm only when the forecast gives at most this chance of the ramp being over capacity
+  eta_change_flag_min: 30           # live tracking moves the ETA by more than this: re-plan automatically and note it
+  eta_change_look_min: 90           # moves by more than this: a person confirms with the crew and the car service
+  tracking_horizon_h: 6             # live ETA known this long before landing (flight tracking)
+  walk_in_share: 0.12               # arrivals with no request at all
+  duplicate_share: 0.05             # trips requested twice through two channels
+  aircraft_change_share: 0.03       # operator swaps to a bigger aircraft after requesting
+  channel_mix:                      # how requests reach the FBO
+    FlightBridge: 0.45
+    Scheduler export: 0.20
+    Email: 0.15
+    Phone: 0.10
+    FBO portal: 0.10
+  lead_days:                        # how far ahead requests arrive, by stay type [min, max]
+    event_stay: [14, 75]
+    through_game: [14, 75]
+    overnight: [2, 30]
+    drop_and_go: [0, 7]
+    pre_window: [7, 40]
+
+forecast:                           # Role 2 forecast (rampcast/forecast). Each value has a source or is labelled an assumption.
+  monte_carlo_runs: 5000
+  seed: 61
+  airport: KVNY
+  baseline_dates: ["2022-01-15", "2022-01-21"]   # ordinary days in daily_counts.csv (reconstructed_2022); 2022-01-17 is MLK Day
+  window_offsets: [-5, 1]           # 2027-02-09 (Tue) to 2027-02-15 (Mon, Presidents' Day); game day = 0
+  traffic_level_2027: 1.0           # assumption: 2027 ordinary traffic relative to the 2022 baseline days
+  count_dispersion: 1.5             # assumption: variance / mean of daily arrivals (negative binomial); 1.0 = Poisson
+  week_level_sd: 0.10               # assumption: lognormal sd of a week-wide demand factor (a busy week is busy every day)
+  uplift:
+    anchor_offsets: [-3, 0]         # Thu..Sun before the game: the window the published arrival ratios describe
+    shape_source: reconstructed_2022   # assumption: day-to-day shape from Role 1's rebuilt 2022 KVNY week
+    fixed_offsets: [1]              # Monday after the game: same arrival multiplier in every scenario
+    scenario_rule: {low: min, medium: mean, high: max}   # spread across the analogs used for level
+  analogs:                          # published WingX figures; each has its own window and denominator
+    - {event: SB_LVIII_2024, region: Las Vegas, metric: arrivals_ratio, value: 1.5, use: level,
+       window: "event-weekend average daily arrivals vs February-to-date daily average",
+       source: "WingX via AIN, 2024-02-13", url: "https://www.ainonline.com/aviation-news/business-aviation/2024-02-13/super-bowl-draws-flocks-aircraft-numbers-down-previous"}
+    - {event: SB_LX_2026, region: Bay Area, metric: arrivals_ratio, value: 2.0, use: level,
+       window: "Feb 5-8 2026 (Thu-Sun) arrivals vs normal February",
+       source: "WingX via GlobalAir, 2026", url: "https://www.globalair.com/articles/bay-area-airports-report-3x-the-normal-business-jets-traffic-during-super-bowl/11933"}
+    - {event: SB_LX_2026, region: Bay Area, metric: monday_departures_ratio, value: 3.0, use: check,
+       window: "day-after departures vs typical February daily average",
+       source: "WingX via GlobalAir, 2026", url: "https://www.globalair.com/articles/bay-area-airports-report-3x-the-normal-business-jets-traffic-during-super-bowl/11933"}
+    - {event: SB_LVI_2022, region: Los Angeles, metric: monday_departures_ratio, value: 1.65, use: check,
+       window: "548 day-after departures, +65% vs typical activity",
+       source: "WingX via AIN, 2022-02-18", url: "https://www.ainonline.com/aviation-news/business-aviation/2022-02-18/super-bowl-brings-super-bounty-la-area-fbos"}
+  fbo_reports_2022:                 # AIN informal FBO poll, 2022-02-18; used only as a plausibility range
+    - {fbo: Castle & Cooke, airport: KVNY, metric: aircraft_in_week, value: 70}
+    - {fbo: Million Air, airport: KBUR, metric: aircraft_in_week_prior, value: 170}
+    - {fbo: Million Air, airport: KBUR, metric: aircraft_on_ramp_at_kickoff, value: 45}
+    - {fbo: Ross Aviation, airport: KLGB, metric: jets_on_ramp_game_day, value: 75}
+  stays:
+    drop_and_go_share: 0.30         # reconstructed_2022: 30% of paired KVNY arrivals left within 2 h
+    drop_and_go_minutes: [55, 120]
+    ordinary_nights: [1, 2]         # assumption: visits that are not for the game stay 1-2 nights
+    ordinary_departure_hours: [8, 17]
+    stay_through_game_from_offset: -3   # assumption: non-drop-and-go arrivals from Thursday on stay through the game
+    leave_after_game_share: 0.48    # reconstructed_2022: 126 stayers left on game day, 137 on Monday
+    after_game_hours: [20.5, 23.5]  # local; after the game-day TFR ends at 20:30 (tfr_game_day)
+    monday_departure_hours: [7.0, 14.0]
+  game_day_arrival_damping: 0.35    # assumption: arrival rate during the game-day TFR window relative to normal
+  pre_window_aircraft: 18           # assumption (engine default): transient aircraft already parked at 2027-02-09 00:00
+  pre_window_departure_days: [0, 1] # they leave on window day 0 or 1, between ordinary_departure_hours

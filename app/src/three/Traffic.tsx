@@ -5,10 +5,10 @@ import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { SIZE_LABEL } from "../lib/format";
 import type { SizeClass } from "../lib/types";
-import { lightMats } from "./Airport";
-import { DIMS, type FlightPlan3D, poseAt } from "./layout";
-import { focus, sim, trafficStats } from "./state";
-import { fuelTruckGeometry, jetGeometry, jetLights, suvGeometry, tugGeometry } from "./models";
+import { CURB, lightMats } from "./Airport";
+import { DIMS, type FlightPlan3D, poseAt, TOW_ASIDE_MS } from "./layout";
+import { crewStats, focus, sim, trafficStats } from "./state";
+import { coneGeometry, fuelTruckGeometry, jetGeometry, jetLights, LIVERIES, personGeometry, suvGeometry, tugGeometry, wandGeometry } from "./models";
 
 
 const SIZES: SizeClass[] = ["light", "mid", "super_mid", "large", "other"];
@@ -18,6 +18,8 @@ const v = new THREE.Vector3();
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
 const am = new THREE.Matrix4(); // the current aircraft's matrix (o3 is reused for lights and vehicles)
 const AIRBORNE = new Set(["approach", "rollout", "lineup", "takeoff", "climb"]);
+const N_WALK = 160, N_MARSHAL = 40, N_CREW = 160, N_CONE = 900, N_QUEUE = 60;
+const MARSHAL_MS = 100_000; // marshaller on the stand for the last 100 s of the taxi in
 
 function pool(geom: THREE.BufferGeometry, mat: THREE.Material, n: number, shadow = true) {
   const m = new THREE.InstancedMesh(geom, mat, n);
@@ -28,21 +30,34 @@ function pool(geom: THREE.BufferGeometry, mat: THREE.Material, n: number, shadow
   return m;
 }
 
-export function Traffic({ plans, selected, onSelect }: {
-  plans: FlightPlan3D[]; selected: string | null; onSelect: (id: string | null) => void;
+function liveryOf(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return (h >>> 0) % LIVERIES.length;
+}
+
+interface JetGroup { size: SizeClass; liv: number; list: FlightPlan3D[]; mesh: THREE.InstancedMesh }
+
+export function Traffic({ plans, selected, onSelect, colorBySize }: {
+  plans: FlightPlan3D[]; selected: string | null; onSelect: (id: string | null) => void; colorBySize: boolean;
 }) {
   const paint = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.3, envMapIntensity: 1.1 }), []);
   const vehMat = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.35 }), []);
-  const bySize = useMemo(() => {
-    const out = {} as Record<SizeClass, FlightPlan3D[]>;
-    SIZES.forEach((s) => { out[s] = plans.filter((p) => p.size === s); });
-    return out;
-  }, [plans]);
-  const jets = useMemo(() => {
-    const out = {} as Record<SizeClass, THREE.InstancedMesh>;
-    SIZES.forEach((s) => { out[s] = pool(jetGeometry(s), paint, Math.max(1, bySize[s].length)); });
-    return out;
-  }, [bySize, paint]);
+  // One instanced mesh per size and paint scheme; "colour by size" paints every tail by class instead.
+  const groups = useMemo(() => {
+    const m = new Map<string, JetGroup>();
+    for (const f of plans) {
+      const liv = colorBySize ? -1 : liveryOf(f.id), key = `${f.size}|${liv}`;
+      if (!m.has(key)) m.set(key, { size: f.size, liv, list: [], mesh: null as unknown as THREE.InstancedMesh });
+      m.get(key)!.list.push(f);
+    }
+    for (const g of m.values()) {
+      const L = g.liv < 0 ? null : LIVERIES[g.liv];
+      g.mesh = pool(jetGeometry(g.size, L?.accent ?? DIMS[g.size].color, L?.paint), paint, g.list.length);
+    }
+    return [...m.values()];
+  }, [plans, paint, colorBySize]);
+  const last = useRef({ x: 0, z: 0, y: 0, t: 0, id: "" });
   const bulb = useMemo(() => new THREE.SphereGeometry(0.32, 8, 6), []);
   const lights = useMemo(() => ({
     red: pool(bulb, lightMats.red, plans.length * 2 + 1, false),
@@ -53,7 +68,16 @@ export function Traffic({ plans, selected, onSelect }: {
   }), [plans.length, bulb]);
   const navLights = useMemo(() => Object.fromEntries(SIZES.map((s) => [s, jetLights(s)])) as Record<SizeClass, ReturnType<typeof jetLights>>, []);
   const vehicles = useMemo(() => ({
-    tug: pool(tugGeometry(), vehMat, 40), fuel: pool(fuelTruckGeometry(), vehMat, 24), suv: pool(suvGeometry(), vehMat, 40),
+    tug: pool(tugGeometry(), vehMat, 60), fuel: pool(fuelTruckGeometry(), vehMat, 24), suv: pool(suvGeometry(), vehMat, 40),
+    queue: pool(suvGeometry(), vehMat, N_QUEUE),
+  }), [vehMat]);
+  // Ramp people: wing walkers (lime vests), marshallers (orange vests, lit wands), service crew (yellow), cones.
+  const people = useMemo(() => ({
+    walker: pool(personGeometry("#C6F432"), vehMat, N_WALK),
+    marshal: pool(personGeometry("#F97316"), vehMat, N_MARSHAL),
+    wand: pool(wandGeometry(), lightMats.amber, N_MARSHAL * 2, false),
+    crew: pool(personGeometry("#FACC15"), vehMat, N_CREW),
+    cone: pool(coneGeometry(), vehMat, N_CONE),
   }), [vehMat]);
   const ring = useRef<THREE.Mesh>(null);
   const tag = useRef<THREE.Group>(null);
@@ -64,9 +88,16 @@ export function Traffic({ plans, selected, onSelect }: {
     const blink = Math.floor(state.clock.elapsedTime * 1.6) % 2 === 0;
     for (const k of Object.keys(trafficStats) as (keyof typeof trafficStats)[]) trafficStats[k] = 0;
     let nRed = 0, nGreen = 0, nWhite = 0, nAmber = 0, nLand = 0, nTug = 0, nFuel = 0, nSuv = 0;
+    let nWalk = 0, nMarshal = 0, nWand = 0, nCrew = 0, nCone = 0, queue = 0, rampJets = 0, towsAside = 0;
+    const wave = Math.sin(state.clock.elapsedTime * 3.2);
+    const person = (m: THREE.InstancedMesh, i: number, x: number, z: number, heading: number) => {
+      if (i >= m.count) return;
+      o3.position.set(x, 0, z); o3.rotation.set(0, heading, 0); o3.scale.setScalar(1); o3.updateMatrix();
+      m.setMatrixAt(i, o3.matrix);
+    };
     focus.active = false;
-    for (const s of SIZES) {
-      const mesh = jets[s], list = bySize[s], L = navLights[s], dim = DIMS[s];
+    for (const grp of groups) {
+      const mesh = grp.mesh, list = grp.list, s = grp.size, L = navLights[s], dim = DIMS[s];
       for (let i = 0; i < list.length; i++) {
         const f = list[i];
         const p = poseAt(f, t);
@@ -88,8 +119,52 @@ export function Traffic({ plans, selected, onSelect }: {
         if (AIRBORNE.has(p.phase) || p.phase === "taxi_in" || p.phase === "taxi_out") {
           v.copy(L.nose).applyMatrix4(am); setAt(lights.land, nLand++, v, AIRBORNE.has(p.phase) ? 3.4 : 1.8);
         }
+        // Cars at the terminal curb: passengers just landed, and drop-offs for the next hour of departures.
+        if (!f.other && ((t > f.taxiInEnd && t < f.taxiInEnd + 30 * MIN && t < f.pushStart) || (t > f.pushStart - 45 * MIN && t < f.pushStart))) queue++;
+        if (!f.other && (p.phase === "parked" || p.phase === "tow" || p.phase === "pushback")) rampJets++;
         const fx = Math.sin(p.heading), fz = Math.cos(p.heading);
-        if (p.tug && nTug < 40) {
+        if (!f.other) {
+          const walk = (side: 1 | -1, back = 0) => {
+            // Wing walker 1.5 m outboard of the tip, keeping pace with the wing.
+            v.set(side * (dim.span / 2 + 1.5), 0, -0.2 * dim.length - back).applyMatrix4(am);
+            person(people.walker, nWalk++, v.x, v.z, p.heading);
+          };
+          const aside = p.phase === "tow" && f.towMoves?.some((mv) => t >= mv.t && t < mv.t + (mv.dur ?? TOW_ASIDE_MS));
+          if (aside) towsAside++;
+          if (p.phase === "tow" || p.phase === "pushback") { walk(1); walk(-1); if (aside) walk(1, dim.length * 0.4); }
+          if (p.phase === "taxi_in" && t > f.taxiInEnd - MARSHAL_MS) {
+            // Marshaller ahead of the stop bar facing the cockpit; wing walkers guide the tips into the box.
+            const ph = Math.atan2(f.stand.x - f.lane.x, f.stand.z - f.lane.z), d = dim.length / 2 + 7;
+            const mx = f.stand.x + Math.sin(ph) * d, mz = f.stand.z + Math.cos(ph) * d;
+            if (nMarshal < N_MARSHAL) {
+              person(people.marshal, nMarshal++, mx, mz, ph + Math.PI);
+              const near = Math.hypot(p.x - f.stand.x, p.z - f.stand.z) < 12;
+              for (const side of [1, -1]) {
+                // "Come ahead" wands beat overhead; crossed above the head means stop.
+                const tilt = near ? side * 0.62 : -side * (0.35 + 0.45 * (0.5 + 0.5 * wave));
+                o3.position.set(mx + Math.cos(ph) * side * 0.32, 1.45, mz - Math.sin(ph) * side * 0.32);
+                o3.rotation.set(0, ph + Math.PI, tilt, "YXZ"); o3.scale.setScalar(1); o3.updateMatrix();
+                if (nWand < people.wand.count) people.wand.setMatrixAt(nWand++, o3.matrix);
+              }
+            }
+            if (Math.hypot(p.x - f.lane.x, p.z - f.lane.z) < dim.length * 4 || Math.hypot(p.x - f.stand.x, p.z - f.stand.z) < 60) { walk(1); walk(-1); }
+          }
+          if (p.phase === "parked") {
+            // Cones off both wingtips and the tail, as soon as the chocks are in.
+            for (const c of [[dim.span / 2 + 0.6, -0.2 * dim.length], [-dim.span / 2 - 0.6, -0.2 * dim.length], [0, -0.55 * dim.length], [0, 0.55 * dim.length]]) {
+              v.set(c[0], 0, c[1]).applyMatrix4(am);
+              person(people.cone, nCone++, v.x, v.z, p.heading);
+            }
+            if (t < f.taxiInEnd + 20 * MIN || (t > f.pushStart - 30 * MIN)) {
+              // Line service at the airstair and the baggage door.
+              v.set(-(dim.r + 1.6), 0, 0.3 * dim.length).applyMatrix4(am);
+              person(people.crew, nCrew++, v.x, v.z, p.heading - Math.PI / 2);
+              v.set(dim.r + 1.8, 0, -0.25 * dim.length).applyMatrix4(am);
+              person(people.crew, nCrew++, v.x, v.z, p.heading + Math.PI / 2);
+            }
+          }
+        }
+        if (p.tug && nTug < 60) {
           const d = dim.length / 2 + 3.5;
           o3.position.set(p.x + fx * d, 0, p.z + fz * d);
           o3.rotation.set(0, p.heading + Math.PI, 0);
@@ -97,14 +172,14 @@ export function Traffic({ plans, selected, onSelect }: {
           vehicles.tug.setMatrixAt(nTug++, o3.matrix);
           if (nAmber < 60) setAt(lights.amber, nAmber++, v.set(p.x + fx * d, 2.6, p.z + fz * d), blink ? 1.3 : 0.6);
         }
-        if (p.phase === "parked" && t > f.D - 50 * MIN && t < f.D - 26 * MIN && nFuel < 24) {
+        if (!f.other && p.phase === "parked" && t > f.D - 50 * MIN && t < f.D - 26 * MIN && nFuel < 24) {
           const d = dim.span / 2 + 4;
           o3.position.set(p.x + fz * d - fx * 4, 0, p.z - fx * d - fz * 4);
           o3.rotation.set(0, p.heading, 0);
           o3.updateMatrix();
           vehicles.fuel.setMatrixAt(nFuel++, o3.matrix);
         }
-        if (p.phase === "parked" && t > f.taxiInEnd && t < f.taxiInEnd + 18 * MIN && nSuv < 40) {
+        if (!f.other && p.phase === "parked" && t > f.taxiInEnd && t < f.taxiInEnd + 18 * MIN && nSuv < 40) {
           const d = dim.r + 5;
           o3.position.set(p.x - fz * d + fx * dim.length * 0.22, 0, p.z + fx * d + fz * dim.length * 0.22);
           o3.rotation.set(0, p.heading, 0);
@@ -113,6 +188,15 @@ export function Traffic({ plans, selected, onSelect }: {
         }
         if (f.id === selected) {
           focus.active = true; focus.x = p.x; focus.y = p.y; focus.z = p.z; focus.heading = p.heading;
+          focus.pitch = p.pitch; focus.eye = L.centerY + dim.r * 0.35; focus.nose = 0.36 * dim.length; focus.phase = p.phase;
+          // Ground speed and height for the pilot's-view readout, from how far the jet moved in sim time.
+          const lp = last.current, dt = (t - lp.t) / 1000;
+          if (lp.id === f.id && dt > 0.05 && dt < 120) {
+            const v = (Math.hypot(p.x - lp.x, p.z - lp.z) / dt) * 1.944;
+            focus.speedKt = focus.speedKt * 0.85 + v * 0.15;
+          } else if (lp.id !== f.id) focus.speedKt = 0;
+          if (lp.id !== f.id || dt > 0.05) last.current = { x: p.x, z: p.z, y: p.y, t, id: f.id };
+          focus.altFt = p.y * 3.281;
           if (ring.current) {
             ring.current.visible = p.y < 3; // ground ring only while on the ground
             ring.current.position.set(p.x, 0.2, p.z);
@@ -124,24 +208,35 @@ export function Traffic({ plans, selected, onSelect }: {
       mesh.instanceMatrix.needsUpdate = true;
     }
     if (!focus.active && ring.current) ring.current.visible = false;
+    // The curb queue: nose to tail eastbound in the inside lane, then spilling into the outside lane.
+    const nQ = Math.min(N_QUEUE, queue);
+    for (let i = 0; i < nQ; i++) {
+      const lane = i < 30 ? 0 : 1, k = i % 30;
+      o3.position.set(60 - k * 7.2 - lane * 3, 0, CURB.z - 4 + lane * 5.5); o3.rotation.set(0, Math.PI / 2, 0); o3.scale.setScalar(1); o3.updateMatrix();
+      vehicles.queue.setMatrixAt(i, o3.matrix);
+    }
+    crewStats.walkers = nWalk; crewStats.marshallers = nMarshal; crewStats.curbQueue = queue; crewStats.rampJets = rampJets; crewStats.towsAside = towsAside;
+    clear(people.walker, nWalk); clear(people.marshal, nMarshal); clear(people.wand, nWand); clear(people.crew, nCrew); clear(people.cone, nCone);
+    clear(vehicles.queue, nQ);
     clear(lights.red, nRed); clear(lights.green, nGreen); clear(lights.white, nWhite); clear(lights.amber, nAmber); clear(lights.land, nLand);
     clear(vehicles.tug, nTug); clear(vehicles.fuel, nFuel); clear(vehicles.suv, nSuv);
   });
 
-  const click = (s: SizeClass) => (e: ThreeEvent<PointerEvent>) => {
+  const click = (g: JetGroup) => (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    const id = e.instanceId !== undefined ? bySize[s][e.instanceId]?.id : undefined;
+    const id = e.instanceId !== undefined ? g.list[e.instanceId]?.id : undefined;
     if (id) onSelect(id);
   };
 
   return (
     <group>
-      {SIZES.map((s) => (
-        <primitive key={s} object={jets[s]} onPointerDown={click(s)}
+      {groups.map((g) => (
+        <primitive key={`${g.size}|${g.liv}`} object={g.mesh} onPointerDown={click(g)}
           onPointerOver={() => { document.body.style.cursor = "pointer"; }} onPointerOut={() => { document.body.style.cursor = ""; }} />
       ))}
       <primitive object={lights.red} /><primitive object={lights.green} /><primitive object={lights.white} /><primitive object={lights.amber} /><primitive object={lights.land} />
-      <primitive object={vehicles.tug} /><primitive object={vehicles.fuel} /><primitive object={vehicles.suv} />
+      <primitive object={vehicles.tug} /><primitive object={vehicles.fuel} /><primitive object={vehicles.suv} /><primitive object={vehicles.queue} />
+      <primitive object={people.walker} /><primitive object={people.marshal} /><primitive object={people.wand} /><primitive object={people.crew} /><primitive object={people.cone} />
       <mesh ref={ring} rotation-x={-Math.PI / 2} visible={false}>
         <ringGeometry args={[0.92, 1, 64]} />
         <meshBasicMaterial color={new THREE.Color(0.6, 1.6, 4)} toneMapped={false} transparent opacity={0.9} />

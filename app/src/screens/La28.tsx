@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { CalendarClock, Globe2, Hourglass, Medal, ShieldAlert } from "lucide-react";
 import { ForecastChart } from "../components/charts";
 import { TopBar } from "../components/Shell";
-import { ApproveBar, Chip, ErrorNote, Kpi, Panel, Skeleton } from "../components/ui";
+import { ApproveBar, Chip, ErrorNote, g, Glance, Kpi, KpiRow, Panel, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
 import { cx, fmt } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -22,20 +22,25 @@ export default function La28() {
         subtitle="The same forecast and parking engine on a different event. What changes for the FBO, and what to do differently." />
       {r.error && <div className="mb-4"><ErrorNote error={r.error} onRetry={r.reload} /></div>}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
+      <Glance>
+        {la && sb ? <>The Super Bowl spikes and clears on Monday. The Olympics fill the ramp and stay: <b className="num">{la.parked_at_week_end}</b> jets are still parked when opening week ends, against <b className="num">{sb.parked_at_week_end}</b> after the Super Bowl.
+          Plan for long stays from day one.</> : "Loading the LA28 estimate…"}
+      </Glance>
+      <KpiRow keep={3}>
         <Kpi label="Arrivals this week" value={d ? d.days.reduce((a, x) => a + x.p50, 0) : 0} tone="runway"
-          sub={d ? <>vs <span className="num">{d.days.reduce((a, x) => a + x.baseline_p50, 0)}</span> in an ordinary July week</> : "…"} />
-        <Kpi label="Peak ramp demand" value={la?.peak_demand ?? 0} digits={1} unit={`/ ${d?.capacity ?? "–"}`} tone="alert"
-          sub={sb ? <>Super Bowl peak <span className="num">{sb.peak_demand}</span></> : "…"} />
+          sub={d ? <>vs <span className="num">{d.days.reduce((a, x) => a + x.baseline_p50, 0)}</span> in an ordinary July week</> : "…"}
+          info={{ what: "Business jets expected at our FBO in the Olympic opening week (middle estimate).", source: "No Olympic precedent at VNY: an estimate from stated assumptions (la28.py), not a backtested forecast." }} />
         <Kpi label="Hours over capacity" value={la?.hours_over_capacity ?? 0} unit="h" tone="alert"
-          sub={sb ? <>If nothing changes. Super Bowl: <span className="num">{sb.hours_over_capacity}</span> h</> : "…"} />
+          sub={sb ? <>If nothing changes. Super Bowl: <span className="num">{sb.hours_over_capacity}</span> h</> : "…"} info={g("hours_over")} />
         <Kpi label="Parked at week end" value={la?.parked_at_week_end ?? 0} unit="jets" tone="watch"
-          sub={sb ? <>Super Bowl: <span className="num">{sb.parked_at_week_end}</span>. The ramp does not clear on Monday</> : "…"} />
+          sub={sb ? <>Super Bowl: <span className="num">{sb.parked_at_week_end}</span>. The ramp does not clear on Monday</> : "…"} info={{ what: "Jets still on our ramp at the end of opening week. Olympic delegations stay for the Games, so the ramp does not clear.", source: "LA28 profile in la28.py: 62% long stays, stated assumptions." }} />
+        <Kpi label="Peak ramp demand" value={la?.peak_demand ?? 0} digits={1} unit={`/ ${d?.capacity ?? "–"}`} tone="alert"
+          sub={sb ? <>Super Bowl peak <span className="num">{sb.peak_demand}</span></> : "…"} info={g("ramp_demand")} />
         <Kpi label="Median stay" value={la ? la.median_stay_h / 24 : 0} digits={1} unit="days"
           sub={sb ? <>Super Bowl: <span className="num">{(sb.median_stay_h / 24).toFixed(1)}</span> days</> : "…"} />
         <Kpi label="International" value={la?.international_pct ?? 0} unit="%"
           sub={sb ? <>Super Bowl: <span className="num">{sb.international_pct}</span>%. More customs demand</> : "…"} />
-      </div>
+      </KpiRow>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.5fr_1fr]">
         <Panel eyebrow="Forecast · daily arrivals at our FBO" title="Ordinary July week vs LA28 opening week"

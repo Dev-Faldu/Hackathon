@@ -30,11 +30,17 @@ Conventions:
 | direction | string | `arrival` | `arrival` or `departure` relative to `airport` |
 | airport | string | `KVNY` | the basin airport this row is about |
 | event_name | string | `SB_LVI_2022` | null for ordinary weeks |
+| curfew_class | string | `stage2_jets` | optional: `stage2_jets`, `older_stage3_jets` or empty; from the registry noise stage. Without it the engine uses the shares in assumptions.yaml |
 | day_offset | int | `-2` | days relative to game day, null for ordinary weeks |
+| source | string | `reconstructed_2022` | how the row was made: the run's label (`reconstructed_2022`, or `opensky_2022_shifted` for a real pull), the same with `_anchor` on the two days whose basin totals are published (arrivals Fri 11 Feb, departures Mon 14 Feb; the airport split is still assumed), or `synthetic` for generated rows |
 
 ### `daily_counts.csv`
 
-`date, airport, arrivals, departures, arr_light, arr_mid, arr_super_mid, arr_large, arr_other, event_name, day_offset`
+`date, airport, arrivals, departures, arr_light, arr_mid, arr_super_mid, arr_large, arr_other, event_name, day_offset, source`
+
+Dates without arrival tracking are left blank/missing for arrival columns instead of fake zeroes. `source` uses the same labels as `flights.parquet`.
+
+`kvny_historical_counts.csv` (KVNY, Jan–Mar 2019–2026 without 2021) and `super_bowl_uplifts.csv` (Las Vegas 2024, Bay Area 2026, Phoenix 2023) are **synthetic**: shaped like OPSNET/TFMSC counts and published event ratios, but drawn at random. The forecast uses the published ratios in `assumptions.yaml` `forecast.analogs` instead; swap in real exports before fitting anything to these files.
 
 ### `replay_2027.jsonl`: one JSON event per line, sorted by `t_utc`
 
@@ -53,6 +59,7 @@ Conventions:
 ```
 
 `commitment_type` is one of `fixed_time`, `medical_access` or `none`. `deadline_local` is null unless the type is `fixed_time`.
+Optional `car_staged_at` (ICAO, default `KVNY`): where the party's ground car waits. Used by the `car_wrong_airport` alert.
 `hotel_zone` is one of `Beverly Hills`, `Santa Monica`, `Downtown LA`, `Inglewood` or `Burbank`.
 
 ### `stands.json`
@@ -120,12 +127,43 @@ The scorer's input model must not contain name, status, tier, loyalty or payment
 Request: `{"scenario":"medium","modifiers":{"runway_closed":{"from":"2027-02-12T13:05:00-08:00","to":"2027-02-12T13:55:00-08:00"},"demand_multiplier":1.0,"customs_hours":null}}`
 
 Response: `{"kpi_diff":{"A":{"hours_over_capacity":[0,3]}},"new_alerts":[...],"strategies":[...]}`, where each pair is `[before, after]`.
+Optional modifiers: `arrival_delay` `{from, to, minutes}` and `diversions` `{flight_id: ICAO}`. The response also carries `queue` (top 10 after the change) and `queue_changes` (rank before and after).
 
 ### `GET /briefing?t=...` and `POST /explain` (Role 3)
 
 ```json
-{"text":"Friday peak: medium scenario puts the ramp at 107% from 13:00 to 17:00 (A.kpis...).","cited_ids":["A.kpis.hours_over_capacity"],"model":"claude-opus-5-5","fallback":false}
+{"text":"Friday peak: medium scenario puts the ramp at 107% from 13:00 to 17:00 (A.kpis...).","cited_ids":["A.kpis.hours_over_capacity"],"model":"claude-sonnet-5-5","fallback":false}
 ```
+
+### `POST /bookings/quote` and `POST /bookings/inbound` (booking desk)
+
+Request (trip-sheet fields; give `aircraft_type` as an ICAO designator or `size_class`):
+`{"aircraft_type":"CL35","tail":"N350RC","origin":"KTEB","international":false,"arrive_local":"2027-02-10T16:00","depart_local":"2027-02-11T10:00","services":["Fuel","GPU"],"channel":"FlightBridge"}`
+
+Response: `{"decision":"confirmed|approval|full","position":{...}|null,"price_usd":700,"hold_expires_local":"...","checks":[{"ok":true,"label":"Ramp space","detail":"..."}],"alternatives":[...],"trip_sheet":{...},"answer_ms":0.6}`.
+`/bookings/inbound` is the open endpoint for schedulers and trip-services tools; same answer plus `received_via`.
+`POST /bookings/accept` with `{"trip_sheet":{...}}` confirms, logs to the audit trail and returns the trip sheet to send back.
+
+### `GET /bookings/inbox?t=...` and `GET /bookings/connections`
+
+Inbox: every request received by `t` from every channel, each with `status` (`auto` or `look`), `issues` and `notes`. Requests are rebuilt from the replay week; channel mix, lead times, duplicates and aircraft swaps are assumptions (`bookings` in `assumptions.yaml`).
+
+### Parking layouts
+
+Every parking route takes `layout=stands` (48 marked stands) or `layout=tandem` (game-day packing; slot ids like `B3-2` = row B, column 3, second in the column; `H1`–`H6` hot spots; `T*` temp zone; `P*` overflow pad). Tows carry `kind` (`arrival` or `departure`) and `for_flight_t`. Accepted bookings join the plan: `POST /bookings/accept` returns `flight_id` and `position`; `DELETE /bookings/accepted/{flight_id}` cancels.
+
+Every parking route also takes `method=optimized` (default, adaptive), `method=cpsat` (Role 3's CP-SAT solver; a few seconds the first time, incremental after) or `method=first_come` (whiteboard). Metrics carry `solver` and `solve_s`. `POST /whatif` takes `layout` and returns `stand_plan` with `boxed_in` (box-ins the re-plan adds) and `boxed_in_planned`.
+
+### AI co-pilot
+
+- `GET /ai/recommendations?t=&scenario=&layout=`: `{t_local, items: [{id, urgency: now|today|this week, score, title, why[], numbers[], models[], approver, screen, action}], counts, models_consulted}`. Suggestions only.
+- `GET /ai/models?scenario=&layout=`: a card per model `{id, name, family, owner, question, automation, method[], inputs: [{name, label: published|reconstructed|assumption|live}], outputs[], limits[], code, evidence[], status}` plus Role 2's `validation` rows.
+- `GET /ai/benchmark?layout=&temp=`: whiteboard, adaptive and CP-SAT on the same week: `{rows: [{method, tows, overflow, boxed_in, pad, temp, hot, solver, solve_s}], best, cut_vs_whiteboard_pct}`.
+- `GET /afteraction` adds `out_of_sample: {model_pct, naive_pct, events}`.
+
+### `GET /airfield/movements`
+
+The other FBOs' business-jet visits at VNY in the replay (`id, size_class, landed, departed, origin`), so the 3D runway carries the whole field's traffic.
 
 ### Audit log (`logs/audit.jsonl`, Role 3)
 

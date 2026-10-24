@@ -1,0 +1,13 @@
+check,metric,subject,method,n_events_used,predicted,p10,p90,reference,reference_min,reference_max,error,abs_pct_error,status,note
+leave_one_event_out,arrivals_ratio,SB_LVIII_2024,naive_ordinary_week,0,1.0,,,1.5,,,-0.5,33.3,,2 published events for this metric
+leave_one_event_out,arrivals_ratio,SB_LVIII_2024,analog_mean_leave_one_out,1,2.0,,,1.5,,,0.5,33.3,,2 published events for this metric
+leave_one_event_out,arrivals_ratio,SB_LX_2026,naive_ordinary_week,0,1.0,,,2.0,,,-1.0,50.0,,2 published events for this metric
+leave_one_event_out,arrivals_ratio,SB_LX_2026,analog_mean_leave_one_out,1,1.5,,,2.0,,,-0.5,25.0,,2 published events for this metric
+leave_one_event_out,arrivals_ratio,SB_LX_2026,naive_previous_host,1,1.5,,,2.0,,,-0.5,25.0,,2 published events for this metric
+leave_one_event_out,monday_departures_ratio,SB_LVI_2022,naive_ordinary_week,0,1.0,,,1.65,,,-0.65,39.4,,2 published events for this metric
+leave_one_event_out,monday_departures_ratio,SB_LVI_2022,analog_mean_leave_one_out,1,3.0,,,1.65,,,1.35,81.8,,2 published events for this metric
+leave_one_event_out,monday_departures_ratio,SB_LX_2026,naive_ordinary_week,0,1.0,,,3.0,,,-2.0,66.7,,2 published events for this metric
+leave_one_event_out,monday_departures_ratio,SB_LX_2026,analog_mean_leave_one_out,1,1.65,,,3.0,,,-1.35,45.0,,2 published events for this metric
+leave_one_event_out,monday_departures_ratio,SB_LX_2026,naive_previous_host,1,1.65,,,3.0,,,-1.35,45.0,,2 published events for this metric
+plausibility_range,aircraft_arriving_in_week,medium scenario,rampcast.forecast v1,,199.0,166.0,234.0,Castle & Cooke KVNY 70; Million Air KBUR 170,70.0,170.0,,,above,arrivals at our FBO over the 7-day window; AIN informal poll 2022-02-18; p50 reaches the top of the range at an FBO share of about 0.26 (now 0.3)
+plausibility_range,aircraft_on_ramp_at_kickoff,medium scenario,rampcast.forecast v1,,91.0,73.0,110.0,Million Air KBUR 45; Ross Aviation KLGB 75,45.0,75.0,,,above,aircraft on our ramp at kickoff (Sun 15:30); AIN informal poll 2022-02-18; p50 reaches the top of the range at an FBO share of about 0.25 (now 0.3)

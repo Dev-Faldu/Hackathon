@@ -19,6 +19,8 @@ export interface Meta {
   live_source: "sample" | "opensky_2022_shifted" | "reconstructed_2022";
   notes: string[];
   claude_enabled: boolean;
+  local_llm_enabled?: boolean;
+  local_llm_model?: string | null;
   modules: Record<string, boolean>;
   stands: Stand[];
   demo_t: string;
@@ -37,11 +39,12 @@ export interface Occupancy { scenario: Scenario; capacity: number; runs: number;
 export interface Kpis {
   aircraft_accommodated: number; parked_at_vny: number; overflow_aircraft: number; hours_over_capacity: number;
   empty_legs: number; co2_t: number; co2_saved_vs_adhoc_t: number; peak_line_staff: number;
-  peak_movements_per_hour: number; fuel_gal_week: number; risk: "low" | "medium" | "high";
+  peak_movements_per_hour: number; fuel_gal_week: number; risk: "low" | "medium" | "high"; reposition_fuel_gal?: number;
 }
 export interface Strategy {
   id: "A" | "B" | "C"; name: string; summary: string; kpis: Kpis; approvers: string[];
   assumptions: string[]; explanation_facts: { id: string; text: string }[];
+  overflow_split?: Record<string, number>; solver?: string;
 }
 export interface StrategiesResponse {
   scenario: Scenario; source: string; capacity: number; approved: string | null;
@@ -95,6 +98,9 @@ export interface WhatIf {
   kpi_diff: Record<string, Record<string, [number, number]>>;
   status_quo: { before: { hours_over_capacity: number; peak_demand: number }; after: { hours_over_capacity: number; peak_demand: number } };
   new_alerts: Alert[]; affected_flights: AffectedFlight[]; strategies: Strategy[]; explanation: Explanation;
+  queue_changes?: { booking_code: string; flight_id: string; rank_before: number | null; rank_after: number; reasons: string[] }[];
+  stand_plan?: { changed_times: number; re_planned: number; overflow_before: number; overflow_after: number; boxed_in: number; solver: string;
+    moves: { flight_id: string; from: string | null; to: string | null; time_changed: boolean }[] };
 }
 export interface Briefing extends Explanation { recommended: string; facts: { id: string; value: number | string; text: string }[] }
 
@@ -102,27 +108,32 @@ export interface AuditRow { t_utc: string; actor_role: string; action: string; t
 export interface AfterAction {
   scenario: Scenario; source: string; notes: string[]; days: ForecastDay[]; mape_pct: number | null;
   naive_mape_pct: number | null; interval_coverage_pct: number; hours_over_capacity_no_plan: number;
+  out_of_sample?: { model_pct: number; naive_pct: number; events: number } | null; validation_note?: string | null;
   hours_over_capacity_with_plan: number; strategy: string; strategy_kpis: Kpis; peak_occupancy: number;
   capacity: number; stand_conflicts_week: number; audit: AuditRow[];
 }
 
 // ---------- parking control ----------
-export type ParkingMethod = "optimized" | "first_come";
-export interface ParkingPosition { id: string; kind: "stand" | "hot" | "temp"; row: string; column: number; depth: number; max_wingspan_ft: number }
+export type ParkingMethod = "optimized" | "cpsat" | "first_come";
+export type Layout = "tandem" | "stands";   // game-day tandem packing, or the 48 marked stands of an ordinary week
+export interface ParkingPosition { id: string; kind: "stand" | "hot" | "temp" | "pad"; row: string; column: number; depth: number; max_wingspan_ft: number }
 export interface ParkingMetrics {
   method: ParkingMethod; temp_zone: boolean; tows: number; boxed_in_events: number; overflow_aircraft: number;
   hot_spot_uses: number; temp_zone_uses: number; peak_stands_used: number; stands: number; utilization_pct: number;
-  revenue_est_usd: number; aircraft_parked: number;
+  revenue_est_usd: number; aircraft_parked: number; layout: Layout; pad_uses: number; positions: number; solver?: string; solve_s?: number;
 }
 export interface GanttBar {
   flight_id: string; booking_code: string | null; size_class: SizeClass; start: string; end: string; stay_type: string;
   origin: string; tow_involved: boolean;
 }
-export interface Tow { t_local: string; flight_id: string; size_class: SizeClass; from: string; to: string; reason: string; for_flight: string }
+export interface Tow {
+  t_local: string; flight_id: string; size_class: SizeClass; from: string; to: string; reason: string; for_flight: string;
+  kind: "arrival" | "departure"; for_flight_t: string;   // the deeper jet's own landing or departure time
+}
 export interface ParkingPlan {
-  method: ParkingMethod; temp_zone: boolean; source: string; positions: ParkingPosition[]; metrics: ParkingMetrics;
+  method: ParkingMethod; temp_zone: boolean; layout: Layout; source: string; positions: ParkingPosition[]; metrics: ParkingMetrics;
   compare: ParkingMetrics; gantt: { position: string; kind: string; bars: GanttBar[] }[]; tows: Tow[];
-  pins: Record<string, string>; window: string[];
+  pins: Record<string, string>; booked: string[]; window: string[];
 }
 export interface Occupant {
   flight_id: string; booking_code: string | null; size_class: SizeClass; wingspan_ft: number; position: string | null;
@@ -132,7 +143,7 @@ export interface ParkingState {
   t_local: string; occupants: Occupant[]; tows_next_3h: Tow[];
   arrivals_next_3h: { flight_id: string; booking_code: string | null; size_class: SizeClass; arrive_local: string; position: string | null; origin: string }[];
   departures_next_3h: { flight_id: string; size_class: SizeClass; depart_local: string; position: string | null }[];
-  stands_used: number; hot_used: number; temp_used: number; overflow_now: number;
+  stands_used: number; hot_used: number; temp_used: number; pad_used: number; overflow_now: number;
 }
 export interface Reservation {
   flight_id: string; booking_code: string | null; size_class: SizeClass; origin: string; origin_name: string;
@@ -156,3 +167,48 @@ export interface La28Report {
   la28: La28Profile; super_bowl: La28Profile;
   recommendations: { title: string; detail: string; approver: string }[]; never: string;
 }
+
+// ---------- booking desk ----------
+export interface BookingCheck { ok: boolean; label: string; detail: string }
+export interface BookingQuote {
+  request_id: string; decision: "confirmed" | "approval" | "full" | "invalid"; headline: string; size_class: SizeClass;
+  position: ParkingPosition | null; position_label: string | null; tows: number | null; price_usd: number;
+  price_lines: { label: string; usd: number }[]; event_rates: boolean; hold_expires_local: string | null;
+  checks: BookingCheck[]; alternatives: { kind: string; label: string; detail: string }[];
+  risk: { p90_peak: number | null; p_over: number; peak_at: string | null; capacity: number }; answer_ms: number;
+  trip_sheet: Record<string, unknown>;
+}
+export interface InboxItem {
+  request_id: string; received_local: string; channel: string; flight: string; flight_id: string; size_class: SizeClass;
+  origin: string; eta_local: string; etd_local: string; position: string | null; lead_days: number;
+  status: "auto" | "look"; issues: { kind: string; text: string }[]; notes: string[]; booked?: boolean;
+}
+export interface Inbox {
+  t_local: string; total: number; auto: number; look: number; by_channel: Record<string, number>;
+  by_issue: Record<string, number>; median_lead_days: number | null; items: InboxItem[]; note: string;
+}
+export interface Connection { name: string; kind: string; flow: string; status: string; today: string; with_rampcast: string }
+export interface BookingMeta { connections: Connection[]; aircraft_types: { code: string; name: string; size_class: SizeClass }[]; services: string[] }
+export interface TripRequest {
+  arrive_local: string; depart_local: string; aircraft_type?: string; size_class?: SizeClass; tail?: string; origin?: string;
+  international?: boolean; services?: string[]; channel?: string; t?: string; layout?: Layout;
+}
+
+// ---------- AI co-pilot ----------
+export type Urgency = "now" | "today" | "this week";
+export interface AiNumber { label: string; value: number | string | null; unit?: string }
+export interface AiRec {
+  id: string; urgency: Urgency; score: number; title: string; why: string[]; numbers: AiNumber[];
+  models: string[]; approver: string; screen: string; action: string;
+}
+export interface AiRecs { t_local: string; scenario: Scenario; layout: Layout; items: AiRec[]; counts: Record<Urgency, number>; models_consulted: number; note: string }
+export interface AiEvidence { label: string; value: number | string; unit?: string; detail?: string }
+export interface AiModel {
+  id: string; name: string; family: string; owner: string; question: string; automation: "suggests" | "automatic" | "human approves";
+  method: string[]; inputs: { name: string; label: "published" | "reconstructed" | "assumption" | "live" }[]; outputs: string[];
+  limits: string[]; code: string; card?: string; evidence: AiEvidence[]; status: "live" | "fallback" | "unavailable";
+}
+export interface AiValidationRow { check: string; metric: string; subject: string; method: string; predicted: string; reference: string; abs_pct_error: string; note: string; status: string }
+export interface AiModels { models: AiModel[]; validation: AiValidationRow[]; note: string }
+export interface AiBenchRow { method: ParkingMethod; name: string; tows: number; overflow: number; boxed_in: number; pad: number; temp: number; hot: number; solver?: string; solve_s: number }
+export interface AiBenchmark { layout: Layout; temp_zone: boolean; rows: AiBenchRow[]; best: ParkingMethod | null; cut_vs_whiteboard_pct: number | null; how: string }

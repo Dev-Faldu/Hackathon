@@ -3,8 +3,9 @@ import { Html } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
 
-// Schematic placement: the real stadium is ~31 km from VNY. Core radius is inner_core_nm in contracts/assumptions.yaml.
-const SOFI = { x: 21000, z: -21000 };
+// SoFi Stadium is 32 km from VNY on a bearing of 154 deg (world angle 84 deg, see layout.ts).
+// Core radius is inner_core_nm in contracts/assumptions.yaml.
+const SOFI = { x: 31830, z: 3350 };
 const R = 10 * 1852, H = 1500;
 
 export function TfrCurtain() {

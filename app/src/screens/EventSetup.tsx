@@ -1,7 +1,7 @@
 import { ArrowRight, CalendarClock, Radio, ShieldCheck, Ticket, Truck, Users, Warehouse } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TopBar } from "../components/Shell";
-import { Chip, Panel } from "../components/ui";
+import { Fold, Glance, Chip, Panel } from "../components/ui";
 import { api } from "../lib/api";
 import { cx, sourceOf } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -42,6 +42,9 @@ export default function EventSetup() {
           Generate plan <ArrowRight size={15} />
         </button>
       </TopBar>
+      <Glance steps={["Check capacity and staff", "Set the priority rules", "Generate the plan"]}>
+        Tell RAMPCAST about the game and your FBO once. Every other screen reads from here, and every number can be changed later.
+      </Glance>
       <div className="grid gap-5 xl:grid-cols-3">
         <Panel eyebrow="Event" title="Super Bowl LXI">
           <dl className="space-y-3 text-[13px]">
@@ -111,6 +114,7 @@ export default function EventSetup() {
         </Panel>
       </div>
 
+      <Fold className="mt-5" title="How live data arrives" summary="Certainty grows as the date gets closer: schedules, then flight plans, then live tracking">
       <Panel className="mt-5" eyebrow="How live data arrives" title="Certainty grows as the date gets closer">
         <div className="grid gap-3 md:grid-cols-4">
           {LADDER.map((l) => (
@@ -129,6 +133,7 @@ export default function EventSetup() {
           In this demo, Live ops replays {sourceOf(meta?.live_source).sentence}.
         </p>
       </Panel>
+      </Fold>
     </div>
   );
 }

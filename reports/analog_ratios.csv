@@ -1,0 +1,5 @@
+event,region,metric,value,use,window,source,url
+SB_LVIII_2024,Las Vegas,arrivals_ratio,1.5,level,event-weekend average daily arrivals vs February-to-date daily average,"WingX via AIN, 2024-02-13",https://www.ainonline.com/aviation-news/business-aviation/2024-02-13/super-bowl-draws-flocks-aircraft-numbers-down-previous
+SB_LX_2026,Bay Area,arrivals_ratio,2.0,level,Feb 5-8 2026 (Thu-Sun) arrivals vs normal February,"WingX via GlobalAir, 2026",https://www.globalair.com/articles/bay-area-airports-report-3x-the-normal-business-jets-traffic-during-super-bowl/11933
+SB_LX_2026,Bay Area,monday_departures_ratio,3.0,check,day-after departures vs typical February daily average,"WingX via GlobalAir, 2026",https://www.globalair.com/articles/bay-area-airports-report-3x-the-normal-business-jets-traffic-during-super-bowl/11933
+SB_LVI_2022,Los Angeles,monday_departures_ratio,1.65,check,"548 day-after departures, +65% vs typical activity","WingX via AIN, 2022-02-18",https://www.ainonline.com/aviation-news/business-aviation/2022-02-18/super-bowl-brings-super-bounty-la-area-fbos

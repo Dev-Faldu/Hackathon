@@ -3,7 +3,7 @@ import { AlertTriangle, BellRing, Car, Clock, Globe2, PlaneLanding, PlaneTakeoff
 import { useState } from "react";
 import { FlightMap, PulseDot, RampMap } from "../components/maps";
 import { ReplayBar, TopBar } from "../components/Shell";
-import { ApproveBar, Chip, Kpi, Panel, Skeleton } from "../components/ui";
+import { ApproveBar, Chip, Fold, g, Glance, Kpi, KpiRow, Panel, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
 import { cx, hhmm, SIZE_LABEL, sourceOf } from "../lib/format";
 import { useApp, useReplayTick } from "../lib/store";
@@ -25,14 +25,21 @@ export default function LiveOps() {
       </TopBar>
       <ReplayBar />
 
-      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <Kpi label="Ramp occupancy" value={s?.occupancy_pct ?? 0} unit="%" tone={s && s.occupancy_pct > 100 ? "alert" : s && s.occupancy_pct > 90 ? "watch" : "ok"}
-          sub={s ? <><span className="num">{s.occupancy}</span> of <span className="num">{s.capacity}</span> large-cabin equivalents</> : "…"} />
-        <Kpi label="Inbound now" value={s?.airborne_count ?? 0} sub="Airborne to KVNY, our FBO" tone="runway" />
-        <Kpi label="Aircraft on ground" value={s?.aircraft_on_ground ?? 0} sub={`${s?.arrivals_today ?? 0} arrivals · ${s?.departures_today ?? 0} departures today`} />
-        <Kpi label="Need overflow" value={s?.overflow_now ?? 0} tone={s && s.overflow_now > 0 ? "alert" : "ok"} sub="No stand fits right now" />
-        <Kpi label="Departure-order conflicts" value={s?.stand_conflicts_week ?? 0} sub="Whole week, in the draft stand plan" />
+      <div className="mt-4">
+        <Glance steps={["Check the alerts", "Approve the car order", "Watch the next arrivals"]}>
+          {s ? <>The ramp is <b className="num">{s.occupancy_pct}%</b> full{s.occupancy_pct > 100 ? " (over capacity)" : ""}, <b className="num">{s.airborne_count}</b> jets are on their way
+            {s.overflow_now > 0 ? <>, and <b className="num text-alert">{s.overflow_now}</b> on the ground have no stand</> : null}.
+            {(al.data?.alerts.length ?? 0) > 0 ? <> <b className="num">{al.data!.alerts.length}</b> alert{al.data!.alerts.length > 1 ? "s" : ""} need a decision.</> : " Nothing needs a decision right now."}</> : "Loading the replay…"}
+        </Glance>
       </div>
+      <KpiRow keep={3}>
+        <Kpi label="Ramp occupancy" value={s?.occupancy_pct ?? 0} unit="%" tone={s && s.occupancy_pct > 100 ? "alert" : s && s.occupancy_pct > 90 ? "watch" : "ok"}
+          sub={s ? <><span className="num">{s.occupancy}</span> of <span className="num">{s.capacity}</span> large-jet spaces</> : "…"} info={g("occupancy")} />
+        <Kpi label="Inbound now" value={s?.airborne_count ?? 0} sub="Airborne to KVNY, our FBO" tone="runway" info={g("inbound")} />
+        <Kpi label="Need overflow" value={s?.overflow_now ?? 0} tone={s && s.overflow_now > 0 ? "alert" : "ok"} sub="No stand fits right now" info={g("overflow_now")} />
+        <Kpi label="Aircraft on ground" value={s?.aircraft_on_ground ?? 0} sub={`${s?.arrivals_today ?? 0} arrivals · ${s?.departures_today ?? 0} departures today`} info={g("on_ground")} />
+        <Kpi label="Departure-order conflicts" value={s?.stand_conflicts_week ?? 0} sub="Whole week, in the draft stand plan" info={g("conflicts")} />
+      </KpiRow>
 
       <div className="mt-5 grid gap-5 2xl:grid-cols-[1.75fr_1fr]">
         <Panel eyebrow="Inbound · worldwide" title={`${s?.airborne_count ?? "–"} jets converging on Van Nuys`} bodyClass="pt-2">
@@ -62,13 +69,15 @@ export default function LiveOps() {
       </div>
 
       <div className="mt-5 grid gap-5 2xl:grid-cols-[1.2fr_1fr]">
+        <Fold title="Who is parked where" summary={s ? `${s.ground.filter((x) => x.stand_id).length} of ${s.stands.length} stands taken` : "…"}>
         <Panel eyebrow="Ramp · draft stand plan" title="Who is parked where"
-          actions={<Chip>{s?.ground.filter((g) => g.stand_id).length ?? 0} / {s?.stands.length ?? 48} stands</Chip>}>
+          actions={<Chip>{s?.ground.filter((x) => x.stand_id).length ?? 0} / {s?.stands.length ?? 48} stands</Chip>}>
           {s ? <RampMap stands={s.stands} ground={s.ground} overflow={s.overflow_now} /> : <Skeleton className="h-[420px]" />}
           <p className="mt-2 text-[11.5px] text-ink-2">
             Jets that leave later park deeper, so no one is boxed in. The line supervisor approves every tow and marshals every aircraft.
           </p>
         </Panel>
+        </Fold>
         <QueuePanel items={qu.data?.items ?? []} policy={qu.data?.policy} loading={qu.loading && !qu.data} />
       </div>
 
