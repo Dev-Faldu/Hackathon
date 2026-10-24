@@ -22,8 +22,10 @@ test:             ## server tests + app typecheck
 build:            ## production build of the app
 	cd app && npx vite build
 
-data:             ## pull real data (needs network + free OpenSky account), see data/scripts
+data:             ## build all processed data files for Role 1 (contracts/README.md)
+	server/.venv/bin/python3 data/scripts/build_processed.py
+
+fetch:            ## pull raw data from OpenSky + FAA registry (needs network + free OpenSky account)
 	python3 data/scripts/fetch_opensky.py --preset analog
 	python3 data/scripts/fetch_opensky.py --preset baseline
 	python3 data/scripts/fetch_faa_registry.py
-	python3 data/scripts/build_replay.py

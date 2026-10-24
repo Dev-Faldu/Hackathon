@@ -7,3 +7,5 @@ pyyaml
 anthropic
 httpx
 pytest
+eval_type_backport
+pyarrow

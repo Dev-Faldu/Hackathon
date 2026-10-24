@@ -1,0 +1,343 @@
+{
+  "fbo": "Sepulveda Jet Center (fictional)",
+  "airport": "KVNY",
+  "capacity_large_equiv": 48,
+  "stands": [
+    {
+      "stand_id": "A1",
+      "row": "A",
+      "column": 1,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "A2",
+      "row": "A",
+      "column": 1,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "A3",
+      "row": "A",
+      "column": 1,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "A4",
+      "row": "A",
+      "column": 2,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "A5",
+      "row": "A",
+      "column": 2,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "A6",
+      "row": "A",
+      "column": 2,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "A7",
+      "row": "A",
+      "column": 3,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "A8",
+      "row": "A",
+      "column": 3,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "A9",
+      "row": "A",
+      "column": 3,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "A10",
+      "row": "A",
+      "column": 4,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "A11",
+      "row": "A",
+      "column": 4,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "A12",
+      "row": "A",
+      "column": 4,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "B1",
+      "row": "B",
+      "column": 1,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "B2",
+      "row": "B",
+      "column": 1,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "B3",
+      "row": "B",
+      "column": 1,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "B4",
+      "row": "B",
+      "column": 2,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "B5",
+      "row": "B",
+      "column": 2,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "B6",
+      "row": "B",
+      "column": 2,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "B7",
+      "row": "B",
+      "column": 3,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "B8",
+      "row": "B",
+      "column": 3,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "B9",
+      "row": "B",
+      "column": 3,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "B10",
+      "row": "B",
+      "column": 4,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "B11",
+      "row": "B",
+      "column": 4,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "B12",
+      "row": "B",
+      "column": 4,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "C1",
+      "row": "C",
+      "column": 1,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "C2",
+      "row": "C",
+      "column": 1,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "C3",
+      "row": "C",
+      "column": 1,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "C4",
+      "row": "C",
+      "column": 2,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "C5",
+      "row": "C",
+      "column": 2,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "C6",
+      "row": "C",
+      "column": 2,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "C7",
+      "row": "C",
+      "column": 3,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "C8",
+      "row": "C",
+      "column": 3,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "C9",
+      "row": "C",
+      "column": 3,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "C10",
+      "row": "C",
+      "column": 4,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "C11",
+      "row": "C",
+      "column": 4,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "C12",
+      "row": "C",
+      "column": 4,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "D1",
+      "row": "D",
+      "column": 1,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "D2",
+      "row": "D",
+      "column": 1,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "D3",
+      "row": "D",
+      "column": 1,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "D4",
+      "row": "D",
+      "column": 2,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "D5",
+      "row": "D",
+      "column": 2,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "D6",
+      "row": "D",
+      "column": 2,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "D7",
+      "row": "D",
+      "column": 3,
+      "depth": 1,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "D8",
+      "row": "D",
+      "column": 3,
+      "depth": 2,
+      "max_wingspan_ft": 80
+    },
+    {
+      "stand_id": "D9",
+      "row": "D",
+      "column": 3,
+      "depth": 3,
+      "max_wingspan_ft": 60
+    },
+    {
+      "stand_id": "D10",
+      "row": "D",
+      "column": 4,
+      "depth": 1,
+      "max_wingspan_ft": 110
+    },
+    {
+      "stand_id": "D11",
+      "row": "D",
+      "column": 4,
+      "depth": 2,
+      "max_wingspan_ft": 100
+    },
+    {
+      "stand_id": "D12",
+      "row": "D",
+      "column": 4,
+      "depth": 3,
+      "max_wingspan_ft": 80
+    }
+  ]
+}
