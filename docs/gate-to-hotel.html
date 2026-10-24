@@ -1,0 +1,409 @@
+<title>Gate to Hotel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: companion to the RAMPCAST blueprint. Same chart-paper tokens. Reading column + full-width swimlane, edge-case ledger and disruption board. */
+:root{
+  --paper:#F3F6F7; --panel:#FFFFFF; --ink:#12233A; --muted:#566578; --rule:#D3DCE3;
+  --chart-blue:#1D5FA8; --tfr:#B4237D; --tfr-soft:rgba(180,35,125,.10); --teal:#17808F; --teal-soft:rgba(23,128,143,.10); --amber:#B97A0B;
+  --ok:#2E8B57; --watch:#B8920F; --over:#C0392B;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0D141D; --panel:#131D29; --ink:#DCE6EE; --muted:#93A3B5; --rule:#273648;
+  --chart-blue:#6AA8EE; --tfr:#E35DAE; --tfr-soft:rgba(227,93,174,.13); --teal:#4DB8C7; --teal-soft:rgba(77,184,199,.12); --amber:#E2A83C;
+  --ok:#4CB879; --watch:#D9B840; --over:#E5574A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0D141D; --panel:#131D29; --ink:#DCE6EE; --muted:#93A3B5; --rule:#273648;
+  --chart-blue:#6AA8EE; --tfr:#E35DAE; --tfr-soft:rgba(227,93,174,.13); --teal:#4DB8C7; --teal-soft:rgba(77,184,199,.12); --amber:#E2A83C;
+  --ok:#4CB879; --watch:#D9B840; --over:#E5574A; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15.5px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1120px;margin:0 auto}
+.col{max-width:70ch}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;text-wrap:balance;margin:0}
+h1{font-size:clamp(48px,8vw,92px);letter-spacing:.01em}
+h2{font-size:clamp(30px,4.2vw,42px);letter-spacing:.01em}
+h3{font-size:21px;font-weight:600;letter-spacing:.02em}
+p{margin:0}
+a{color:var(--chart-blue)}
+a:focus-visible{outline:2px solid var(--tfr);outline-offset:2px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+section{padding-block:56px 8px;display:grid;gap:22px}
+.sec-head{display:grid;gap:10px;border-top:1px solid var(--rule);padding-top:18px}
+.lede{color:var(--muted);font-size:17px}
+header{padding-block:44px 8px;display:grid;gap:18px}
+.callsign{display:flex;flex-wrap:wrap;gap:8px 14px}
+.chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--rule);padding:3px 9px;border-radius:3px;color:var(--muted)}
+.chip.tfr{border-color:var(--tfr);color:var(--tfr)}
+.thesis{font-size:clamp(19px,2.3vw,23px);line-height:1.4;max-width:46ch}
+h1 .arrow{color:var(--tfr)}
+.scroll-x{overflow-x:auto}
+.figure{background:var(--panel);border:1px solid var(--rule);padding:14px;display:grid;gap:12px}
+.note{font-size:12.5px;color:var(--muted)}
+
+/* truth box */
+.truth{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.truth div{background:var(--panel);padding:16px;display:grid;gap:6px;align-content:start;font-size:14.5px}
+.truth b{font-family:var(--display);font-size:21px;font-weight:600}
+
+/* swimlane */
+.lanes{display:grid;grid-template-columns:150px repeat(8,minmax(132px,1fr));min-width:1240px;font-size:12.5px;line-height:1.38}
+.lanes > div{padding:8px 9px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.lanes .ph{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--paper);border-bottom:2px solid var(--ink)}
+.lanes .ln{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.02em;background:var(--paper);display:grid;gap:2px;align-content:start}
+.lanes .ln small{font-family:var(--body);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0}
+.lanes .auth{color:var(--tfr)}
+.lanes .twin{background:var(--teal-soft)}
+.lanes .twin.ln{color:var(--teal)}
+.lanes .x{color:var(--muted);opacity:.6}
+.lanes .hl{box-shadow:inset 0 0 0 2px var(--tfr)}
+
+/* decision table */
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:nowrap}
+td.never{color:var(--tfr)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.watch{color:var(--watch)} .pill.over{color:var(--over)} .pill.info{color:var(--chart-blue)}
+
+/* edge cases */
+.filters{display:flex;flex-wrap:wrap;gap:8px}
+.filters button{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;background:var(--panel);border:1px solid var(--rule);color:var(--muted);padding:6px 11px;border-radius:3px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.filters button:focus-visible{outline:2px solid var(--tfr);outline-offset:2px}
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.case{background:var(--panel);border:1px solid var(--rule);padding:14px 16px;display:grid;gap:8px;align-content:start;font-size:13.5px;line-height:1.45}
+.case .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.case h3{font-size:19px}
+.case .zone{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.case dl{display:grid;grid-template-columns:62px 1fr;gap:4px 10px;margin:0}
+.case dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.case dd{margin:0}
+.case dd.who{color:var(--tfr)}
+.sev{width:100%;height:3px;background:var(--rule)}
+.sev i{display:block;height:3px}
+
+/* disruption board */
+.steps{display:grid;gap:0;border-left:2px solid var(--rule);margin-left:6px}
+.step{display:grid;grid-template-columns:76px 1fr;gap:14px;padding:0 0 22px 18px;position:relative}
+.step::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--teal)}
+.step.alert::before{border-color:var(--over);background:var(--over)}
+.step.human::before{border-color:var(--tfr);background:var(--tfr)}
+.step .t{font-family:var(--mono);font-size:13px;color:var(--muted);padding-top:1px}
+.step .b{display:grid;gap:8px;min-width:0}
+.step h3{font-size:20px}
+
+/* architecture */
+.arch{display:grid;grid-template-columns:repeat(4,minmax(200px,1fr));gap:14px;min-width:880px}
+.arch .colm{display:grid;gap:8px;align-content:start}
+.arch h3{font-size:17px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.node{border:1px solid var(--rule);background:var(--paper);padding:8px 10px;border-radius:3px;font-size:12.5px;line-height:1.35}
+.node b{display:block;font-size:13.5px}
+.node.ai{border-color:var(--teal)}
+.node.human{border-color:var(--tfr);background:var(--tfr-soft)}
+.wall{border:2px dashed var(--tfr);padding:12px 14px;font-size:13.5px;display:grid;gap:4px}
+.wall b{font-family:var(--display);font-size:19px;color:var(--tfr);font-weight:600}
+
+.rails{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.rails div{display:grid;gap:6px;align-content:start;font-size:14px}
+.rails b{font-family:var(--display);font-size:19px;font-weight:600}
+ul{margin:0;padding-left:18px} li{margin:3px 0}
+.sources{font-size:13px;color:var(--muted);display:grid;gap:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="callsign">
+    <span class="chip">RAMPCAST research · part 2</span>
+    <span class="chip">Super Bowl LXI week · Feb 9–15 2027</span>
+    <span class="chip tfr">AI assists · people decide</span>
+  </div>
+  <h1>GATE <span class="arrow">→</span> HOTEL</h1>
+  <p class="thesis">Hundreds of jets leave airports around the world. They all want to land in LA, park, refuel and get their passengers to a hotel. This page maps every step, who controls it, what breaks, and what our system does about it.</p>
+</header>
+
+<section>
+  <div class="sec-head"><span class="label">Start with the truth</span><h2>Nobody runs this whole chain today</h2>
+  <p class="lede col">The journey passes through six different organizations, and each has its own system. Most problems happen at the handoffs between them, which is the gap we fill. Some decisions in the chain belong to people by law, and our system stays out of those.</p></div>
+  <div class="truth">
+    <div><b>Landing order is ATC's job</b><p>SoCal TRACON and the tower sequence arrivals using time-based metering (FAA TBFM) and wake-turbulence spacing. A Ground Delay Program holds flights at their origin with an EDCT (assigned departure time). No outside tool gets a vote, and none should.</p></div>
+    <div><b>Diverting is the pilot's call</b><p>The pilot in command and the operator's dispatcher decide where to go, based on fuel they know and we don't. We can hand them a ranked list of options, but we never make the choice.</p></div>
+    <div><b>The ground side is where nobody coordinates</b><p>When a jet diverts from Van Nuys to Burbank, nothing automatically tells the parking plan, the customs office, the chauffeur or the hotel. That is the gap our system fills.</p></div>
+    <div><b>Commercial and private split at the gate</b><p>Scheduled airline flights were exempt from the 2026 Super Bowl reservation program and the stadium TFR. Private jets need a reservation (PPR) through an FBO, even for drop-and-go. We model airlines as background traffic and serve the private side.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">The whole journey · one swimlane</span><h2>Who does what, from days before until the hotel door</h2>
+  <p class="lede col">Columns show time and rows show organizations. Magenta text marks a legal authority that our system never overrides. The teal row at the bottom is what we build: it watches every lane and proposes, and a person approves.</p></div>
+  <div class="figure scroll-x">
+    <div class="lanes">
+      <div class="ph"></div><div class="ph">Days before</div><div class="ph">Hours before</div><div class="ph">Takeoff</div><div class="ph">En route</div><div class="ph">Approach + landing</div><div class="ph">Ramp</div><div class="ph">Curb</div><div class="ph">Road + hotel</div>
+
+      <div class="ln">FAA / ATC<small>Command Center, SoCal TRACON, tower</small></div>
+      <div>Publishes the domestic notice, the reservation (PPR) program and the game-day TFR</div>
+      <div>Flight plan window. In 2022, LA IFR arrivals filed 6–22 h before departure on required routes</div>
+      <div class="auth">Ground Delay Program issues an EDCT. A ground stop holds departures</div>
+      <div class="auth">Centers and oceanic control. Reroutes for weather</div>
+      <div class="auth">TBFM metering, landing order, runway, holding</div>
+      <div class="auth">Ground control taxi clearance</div>
+      <div class="x">—</div>
+      <div>TFR 10/30 nm on game day (air only)</div>
+
+      <div class="ln">Operator + pilot<small>Owner, charter company, flight department</small></div>
+      <div>Requests a slot (arrival, departure, or drop-and-go) through the FBO</div>
+      <div>Files flight plan. International flights file eAPIS ≥60 min before leaving the foreign airport</div>
+      <div class="auth">Go/no-go, fuel load</div>
+      <div>Updates ETA. Absorbs delays</div>
+      <div class="auth">Pilot in command decides whether to divert</div>
+      <div>Shutdown, crew handoff</div>
+      <div>Crew goes to its own hotel to rest</div>
+      <div>Charter crew duty and rest limits set the earliest departure time</div>
+
+      <div class="ln">CBP<small>International arrivals only</small></div>
+      <div>Landing-rights request (VNY: within 24 h of arrival)</div>
+      <div class="auth">Approves eAPIS. No departure without DHS approval</div>
+      <div class="x">—</div>
+      <div class="x">—</div>
+      <div>Arrival must fit within ±30 min of the approved time</div>
+      <div class="auth">Inspection at VNY's customs facility (Signature West only), limited hours</div>
+      <div class="x">—</div>
+      <div class="x">—</div>
+
+      <div class="ln">FBO<small>Our user: Sepulveda Jet Center (fictional)</small></div>
+      <div>Allocates its slot share. Sets the ramp plan</div>
+      <div>Fuel orders, crew roster, tugs, catering</div>
+      <div class="x">—</div>
+      <div>Watches ETAs and re-plans</div>
+      <div>Line crew and marshaller ready</div>
+      <div class="auth">Line supervisor: parking spot, towing, fueling, safety</div>
+      <div>Escorts the planeside car. Handles bags</div>
+      <div class="x">—</div>
+
+      <div class="ln">Ground + hotel<small>Chauffeur company, helicopter shuttle, hotel</small></div>
+      <div>Car and driver booked against a booking code</div>
+      <div>Driver shifts planned</div>
+      <div class="x">—</div>
+      <div>Car stages near the FBO</div>
+      <div>Car moves planeside on the live ETA</div>
+      <div class="x">—</div>
+      <div>Passengers and bags load</div>
+      <div>I-405 / US-101 route. Early check-in at the hotel</div>
+
+      <div class="ln twin">RAMPCAST twin<small>What we build</small></div>
+      <div class="twin">Demand forecast. Recommended slot cap with low/med/high scenarios</div>
+      <div class="twin">Arrival-wave forecast. Fuel and staff plan</div>
+      <div class="twin">Reads the EDCT and updates the ETA for everyone downstream</div>
+      <div class="twin">Live ETA from ADS-B with an uncertainty band</div>
+      <div class="twin hl">If disrupted: ranked alternates for the operator, ramp hold, customs-window check</div>
+      <div class="twin">Spot plan that respects departure order (no boxed-in jets)</div>
+      <div class="twin">Re-dispatches the car to the airport where the jet actually lands</div>
+      <div class="twin">Drive-time ETA. Hotel told the new ETA by booking code, with no names</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Decision rights</span><h2>Every decision, who owns it, and where the AI stops</h2></div>
+  <div class="scroll-x"><table>
+    <thead><tr><th>Decision</th><th>Owner by law or contract</th><th>Today's tool</th><th>Our AI does</th><th>Our AI never</th></tr></thead>
+    <tbody>
+      <tr><td>Can this jet come to LA this week?</td><td>FAA program, run through airport and FBO reservations</td><td>FBO desk, phone, email</td><td>Forecasts demand, suggests a daily cap and a flex window</td><td class="never">Accepts or rejects a specific aircraft</td></tr>
+      <tr><td>When it takes off from origin</td><td>FAA Command Center (Ground Delay Program)</td><td>TFMS, Flight Schedule Monitor</td><td>Reads the EDCT and moves all downstream ETAs</td><td class="never">Assigns or swaps EDCTs</td></tr>
+      <tr><td>Landing order and runway</td><td>ATC: SoCal TRACON and VNY tower</td><td>TBFM, controllers</td><td>Predicts the arrival time only</td><td class="never">Sequences, holds or clears anything</td></tr>
+      <tr><td>Divert, and to where</td><td>Pilot in command and operator dispatch</td><td>Flight-planning software, phone</td><td>Ranks alternates by runway, open parking, customs and drive time</td><td class="never">Picks the alternate or messages the cockpit</td></tr>
+      <tr><td>Customs clearance</td><td>CBP</td><td>eAPIS, landing-rights desk</td><td>Flags international flights at risk of missing the customs window</td><td class="never">Contacts CBP or alters a manifest</td></tr>
+      <tr><td>Which spot the jet parks in</td><td>FBO line supervisor</td><td>Whiteboard, FBO software</td><td>Drafts a spot plan sorted by departure time</td><td class="never">Directs towing or marshalling</td></tr>
+      <tr><td>Who gets the last spot</td><td>FBO general manager, under written policy</td><td>First come, first served</td><td>Shows the trade-offs: empty legs, waits, fairness</td><td class="never">Ranks customers by who they are or what they pay</td></tr>
+      <tr><td>Car dispatch and route</td><td>Ground transport dispatcher and driver</td><td>Limo dispatch apps, Waze</td><td>Re-plans pickups when ETAs or airports change</td><td class="never">Sees or shares passenger identities</td></tr>
+      <tr><td>Post-game departure time</td><td>Operator and pilot, airport noise rules, ATC</td><td>Phone queue</td><td>Forecasts the Sunday and Monday wave. Warns about curfew and crew rest limits</td><td class="never">Grants departure slots</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Edge-case ledger · 22 cases</span><h2>What breaks when everyone lands at once</h2>
+  <p class="lede col">Each card names the trigger, who decides, and what our system does. The bar shows severity for the FBO. Filter by where it happens.</p></div>
+  <div class="filters" role="group" aria-label="Filter edge cases">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="air" aria-pressed="false">Air</button>
+    <button type="button" data-f="border" aria-pressed="false">Border</button>
+    <button type="button" data-f="ramp" aria-pressed="false">Ramp</button>
+    <button type="button" data-f="ground" aria-pressed="false">Ground</button>
+    <button type="button" data-f="depart" aria-pressed="false">Departure wave</button>
+  </div>
+  <div class="cases" id="cases"></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Worked scenario · fictional flights, real rules</span><h2>Friday 13:05: Van Nuys loses its long runway</h2>
+  <p class="lede col">This is the demo moment. One disruption ripples through every lane, and the system re-plans the parts it owns. Every decision that belongs to someone else lands on that person's screen as a recommendation. Flights, times and delays are made up for the demo. The airport layout and the customs hours are real.</p></div>
+  <div class="scroll-x"><table>
+    <thead><tr><th>Inbound</th><th>Size class</th><th>From</th><th>ETA</th><th>Customs</th><th>Ripple flag at P50 / P90 reopening</th></tr></thead>
+    <tbody id="board"></tbody>
+  </table></div>
+  <div class="steps">
+    <div class="step alert"><span class="t">13:05</span><div class="b"><h3>A disabled aircraft closes runway 16R/34L</h3><p>VNY's 8,000 ft runway is the only one built for large jets, and the parallel runway is about 4,000 ft. Tower closes 16R. The twin estimates reopening at <b>P50 13:55, P90 14:30</b>, based on an assumed history of similar closures. Eight jets inbound to our FBO arrive within the hour.</p></div></div>
+    <div class="step"><span class="t">13:06</span><div class="b"><h3>The twin re-runs every lane</h3><ul><li><b>ETAs:</b> each inbound gets a delayed-arrival band. ATC still decides who lands when.</li><li><b>Customs:</b> two international arrivals now risk missing VNY customs, which closes 14:30 on Fridays (per CBP's June 2024 sheet).</li><li><b>Ramp:</b> holds 8 reserved spots until 15:00, then releases them to the overflow waitlist.</li><li><b>Cars:</b> 8 drivers are waiting planeside, so it drafts new staging moves.</li></ul></div></div>
+    <div class="step"><span class="t">13:08</span><div class="b"><h3>Options go to the operators' dispatchers, not to the cockpit or ATC</h3><p>For each flight it sends a ranked card: <i>keep VNY with an expected delay</i>, <i>BUR (about 10 nm east)</i> or <i>an airport with customs</i>. Each option shows its runway, open parking at partner FBOs, customs availability and the extra drive time to the booked hotel. The operator weighs fuel, the twin's options and the pilot's judgment, then decides.</p></div></div>
+    <div class="step human"><span class="t">13:10</span><div class="b"><h3>Humans approve</h3><ul><li><b>FBO GM</b> approves the 90-minute spot hold.</li><li><b>Customer service</b> calls CBP's landing-rights line to ask for later inspection for JET-04 and JET-06. The twin drafted the request, and a human makes the call.</li><li><b>Ground dispatcher</b> approves moving two cars to Burbank staging after those operators choose BUR.</li></ul></div></div>
+    <div class="step"><span class="t">14:00</span><div class="b"><h3>Recovery</h3><p>The runway reopens, and the twin re-sequences the expected arrival wave for line crews and fuel trucks. Hotel ETAs update by booking code. It then logs the actual reopening time so the next forecast improves. Saturday's spot plan is re-optimized so nobody gets boxed in.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">System architecture · full vision</span><h2>The event operations twin</h2>
+  <p class="lede col">It reads from everyone and writes only to its own planning screens. The dashed wall is a hard product boundary.</p></div>
+  <div class="figure scroll-x">
+    <div class="arch">
+      <div class="colm"><h3>Ingest</h3>
+        <div class="node"><b>Flights</b>OpenSky / ADS-B positions. FAA SWIM (TFMS flight plans, EDCTs, ground stops) via the SWIFT portal</div>
+        <div class="node"><b>Rules + airspace</b>FAA domestic notice, NOTAMs and TFRs, airport noise rules</div>
+        <div class="node"><b>Weather</b>aviationweather.gov METAR/TAF API</div>
+        <div class="node"><b>Border</b>CBP airport hours, landing-rights approvals (status only)</div>
+        <div class="node"><b>FBO state</b>Reservations, ramp map, fuel farm, staff on shift</div>
+        <div class="node"><b>Ground</b>Driver GPS, Caltrans PeMS freeway speeds, OSM roads</div>
+      </div>
+      <div class="colm"><h3>Twin state</h3>
+        <div class="node"><b>One record per trip</b>booking code → flight → aircraft class → spot → car → hotel</div>
+        <div class="node"><b>Privacy layer</b>Tails hashed, LADD tails dropped, no passenger names. Counts by size class only</div>
+        <div class="node"><b>Event clock</b>Days to game, TFR windows, customs hours, curfew</div>
+      </div>
+      <div class="colm"><h3>Predict + plan</h3>
+        <div class="node ai"><b>ETA model</b>Gradient boosting on ADS-B track, EDCT, weather. P10/P50/P90</div>
+        <div class="node ai"><b>Demand + ramp</b>M1–M3 from the blueprint: baseline, event uplift, Monte Carlo occupancy</div>
+        <div class="node ai"><b>Spot planner</b>Integer program. Wingspan fits and departure order, so no aircraft is boxed in</div>
+        <div class="node ai"><b>Alternate ranker</b>Runway, open parking, customs, drive time. Options only</div>
+        <div class="node ai"><b>Car dispatcher</b>Vehicle routing with time windows (OR-Tools)</div>
+      </div>
+      <div class="colm"><h3>Human consoles</h3>
+        <div class="node human"><b>FBO GM</b>Slot caps, spot holds, last-spot policy</div>
+        <div class="node human"><b>Line supervisor</b>Spot plan, tow order, fuel trucks</div>
+        <div class="node human"><b>Customer service</b>Operator option cards, customs requests</div>
+        <div class="node human"><b>Ground dispatcher</b>Car moves, hotel ETAs</div>
+        <div class="node"><b>Audit log</b>Every proposal, approval and override</div>
+      </div>
+    </div>
+    <div class="wall"><b>Hard boundary</b><span>No connection writes to ATC, a cockpit, CBP systems, or any reservation system without a person pressing approve. The twin is read-only toward everything it does not own.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Algorithms · what each piece really is</span><h2>Known problems with known methods</h2></div>
+  <div class="scroll-x"><table>
+    <thead><tr><th>Piece</th><th>Problem class</th><th>Hackathon method</th><th>Benchmark or data to cite</th></tr></thead>
+    <tbody>
+      <tr><td>Arrival ETA</td><td>Regression with uncertainty</td><td>LightGBM quantile regression on distance-to-go, ground speed, EDCT, wind</td><td>OpenSky tracks into KVNY, scored against actual landing times</td></tr>
+      <tr><td>Landing order (simulated input only)</td><td>Aircraft Landing Problem</td><td>First-come-first-served plus wake spacing, used to estimate delay. Never issued as an instruction</td><td>OR-Library <span class="mono">airland1–13</span> (Beasley et al. 2000)</td></tr>
+      <tr><td>Ramp demand</td><td>Count forecasting plus queueing</td><td>Seasonal baseline × event uplift, then Monte Carlo occupancy</td><td>Super Bowl LVI week at VNY (2022) as a blind backtest</td></tr>
+      <tr><td>Spot plan</td><td>Packing plus interval scheduling (like airport gate assignment)</td><td>Small integer program. A jet leaving earlier never sits behind one leaving later</td><td>FAA registry wingspans by model. Ramp drawn from airport diagram</td></tr>
+      <tr><td>Alternate ranking</td><td>Multi-criteria ranking</td><td>Hard filters (runway, customs) then weighted score. Shows its math</td><td>OurAirports runways CSV, CBP airport fact sheets</td></tr>
+      <tr><td>Car dispatch</td><td>Vehicle routing with time windows</td><td>OR-Tools solver, re-solved whenever an ETA changes</td><td>Caltrans PeMS speeds, OSRM on OpenStreetMap</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">What to actually build in 30 hours</span><h2>Go deep on one thing, and show the whole chain</h2>
+  <p class="lede col">The track asks for one focus area, and judges reward depth. Make Parking excellent with real data and a backtest. Then show the twin rippling through the other lanes in a single scripted disruption. That shows you understand the whole system without spreading the team too thin.</p></div>
+  <div class="rails">
+    <div><b>Must ship</b><ul><li>Blind LVI backtest at VNY with MAPE against naive rules</li><li>Low/med/high ramp heatmap and plan table</li><li>Spot planner that respects departure order</li><li>Approve, edit or reject on every plan line, with an audit log</li></ul></div>
+    <div><b>Demo moment</b><ul><li>Runway-closure scenario from this page</li><li>Customs-window flag on two international jets</li><li>Cars re-staged, hotel ETAs updated by booking code</li><li>Narrate who approved what</li></ul></div>
+    <div><b>Mention, don't build</b><ul><li>Live SWIM feed (show the schema only)</li><li>Helicopter shuttle module</li><li>Multi-FBO basin view for airport authorities</li><li>LA28 Olympics period (stretch goal)</li></ul></div>
+    <div><b>Never build</b><ul><li>Anything that sequences landings</li><li>Anything that messages a cockpit or ATC</li><li>VIP identity tracking or profiles</li><li>Customer ranking by wealth or status</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="label">Sources</span></div>
+  <div class="sources">
+    <span>Super Bowl LX special-event PPR (arrivals, departures and drop-and-go; scheduled carriers exempt; TFR 10/30 nm): <a href="https://www.faa.gov/air_traffic/publications/domesticnotices/dom26007_sp.html" target="_blank" rel="noopener">FAA DOM26007</a> · <a href="https://www.faa.gov/newsroom/super-bowl-lx-what-general-aviation-pilots-need-know" target="_blank" rel="noopener">FAA GA guidance</a> · <a href="https://nbaa.org/aircraft-operations/airspace/regional/super-bowl-lx-santa-clara-ca-feb-8-2026/" target="_blank" rel="noopener">NBAA LX</a></span>
+    <span>Super Bowl LVI LA (parking reservations through FBOs, flight-plan window 6–22 h): <a href="https://oldain.ainonline.com/aviation-news/business-aviation/2022-01-28/faa-announces-further-super-bowl-flight-information" target="_blank" rel="noopener">AIN</a> · <a href="https://aviationweek.com/business-aviation/safety-ops-regulation/checklist-super-bowl-preparations-0" target="_blank" rel="noopener">Aviation Week</a> · <a href="https://ops.group/blog/super-bowl-feb-2022/" target="_blank" rel="noopener">OPSGROUP</a></span>
+    <span>VNY customs (Signature West GAF only, hours, landing rights ±30 min): <a href="https://cbp.gov/sites/default/files/2024-06/KVNY%20GA%20Airport%20Fact%20Sheet%2020240618.pdf" target="_blank" rel="noopener">CBP KVNY fact sheet, June 2024</a> · <a href="https://devd.vny.gov/us-customs-and-border-protection" target="_blank" rel="noopener">VNY CBP page</a></span>
+    <span>eAPIS timing and approval: <a href="https://www.gpo.gov/fdsys/pkg/CFR-2012-title19-vol1/pdf/CFR-2012-title19-vol1-sec122-22.pdf" target="_blank" rel="noopener">19 CFR 122.22</a> · <a href="https://pilot-protection-services.aopa.org/news/2024/september/01/the-elephant" target="_blank" rel="noopener">AOPA</a></span>
+    <span>VNY noise curfew (Stage 2 jets 22:00–07:00, some older Stage 3 jets 23:00–07:00, voluntary Quieter Nights): <a href="https://devd.vny.gov/pilot-information/noise-restrictions" target="_blank" rel="noopener">VNY noise restrictions</a> · <a href="https://www.boeing.com/resources/boeingdotcom/commercial/noise/van_nuys.html" target="_blank" rel="noopener">Boeing airport noise summary</a></span>
+    <span>Flow management (GDP, EDCT, TBFM, CDM): <a href="https://www.icao.int/sites/default/files/APAC/Meetings/2024/2024%20ATFMSG-14/3-Working%20Papers/WP06-Air-Traffic-Flow-Management-in-the-United-States-of-America.pdf" target="_blank" rel="noopener">ICAO WP06 on US ATFM</a> · <a href="https://ntrs.nasa.gov/api/citations/20210014842/downloads/IDM%20Concept%20Overview.pdf" target="_blank" rel="noopener">NASA IDM overview</a> · <a href="https://nbaa.org/aircraft-operations/airspace/tfm/tools-used-for-traffic-flow-management/special-traffic-management-program-stmp/" target="_blank" rel="noopener">NBAA on STMP</a></span>
+    <span>Data access: <a href="https://www.faa.gov/air_traffic/technology/swim/products/get_connected" target="_blank" rel="noopener">FAA SWIM</a> · <a href="https://aviationweather.gov/data/api/" target="_blank" rel="noopener">aviationweather.gov API</a> · <a href="https://dot.ca.gov/programs/traffic-operations/mpr/pems-source" target="_blank" rel="noopener">Caltrans PeMS</a> · <a href="https://people.brunel.ac.uk/~mastjjb/jeb/orlib/airlandinfo.html" target="_blank" rel="noopener">OR-Library airland</a></span>
+    <span>Planeside handling precedent (Super Bowl 50, Hayward): <a href="https://hayward-ca.gov/node/5611" target="_blank" rel="noopener">City of Hayward</a>. Helicopter transfer precedent: <a href="https://www.click2houston.com/news/2017/02/01/helicopter-service-flying-fans-to-super-bowl-li" target="_blank" rel="noopener">KPRC</a></span>
+    <span>All rules are as published for 2022–2026 events. The LXI notice has not been published yet, so recheck faa.gov/superbowl closer to February 2027.</span>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function(){
+  const CASES = [
+    // [zone, severity 1-3, title, trigger, who decides, what we do]
+    ['air',3,'Arrival bunching','Friday peak. In 2022 the LA basin saw 501 bizjet arrivals on that single day, clustered midday.','ATC meters with TBFM and decides landing order.','Forecast the hourly wave. Pre-position line crews, tugs and fuel trucks for it.'],
+    ['air',3,'Runway closure at VNY','A disabled aircraft or debris on 16R/34L, the only runway built for large jets.','Tower closes it. Each pilot decides to hold or divert.','Run the worked scenario: ETA bands, alternate options, spot holds, car moves.'],
+    ['air',2,'Marine layer / IFR morning','February low clouds at coastal airports cut arrival rates.','ATC lowers arrival rates and may start a Ground Delay Program.','Read TAFs into the ETA model. Shift the expected wave and staff later.'],
+    ['air',2,'Ground Delay Program / EDCT','Flights held at their origin with assigned departure times.','FAA Command Center.','Ingest the EDCT and push new ETAs to the ramp, cars and hotels at once.'],
+    ['air',3,'Game-day TFR','2:30–8:30 PM in 2022. HHR, LAX, SMO and TOA sit inside the 10 nm core.','FAA and NORAD.','Block planned GA movements in the window from the forecast. Tell operators early.'],
+    ['air',2,'Short-notice VIP TFR','A presidential TFR can be added if the President attends.','FAA and Secret Service.','Treat it as a scenario switch. Re-run the plan within minutes.'],
+    ['air',2,'Early or late outside the slot','A jet arrives outside its reserved window.','FBO and airport under PPR rules. ATC for the airspace side.','Flag it before the jet departs origin, based on its live ETA.'],
+    ['border',3,'Customs window missed','VNY customs on Fridays and Saturdays runs 09:00–14:30 (June 2024 sheet). Friday is also the peak day.','CBP.','Flag international ETAs with P90 past closing. Draft the extension request for a human to send.'],
+    ['border',2,'Manifest change','A passenger is added after eAPIS was filed, so new CBP clearance is needed.','Pilot and CBP.','Show it as a status flag only. We never touch manifests.'],
+    ['border',2,'Customs at one FBO only','At VNY, customs inspects only at Signature West, so other FBOs’ international jets clear there first.','CBP and the FBOs.','Plan the tow or reposition from the customs facility to our ramp as a ramp task.'],
+    ['ramp',3,'Ramp full','Unconstrained demand exceeds spots on Thursday through Saturday.','FBO general manager.','Cap overnight spots. Offer drop-and-go and nearest-partner overflow. Count the empty legs.'],
+    ['ramp',3,'Boxed-in jets','On a dense ramp, a jet parked behind others can’t leave until they move.','Line supervisor.','Park in order of expected departure. Re-solve when ETAs or departure plans change.'],
+    ['ramp',2,'Wingspan and weight mix','A large-cabin jet takes a spot sized for two light jets. Some pavement can’t take heavy jets.','Line supervisor.','Spot planner uses registry wingspans per aircraft class.'],
+    ['ramp',2,'Fuel truck bottleneck','Monday wave: dozens of uplifts in the same hours.','FBO.','Forecast gallons per hour. Pre-fill trucks and schedule fuel-farm deliveries.'],
+    ['ramp',1,'Services crunch','Ground power units, lav and water carts, catering and hangar space all peak together.','FBO.','Derive equipment counts from the movement forecast.'],
+    ['ground',3,'Car at the wrong airport','The jet diverted to BUR, but the chauffeur is waiting at VNY.','Ground dispatcher.','Re-dispatch automatically as a proposal. Send the new hotel ETA by booking code.'],
+    ['ground',2,'Planeside access','Cars on the ramp need FBO escort and limited staging space.','FBO security.','Time car entry to the ETA so the staging lot never overflows.'],
+    ['ground',2,'Freeway gridlock','Sepulveda Pass on I-405, game-day closures around SoFi, Valentine’s evening.','Driver.','Drive-time model from PeMS history. Pad pickup times.'],
+    ['ground',1,'Privacy leak risk','Tail numbers plus hotel names can expose people.','FBO policy, plus the FAA LADD program.','Hash tails, drop LADD aircraft, use booking codes only, and never store names.'],
+    ['depart',3,'Post-game exodus','In 2022, 548 bizjet departures across LA on the Monday after the game.','Operators, ATC, the FBO.','Forecast the departure wave. Order spots and staff for it.'],
+    ['depart',3,'Night curfew','Game ends around 8 PM. VNY bars Stage 2 jet departures 22:00–07:00 and some older Stage 3 jets 23:00–07:00.','Airport ordinance.','Flag affected aircraft. Expect the wave to pile up at 07:00 Monday.'],
+    ['depart',2,'Crew rest','Charter crews who flew in Saturday may not be legal to fly out right after the game.','Operator, under FAA duty rules.','Use the operator’s stated earliest departure as an input. Never compute legality ourselves.']
+  ];
+  const zones = {air:'Air',border:'Border',ramp:'Ramp',ground:'Ground',depart:'Departure wave'};
+  const sevColor = s => s === 3 ? 'var(--over)' : s === 2 ? 'var(--watch)' : 'var(--ok)';
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  function renderCases(f){
+    document.getElementById('cases').innerHTML = CASES.filter(c => f === 'all' || c[0] === f).map(([z, s, t, trig, who, we]) =>
+      `<article class="case"><div class="sev" aria-label="Severity ${s} of 3"><i style="width:${s * 33.4}%;background:${sevColor(s)}"></i></div>
+       <div class="top"><h3>${esc(t)}</h3><span class="zone">${zones[z]}</span></div>
+       <dl><dt>Trigger</dt><dd>${esc(trig)}</dd><dt>Decides</dt><dd class="who">${esc(who)}</dd><dt>We do</dt><dd>${esc(we)}</dd></dl></article>`).join('');
+  }
+  document.querySelectorAll('.filters button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.filters button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderCases(b.dataset.f);
+  }));
+  renderCases('all');
+
+  // Fictional inbound board for the runway-closure scenario. Reopen P50 13:55, P90 14:30. CBP Friday close 14:30.
+  const P50 = 13*60+55, P90 = 14*60+30, CBP_CLOSE = 14*60+30, SPACING = 3;
+  const FL = [
+    ['JET-01','Large cabin','Teterboro, NJ (TEB)','13:12',false],
+    ['JET-02','Super-mid','Dallas Love (DAL)','13:18',false],
+    ['JET-03','Light','Las Vegas (LAS)','13:20',false],
+    ['JET-04','Large cabin','London Luton (LTN)','13:35',true],
+    ['JET-05','Mid','San Jose (SJC)','13:41',false],
+    ['JET-06','Large cabin','Toluca, Mexico (TLC)','13:50',true],
+    ['JET-07','Super-mid','Miami Opa-locka (OPF)','13:55',false],
+    ['JET-08','Light','Scottsdale (SDL)','14:02',false]
+  ];
+  const toMin = s => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+  const hhmm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  const land = (eta, open, i) => Math.max(eta, open + i * SPACING);
+  document.getElementById('board').innerHTML = FL.map(([id, cls, from, eta, intl], i) => {
+    const e = toMin(eta), l50 = land(e, P50, i), l90 = land(e, P90, i);
+    let flag;
+    if (intl && l50 > CBP_CLOSE) flag = `<span class="pill over">Misses customs at P50 (${hhmm(l50)})</span> Request a CBP extension now`;
+    else if (intl && l90 > CBP_CLOSE) flag = `<span class="pill watch">Customs at risk at P90 (${hhmm(l90)})</span> Draft a CBP extension request`;
+    else flag = `<span class="pill info">Delay +${l50 - e} / +${l90 - e} min</span> Hold spot, re-time car`;
+    return `<tr><td class="mono">${id}</td><td>${cls}</td><td>${from}</td><td class="num">${eta}</td><td>${intl ? '<span class="pill watch">Intl · CBP</span>' : '<span class="note">Domestic</span>'}</td><td>${flag}</td></tr>`;
+  }).join('');
+})();
+</script>
