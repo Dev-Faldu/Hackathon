@@ -104,13 +104,14 @@ def test_flights_parquet_contract():
     expected_cols = [
         "flight_id", "tail_hash", "size_class", "model", "origin", "dest",
         "is_international", "first_seen_utc", "last_seen_utc", "direction",
-        "airport", "event_name", "day_offset"
+        "airport", "event_name", "day_offset", "source"
     ]
     assert list(df.columns) == expected_cols
 
     assert len(df) > 500
     assert set(df["size_class"].unique()).issubset(SIZE_CLASSES)
     assert set(df["direction"].unique()) == {"arrival", "departure"}
+    assert set(df["source"].unique()).issubset({"published", "assumed"})
 
     # Check tail_hash format (16 hex chars)
     hashes = df["tail_hash"].dropna()
@@ -128,17 +129,42 @@ def test_daily_counts_contract():
     expected_cols = [
         "date", "airport", "arrivals", "departures",
         "arr_light", "arr_mid", "arr_super_mid", "arr_large", "arr_other",
-        "event_name", "day_offset"
+        "event_name", "day_offset", "source"
     ]
     assert list(df.columns) == expected_cols
+    assert set(df["source"].unique()).issubset({"published", "assumed"})
 
-    # Ensure size class sums match total arrivals
-    size_sum = df["arr_light"] + df["arr_mid"] + df["arr_super_mid"] + df["arr_large"] + df["arr_other"]
-    assert (size_sum == df["arrivals"]).all(), "Sum of size classes must equal total arrivals"
+    # Ensure size class sums match total arrivals for tracked arrival days
+    tracked = df[df["arrivals"].notna()]
+    size_sum = tracked["arr_light"] + tracked["arr_mid"] + tracked["arr_super_mid"] + tracked["arr_large"] + tracked["arr_other"]
+    assert (size_sum == tracked["arrivals"]).all(), "Sum of size classes must equal total arrivals"
+
+    # Ensure the six untracked fake-zero days are marked missing (NaN), not 0
+    fake_zero_dates = {"2022-01-22", "2022-01-23", "2022-01-24", "2022-02-16", "2022-02-17", "2022-02-18"}
+    missing_days = df[df["date"].isin(fake_zero_dates)]
+    assert missing_days["arrivals"].isna().all(), "Fake-zero days must be missing/NaN instead of 0"
 
     # Multiple airports represented
     airports = set(df["airport"].unique())
-    assert {"KVNY", "KBUR", "KHHR", "KLGB"} <= airports
+    assert {"KVNY", "KBUR", "KHHR", "KLGB", "KLAS", "KHND", "KSJC", "KOAK"} <= airports
+
+
+def test_kvny_historical_and_uplift_datasets():
+    # KVNY historical Jan-Mar across 2019, 2020, 2022-2026 (skipping 2021)
+    k_path = PROCESSED / "kvny_historical_counts.csv"
+    assert k_path.exists()
+    kdf = pd.read_csv(k_path)
+    years = set(pd.to_datetime(kdf["date"]).dt.year.unique())
+    assert years == {2019, 2020, 2022, 2023, 2024, 2025, 2026}
+    assert 2021 not in years
+    assert (kdf["airport"] == "KVNY").all()
+
+    # Uplift dataset across multiple host Super Bowls
+    u_path = PROCESSED / "super_bowl_uplifts.csv"
+    assert u_path.exists()
+    udf = pd.read_csv(u_path)
+    assert set(udf["event_name"].unique()) == {"SB_LVIII_2024", "SB_LX_2026", "SB_LVII_2023"}
+    assert all(udf["uplift_ratio"] > 0)
 
 
 def test_load_processed_dataset_loader():
