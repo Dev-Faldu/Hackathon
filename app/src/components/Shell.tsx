@@ -11,6 +11,7 @@ import { useApp, type Screen } from "../lib/store";
 import { Chip, Segmented } from "./ui";
 
 const NAV: { id: Screen; label: string; icon: ReactNode; hint: string }[] = [
+  { id: "ai", label: "AI co-pilot", icon: <Sparkles size={17} />, hint: "What to do next, and every model behind it" },
   { id: "setup", label: "Event setup", icon: <Settings2 size={17} />, hint: "Capacity, staff, priority rules" },
   { id: "bookings", label: "Booking desk", icon: <CalendarCheck size={17} />, hint: "Instant answers, one inbox" },
   { id: "parking", label: "Parking control", icon: <SquareParking size={17} />, hint: "Stands, tows, reservations" },
@@ -180,7 +181,7 @@ export function ReplayBar() {
   const pct = (ms: number) => ((ms - windowMs[0]) / span) * 100;
   const iso = new Date(tMs).toISOString();
   return (
-    <div className="glass flex items-center gap-4 px-4 py-3">
+    <div className="glass flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 md:flex-nowrap">
       <button onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause replay" : "Play replay"}
         className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-runway text-white shadow-[0_6px_18px_rgba(37,99,235,0.35)]">
         {playing ? <Pause size={17} /> : <Play size={17} className="ml-0.5" />}
@@ -189,7 +190,7 @@ export function ReplayBar() {
         <div className="num text-[22px] font-semibold leading-none">{hhmm(iso)}</div>
         <div className="mt-1 text-[11.5px] text-ink-2">{dayLabel(iso)} · PST</div>
       </div>
-      <div className="relative min-w-0 flex-1 pt-1">
+      <div className="relative order-last w-full min-w-0 pt-1 md:order-none md:w-auto md:flex-1">
         <div className="relative h-8">
           <div className="absolute inset-x-0 top-3 h-2 rounded-full bg-ink/[0.06]" />
           <div className="absolute top-3 h-2 rounded-full bg-tfr/25" style={{ left: `${pct(tfr[0])}%`, width: `${pct(tfr[1]) - pct(tfr[0])}%` }}
@@ -204,12 +205,16 @@ export function ReplayBar() {
         </div>
         <div className="mt-0.5 flex justify-between text-[11px] text-ink-2">
           {days.map((d) => (
-            <span key={d} className={cx("num", d === "2027-02-14" && "font-semibold text-tfr")}>{dayLabel(d)}</span>
+            <span key={d} className={cx("num", d === "2027-02-14" && "font-semibold text-tfr")}>
+              <span className="md:hidden">{dayLabel(d).slice(0, 3)}</span><span className="hidden md:inline">{dayLabel(d)}</span>
+            </span>
           ))}
         </div>
       </div>
-      <Segmented size="sm" value={String(speed)} onChange={(v) => setSpeed(Number(v))}
-        options={[{ value: "60", label: "60×" }, { value: "600", label: "600×" }, { value: "3600", label: "3600×" }]} />
+      <div className="ml-auto md:ml-0">
+        <Segmented size="sm" value={String(speed)} onChange={(v) => setSpeed(Number(v))}
+          options={[{ value: "60", label: "60×" }, { value: "600", label: "600×" }, { value: "3600", label: "3600×" }]} />
+      </div>
     </div>
   );
 }

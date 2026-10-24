@@ -11,8 +11,9 @@ import WhatIf from "./screens/WhatIf";
 import La28 from "./screens/La28";
 import Bookings from "./screens/Bookings";
 import World3D from "./screens/World3D";
+import Copilot from "./screens/Copilot";
 
-const SCREENS = { setup: EventSetup, bookings: Bookings, parking: Parking, world: World3D, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction, la28: La28 };
+const SCREENS = { ai: Copilot, setup: EventSetup, bookings: Bookings, parking: Parking, world: World3D, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction, la28: La28 };
 
 export default function App() {
   const { screen } = useApp();

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AfterAction, Alert, AssignResult, AuditRow, Briefing, Explanation, Forecast, Meta, Occupancy, ParkingMethod,
   ParkingPlan, ParkingState, Queue, ReplayState, Reservation, Scenario, Settings, StrategiesResponse, WhatIf, La28Report,
-  BookingMeta, BookingQuote, Inbox, Layout, TripRequest } from "./types";
+  BookingMeta, BookingQuote, Inbox, Layout, TripRequest, AiRecs, AiModels, AiBenchmark } from "./types";
 import type { Movement } from "../three/layout";
 
 const BASE = "/api";
@@ -16,6 +16,9 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 const q = (t?: string) => (t ? `t=${encodeURIComponent(t)}` : "");
 
 export const api = {
+  aiRecommendations: (s: Scenario, layout: Layout, t?: string) => http<AiRecs>(`/ai/recommendations?scenario=${s}&layout=${layout}&${q(t)}`),
+  aiModels: (s: Scenario, layout: Layout) => http<AiModels>(`/ai/models?scenario=${s}&layout=${layout}`),
+  aiBenchmark: (layout: Layout, temp: boolean) => http<AiBenchmark>(`/ai/benchmark?layout=${layout}&temp=${temp}`),
   meta: () => http<Meta>("/meta"),
   forecast: (s: Scenario) => http<Forecast>(`/forecast?scenario=${s}`),
   occupancy: (s: Scenario) => http<Occupancy>(`/ramp/occupancy?scenario=${s}`),

@@ -106,6 +106,7 @@ export interface AuditRow { t_utc: string; actor_role: string; action: string; t
 export interface AfterAction {
   scenario: Scenario; source: string; notes: string[]; days: ForecastDay[]; mape_pct: number | null;
   naive_mape_pct: number | null; interval_coverage_pct: number; hours_over_capacity_no_plan: number;
+  out_of_sample?: { model_pct: number; naive_pct: number; events: number } | null; validation_note?: string | null;
   hours_over_capacity_with_plan: number; strategy: string; strategy_kpis: Kpis; peak_occupancy: number;
   capacity: number; stand_conflicts_week: number; audit: AuditRow[];
 }
@@ -190,3 +191,22 @@ export interface TripRequest {
   arrive_local: string; depart_local: string; aircraft_type?: string; size_class?: SizeClass; tail?: string; origin?: string;
   international?: boolean; services?: string[]; channel?: string; t?: string; layout?: Layout;
 }
+
+// ---------- AI co-pilot ----------
+export type Urgency = "now" | "today" | "this week";
+export interface AiNumber { label: string; value: number | string | null; unit?: string }
+export interface AiRec {
+  id: string; urgency: Urgency; score: number; title: string; why: string[]; numbers: AiNumber[];
+  models: string[]; approver: string; screen: string; action: string;
+}
+export interface AiRecs { t_local: string; scenario: Scenario; layout: Layout; items: AiRec[]; counts: Record<Urgency, number>; models_consulted: number; note: string }
+export interface AiEvidence { label: string; value: number | string; unit?: string; detail?: string }
+export interface AiModel {
+  id: string; name: string; family: string; owner: string; question: string; automation: "suggests" | "automatic" | "human approves";
+  method: string[]; inputs: { name: string; label: "published" | "reconstructed" | "assumption" | "live" }[]; outputs: string[];
+  limits: string[]; code: string; card?: string; evidence: AiEvidence[]; status: "live" | "fallback" | "unavailable";
+}
+export interface AiValidationRow { check: string; metric: string; subject: string; method: string; predicted: string; reference: string; abs_pct_error: string; note: string; status: string }
+export interface AiModels { models: AiModel[]; validation: AiValidationRow[]; note: string }
+export interface AiBenchRow { method: ParkingMethod; name: string; tows: number; overflow: number; boxed_in: number; pad: number; temp: number; hot: number; solver?: string; solve_s: number }
+export interface AiBenchmark { layout: Layout; temp_zone: boolean; rows: AiBenchRow[]; best: ParkingMethod | null; cut_vs_whiteboard_pct: number | null; how: string }

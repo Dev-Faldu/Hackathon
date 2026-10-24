@@ -152,6 +152,15 @@ Inbox: every request received by `t` from every channel, each with `status` (`au
 
 Every parking route takes `layout=stands` (48 marked stands) or `layout=tandem` (game-day packing; slot ids like `B3-2` = row B, column 3, second in the column; `H1`–`H6` hot spots; `T*` temp zone; `P*` overflow pad). Tows carry `kind` (`arrival` or `departure`) and `for_flight_t`. Accepted bookings join the plan: `POST /bookings/accept` returns `flight_id` and `position`; `DELETE /bookings/accepted/{flight_id}` cancels.
 
+Every parking route also takes `method=optimized` (default, adaptive), `method=cpsat` (Role 3's CP-SAT solver; a few seconds the first time, incremental after) or `method=first_come` (whiteboard). Metrics carry `solver` and `solve_s`. `POST /whatif` takes `layout` and returns `stand_plan` with `boxed_in` (box-ins the re-plan adds) and `boxed_in_planned`.
+
+### AI co-pilot
+
+- `GET /ai/recommendations?t=&scenario=&layout=`: `{t_local, items: [{id, urgency: now|today|this week, score, title, why[], numbers[], models[], approver, screen, action}], counts, models_consulted}`. Suggestions only.
+- `GET /ai/models?scenario=&layout=`: a card per model `{id, name, family, owner, question, automation, method[], inputs: [{name, label: published|reconstructed|assumption|live}], outputs[], limits[], code, evidence[], status}` plus Role 2's `validation` rows.
+- `GET /ai/benchmark?layout=&temp=`: whiteboard, adaptive and CP-SAT on the same week: `{rows: [{method, tows, overflow, boxed_in, pad, temp, hot, solver, solve_s}], best, cut_vs_whiteboard_pct}`.
+- `GET /afteraction` adds `out_of_sample: {model_pct, naive_pct, events}`.
+
 ### `GET /airfield/movements`
 
 The other FBOs' business-jet visits at VNY in the replay (`id, size_class, landed, departed, origin`), so the 3D runway carries the whole field's traffic.

@@ -3,7 +3,7 @@ import { api } from "./api";
 import { toLocalIso } from "./format";
 import type { Layout, Meta, Scenario } from "./types";
 
-export type Screen = "setup" | "bookings" | "parking" | "world" | "plan" | "live" | "whatif" | "after" | "la28";
+export type Screen = "ai" | "setup" | "bookings" | "parking" | "world" | "plan" | "live" | "whatif" | "after" | "la28";
 export interface Toast { id: number; title: string; body?: string; tone?: "ok" | "info" | "alert" }
 
 interface Ctx {
@@ -36,11 +36,11 @@ interface Ctx {
 const readSimple = () => { try { return localStorage.getItem("rampcast.view") !== "detailed"; } catch { return true; } };
 
 const AppCtx = createContext<Ctx | null>(null);
-const SCREENS: Screen[] = ["setup", "bookings", "parking", "world", "plan", "live", "whatif", "after", "la28"];
+const SCREENS: Screen[] = ["ai", "setup", "bookings", "parking", "world", "plan", "live", "whatif", "after", "la28"];
 
 const fromHash = (): Screen => {
   const h = window.location.hash.replace("#", "") as Screen;
-  return SCREENS.includes(h) ? h : "parking";
+  return SCREENS.includes(h) ? h : "ai";
 };
 
 export function AppProvider({ children }: { children: ReactNode }) {

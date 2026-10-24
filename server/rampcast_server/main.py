@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from rampcast.engine import audit, models as M, whatif
 
-from . import adapters, bookings, config as C, engine, explain, forecast, la28, parking, store
+from . import adapters, ai, bookings, config as C, engine, explain, forecast, la28, parking, store
 from .data import Dataset, Flight, airfield_movements, generate_sample, load_processed
 from .replay import Replay
 
@@ -23,6 +23,8 @@ from .replay import Replay
 async def lifespan(_: FastAPI):
     # Warm the slow caches (Monte Carlo, stand plan) in the background so the first screen loads fast.
     threading.Thread(target=lambda: (replay(), forecast.occupancy("medium"), la28.report("medium")), daemon=True).start()
+    # The exact solver takes seconds: plan the default game-day layout up front so the co-pilot's benchmark is ready.
+    threading.Thread(target=_warm_benchmarks, daemon=True).start()
     yield
 
 
@@ -304,7 +306,18 @@ def get_afteraction(scenario: str = "medium"):
             "hours_over_capacity_with_plan": card["kpis"]["hours_over_capacity"],
             "strategy": chosen, "strategy_kpis": card["kpis"],
             "peak_occupancy": round(float(occ.max()), 1), "capacity": engine.capacity(),
-            "stand_conflicts_week": replay().conflicts, "audit": store.audit_list()[-50:]}
+            "stand_conflicts_week": replay().conflicts, "audit": store.audit_list()[-50:],
+            "out_of_sample": _out_of_sample(), "validation_note": fc.get("validation", {}).get("validation_note")}
+
+
+def _out_of_sample() -> dict | None:
+    """Role 2's leave-one-event-out error on the published arrival ratios: the only check not shaped on the replay."""
+    rows = [r for r in ai.validation_summary() if r["check"] == "leave_one_event_out" and r["metric"] == "arrivals_ratio"]
+    model = [float(r["abs_pct_error"]) for r in rows if r["method"] == "analog_mean_leave_one_out"]
+    naive = [float(r["abs_pct_error"]) for r in rows if r["method"] == "naive_ordinary_week"]
+    if not model or not naive:
+        return None
+    return {"model_pct": round(sum(model) / len(model), 1), "naive_pct": round(sum(naive) / len(naive), 1), "events": len(model)}
 
 
 @router.get("/airfield/movements")
@@ -538,6 +551,125 @@ def get_booking_inbox(t: str | None = None, layout: str = "stands"):
 def get_booking_connections():
     types = [{"code": k, "name": v[0], "size_class": v[1]} for k, v in bookings.AIRCRAFT_TYPES.items()]
     return {"connections": bookings.CONNECTIONS, "aircraft_types": types, "services": list(bookings.SERVICES)}
+
+
+# ---------- AI co-pilot: every model, what it suggests now, and how each one works ----------
+
+_bench: dict[tuple, dict] = {}
+_bench_locks: dict[tuple, threading.Lock] = {}
+_bench_guard = threading.Lock()
+
+
+def _bench_key(layout: str, temp: bool) -> tuple:
+    return (layout, temp, parking.pins_key(_pins[layout]), _accepted_v[0])
+
+
+def _warm_benchmarks() -> None:
+    try:  # the co-pilot is the first screen: its own answers first, then the slow solver runs
+        get_ai_models("medium", "tandem")
+        get_ai_recommendations(None, "medium", "tandem")
+    except Exception:
+        pass
+    for layout, temp in (("tandem", False), ("tandem", True), ("stands", False)):
+        try:
+            get_ai_benchmark(layout, temp)
+        except Exception:  # warm-up only; the route computes on demand
+            pass
+
+
+@router.get("/ai/benchmark")
+def get_ai_benchmark(layout: str = "tandem", temp: bool = False):
+    """Whiteboard, adaptive and exact (CP-SAT) parking on the same week; the exact solver takes a few seconds."""
+    layout = check_layout(layout)
+    key = _bench_key(layout, temp)
+    with _bench_guard:
+        lock = _bench_locks.setdefault(key, threading.Lock())
+    with lock:  # a second request for the same benchmark waits for the first instead of solving again
+        if key not in _bench:
+            ds = ops_dataset()
+            rows = {m: parking.metrics(ds, parking_plan(m, temp, layout)) for m in parking.METHODS}
+            _bench[key] = ai.benchmark(rows, layout, temp)
+    return _bench[key]
+
+
+def _drift_evidence(ds: Dataset) -> list[dict]:
+    long = [(f, parking._as_told(f)) for f in ds.flights if (f.departed_vny - f.landed) > timedelta(hours=3)]
+    if not long:
+        return []
+    gaps = [(f.departed_vny - t.departed_vny).total_seconds() / 3600 for f, t in long]
+    return [{"label": "Mean drift, stays over 3 h", "value": round(sum(abs(g) for g in gaps) / len(gaps), 1), "unit": "h",
+             "detail": f"{len(long)} jets"},
+            {"label": "Left later than they said", "value": round(sum(g > 0 for g in gaps) / len(gaps) * 100), "unit": "%",
+             "detail": "the ones that box others in"}]
+
+
+@router.get("/ai/models")
+def get_ai_models(scenario: str = "medium", layout: str = "stands"):
+    scenario, layout = check_scenario(scenario), check_layout(layout)
+    fc, occ = get_forecast(scenario), get_occupancy(scenario)
+    f_ev, r_ev = ai.forecast_evidence(fc, occ)
+    ds = ops_dataset()
+    m = parking.metrics(ds, parking_plan("optimized", False, layout))
+    wb = parking.metrics(ds, parking_plan("first_come", False, layout))
+    s = _strategies(scenario, {})
+    best = _briefing_facts(scenario, C.parse_t(None))["recommended"]
+    card = next(c for c in s["strategies"] if c["id"] == best)
+    t = C.parse_t(demo_t())
+    q = engine.priority_queue(live_dataset(), t, store.get_settings()["weights"])
+    al = engine.alerts(live_dataset(), t)["alerts"]
+    kinds: dict[str, int] = {}
+    for a in al:
+        kinds[a["kind"]] = kinds.get(a["kind"], 0) + 1
+    inbox = bookings.inbox(ds, parking_plan("optimized", False, layout), t, accepted=_accepted_meta)
+    bench = _bench.get(_bench_key(layout, False))
+    cp = next((r for r in bench["rows"] if r["method"] == "cpsat"), None) if bench else None
+    mods = adapters.status()
+    evidence = {
+        "forecast": f_ev, "ramp_mc": r_ev,
+        "strategies": [{"label": "Suggested plan", "value": f"Strategy {card['id']}", "detail": card["name"]},
+                       {"label": "Hours over capacity", "value": card["kpis"]["hours_over_capacity"], "unit": "h",
+                        "detail": f"from {s['status_quo']['hours_over_capacity']} h with no plan"}],
+        "stand_default": [{"label": "Tows this week", "value": m["tows"], "detail": f"whiteboard {wb['tows']} on the same week ({layout})"},
+                          {"label": "Jets turned away", "value": m["overflow_aircraft"], "detail": f"{m['aircraft_parked']} parked"}],
+        "stand_cpsat": ([{"label": "Tows this week", "value": cp["tows"], "detail": f"{cp['overflow']} turned away · {cp['solve_s']} s to solve"}]
+                        if cp else [{"label": "Benchmark", "value": "not run yet", "detail": "run it in the algorithm arena"}]),
+        "drift": _drift_evidence(ds),
+        "booking": [{"label": "Answered automatically", "value": round(inbox["auto"] / inbox["total"] * 100) if inbox["total"] else 0,
+                     "unit": "%", "detail": f"{inbox['auto']} of {inbox['total']} requests by {_hhmm(inbox['t_local'])} Fri"}],
+        "priority": [{"label": "In the queue", "value": len(q["items"]), "detail": (q["items"][0]["reasons"][0] if q["items"] and q["items"][0]["reasons"] else "")}],
+        "alerts": [{"label": "Alerts at the demo time", "value": len(al), "detail": ", ".join(f"{v} {k.replace('_', ' ')}" for k, v in kinds.items())}],
+        "runway": [{"label": "Separation", "value": "90 s / 2 min", "detail": "arrivals / departures on 16R"}],
+        "explain": [{"label": "Writer", "value": "Claude" if explain.claude_available() else "Built-in templates",
+                     "detail": "every number cites a fact id"}],
+    }
+    status = {"forecast": "live" if mods["forecast"] else "fallback", "ramp_mc": "live" if mods["occupancy"] else "fallback",
+              "strategies": "live" if mods["strategies"] else "fallback",
+              "stand_cpsat": "live" if parking.cpsat.cp_model is not None else "unavailable"}
+    return ai.models(evidence, status)
+
+
+def _hhmm(iso: str) -> str:
+    return iso[11:16]
+
+
+@router.get("/ai/recommendations")
+def get_ai_recommendations(t: str | None = None, scenario: str = "medium", layout: str = "stands"):
+    scenario, layout = check_scenario(scenario), check_layout(layout)
+    tt = query_t(t)
+    ds = ops_dataset()
+    plan = parking_plan("optimized", False, layout)
+    recs = ai.recommendations(
+        tt, briefing=_briefing_facts(scenario, tt), strategies=_strategies(scenario, {}), approved=store.approved_strategy(),
+        parking_now=parking.state(ds, plan, tt), plan_metrics=parking.metrics(ds, plan),
+        temp_metrics=parking.metrics(ds, parking_plan("optimized", True, layout)),
+        bench=_bench.get(_bench_key(layout, False)), alerts=engine.alerts(live_dataset(), tt)["alerts"],
+        queue=engine.priority_queue(live_dataset(), tt, store.get_settings()["weights"]),
+        inbox=bookings.inbox(ds, plan, tt, accepted=_accepted_meta), occ=get_occupancy(scenario),
+        settings=store.get_settings(), layout=layout)
+    counts = {u: sum(1 for r in recs if r["urgency"] == u) for u in ("now", "today", "this week")}
+    return {"t_local": C.iso_local(tt), "scenario": scenario, "layout": layout, "items": recs, "counts": counts,
+            "models_consulted": len({m for r in recs for m in r["models"]}),
+            "note": "Suggestions only. Each names the numbers it used, the models behind it and who approves."}
 
 
 app.include_router(router, prefix="/api")

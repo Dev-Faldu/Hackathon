@@ -24,22 +24,24 @@ export default function AfterAction() {
       <TopBar title="After-action" subtitle="Did the forecast hold up, what did the plan change, and who approved what." />
       {aa.error && <ErrorNote error={aa.error} onRetry={aa.reload} />}
       <Glance>
-        {d ? <>The forecast missed the real week by <b className="num">{d.mape_pct}%</b> a day on average{d.naive_mape_pct != null ? <>, against <b className="num">{d.naive_mape_pct}%</b> for “same as an ordinary week”</> : null}.
+        {d ? <>{d.out_of_sample ? <>Left out of the fit, a Super Bowl's arrival surge was predicted within <b className="num">{d.out_of_sample.model_pct}%</b>,
+          against <b className="num">{d.out_of_sample.naive_pct}%</b> for “same as an ordinary week”. </> : null}
           The plan cut hours over capacity from <b className="num">{d.hours_over_capacity_no_plan}</b> to <b className="num">{d.hours_over_capacity_with_plan}</b>, and every decision is in the audit trail.</> : "Loading the backtest…"}
       </Glance>
       <KpiRow keep={3}>
-        <Kpi label="Forecast error (MAPE)" value={d?.mape_pct ?? 0} digits={1} unit="%" tone="runway"
-          sub={d?.naive_mape_pct != null ? <>vs <span className="num">{d.naive_mape_pct}%</span> for "ordinary week" rule</> : "…"} info={g("mape")} />
+        <Kpi label="Out-of-sample error" value={d?.out_of_sample?.model_pct ?? 0} digits={1} unit="%" tone="runway"
+          sub={d?.out_of_sample ? <>vs <span className="num">{d.out_of_sample.naive_pct}%</span> for "ordinary week" rule · {d.out_of_sample.events} events</> : "…"} info={g("out_of_sample")} />
         <Kpi label="Hours over capacity" value={d?.hours_over_capacity_with_plan ?? 0} unit="h" tone="ok"
           sub={<>with Strategy {d?.strategy ?? "–"} · <span className="num">{d?.hours_over_capacity_no_plan ?? "–"}</span> h without a plan</>} info={g("hours_with_plan")} />
         <Kpi label="CO₂ avoided" value={d?.strategy_kpis.co2_saved_vs_adhoc_t ?? 0} digits={1} unit="t" tone="ok"
           sub="Nearest-partner overflow vs ad-hoc repositioning (estimate)" info={g("co2")} />
-        <Kpi label="P10–P90 coverage" value={d?.interval_coverage_pct ?? 0} unit="%" sub="Days where the actual fell inside the band" info={g("coverage")} />
+        <Kpi label="Replay gap (MAPE)" value={d?.mape_pct ?? 0} digits={1} unit="%" sub="Forecast vs the replayed week; not an accuracy claim" info={g("mape")} />
+        <Kpi label="P10–P90 coverage" value={d?.interval_coverage_pct ?? 0} unit="%" sub="Replayed days inside the band" info={g("coverage")} />
         <Kpi label="Decisions logged" value={d?.audit.length ?? 0} sub="Approve · edit · reject" info={g("decisions")} />
       </KpiRow>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.6fr_1fr]">
-        <Panel eyebrow="Backtest" title="Forecast vs what actually arrived" actions={<Chip tone={real ? "ok" : "watch"}>{sourceOf(d?.source).chip}</Chip>}>
+        <Panel eyebrow="Replay check · a consistency check, not accuracy" title="Forecast vs the replayed week" actions={<Chip tone={real ? "ok" : "watch"}>{sourceOf(d?.source).chip}</Chip>}>
           {d ? <ForecastChart days={d.days} showActual /> : <Skeleton className="h-[260px]" />}
           <div className="mt-1 flex flex-wrap items-center gap-4 text-[11.5px] text-ink-2">
             <span className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rotate-45 rounded-[2px] bg-ink" /> Actual arrivals</span>

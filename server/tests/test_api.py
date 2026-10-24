@@ -254,3 +254,52 @@ def test_bad_replay_time_is_a_422(client):
 def test_whatif_reports_the_stand_replan(client):
     r = client.post("/whatif", json={"scenario": "medium", "modifiers": CLOSURE}).json()
     assert r["stand_plan"]["boxed_in"] == 0
+
+
+URGENCY_RANK = {"now": 0, "today": 1, "this week": 2}
+
+
+def test_ai_copilot_suggestions_cite_models_numbers_and_approvers(client):
+    recs = client.get("/ai/recommendations?layout=tandem&t=2027-02-12T13:10:00-08:00").json()
+    model_ids = {m["id"] for m in client.get("/ai/models?layout=tandem").json()["models"]}
+    assert recs["items"], "the busy Friday afternoon should need something"
+    for it in recs["items"]:
+        assert it["why"] and it["approver"] and it["models"]
+        assert set(it["models"]) <= model_ids
+    ranks = [URGENCY_RANK[it["urgency"]] for it in recs["items"]]
+    assert ranks == sorted(ranks)
+    assert recs["counts"]["now"] == sum(1 for it in recs["items"] if it["urgency"] == "now")
+
+
+def test_ai_model_cards_are_complete_and_label_their_inputs(client):
+    d = client.get("/ai/models").json()
+    assert len(d["models"]) >= 10
+    for m in d["models"]:
+        assert m["question"] and m["method"] and m["outputs"] and m["limits"] and m["code"]
+        assert {i["label"] for i in m["inputs"]} <= {"published", "reconstructed", "assumption", "live"}
+    fc = next(m for m in d["models"] if m["id"] == "forecast")
+    assert fc["evidence"] and fc["status"] == "live"
+    assert any(r["check"] == "leave_one_event_out" for r in d["validation"])
+
+
+def test_benchmark_runs_three_parking_methods_on_one_week(client):
+    b = client.get("/ai/benchmark?layout=tandem").json()
+    rows = {r["method"]: r for r in b["rows"]}
+    assert list(rows) == ["first_come", "optimized", "cpsat"]
+    assert rows["optimized"]["tows"] < rows["first_come"]["tows"]
+    assert rows["cpsat"]["tows"] < rows["first_come"]["tows"]
+    assert b["best"] in ("optimized", "cpsat")
+
+
+def test_exact_solver_never_double_books_a_slot(client):
+    plan = client.get("/parking/plan?method=cpsat&layout=tandem").json()
+    assert plan["metrics"]["solver"].startswith("cp-sat")
+    for row in plan["gantt"]:
+        if row["position"] != "OVERFLOW":
+            bars = sorted(row["bars"], key=lambda b: b["start"])
+            assert all(a["end"] <= b["start"] for a, b in zip(bars, bars[1:])), f"double-booked {row['position']}"
+
+
+def test_afteraction_reports_the_out_of_sample_check(client):
+    d = client.get("/afteraction").json()
+    assert d["out_of_sample"]["model_pct"] < d["out_of_sample"]["naive_pct"]

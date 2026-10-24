@@ -6,7 +6,7 @@ RAMPCAST is an AI ramp-capacity planner for a fictional FBO, *Sepulveda Jet Cent
 
 It also answers a parking request the moment it arrives (from FlightBridge, a scheduler, email or the phone) instead of weeks later, and shows game-day ramp operations in 3D the way a pilot would see them: jets packed wingtip to wingtip, wing walkers on every tow, and a departure queue at the hold short line.
 
-**The AI, in one line:** a probabilistic demand forecast (P10–P90, 120-run Monte Carlo of the ramp) plus an optimizer (departure-aware stand assignment with local search, three overflow strategies scored on capacity, risk, CO₂ and staff), with every sentence in the briefings generated from the engine's facts. It runs fully offline: no API keys, no external model.
+**The AI, in one line:** an analog-uplift demand forecast (P10–P90) and a 5,000-week Monte Carlo of the ramp, two stand planners (an adaptive heuristic and an OR-Tools CP-SAT solver) measured against a whiteboard on the same week, a CP-SAT strategy optimizer for overflow partners, rules, a need-based priority queue and an instant booking desk, all brought together on the **AI co-pilot** screen: what needs doing now, why, which models said so, and who approves. Every sentence in the briefings is generated from the engine's facts. It runs fully offline: no API keys, no external model.
 
 Visual blueprint: [`docs/rampcast-blueprint.html`](docs/rampcast-blueprint.html)
 End-to-end research (takeoff → landing → ramp → car → hotel, decision rights, 22 edge cases, runway-closure scenario): [`docs/gate-to-hotel.html`](docs/gate-to-hotel.html)
@@ -34,14 +34,15 @@ No keys or accounts are needed: briefings, what-if explanations and answers to t
 
 | Screen | What it shows | Demo beat |
 |---|---|---|
+| **AI co-pilot** (first screen) | Every model asked what needs doing at the replay time, ranked now / today / this week: tows in the next 3 hours, customs and curfew alerts (grouped by action), who to serve first at the curb, hours the ramp is likely full, bookings that need a person, the strategy to approve, staff short at the peak, whether to open the temp zone. Each suggestion lists its numbers, the models behind it and the role that approves. Below: a pipeline of the 11 models, an algorithm arena (whiteboard vs adaptive vs CP-SAT on the same week), a model card per model (question, method, inputs labelled published / reconstructed / assumption / live, outputs, "never use it to", code path, live evidence) and the forecast's out-of-sample check | Move the replay clock to Friday 13:00 and read the "Now" list; click a model chip to jump to its card; switch the arena to "Temp zone open" and watch CP-SAT win |
 | **Booking desk** | Accepting a booking puts the jet in the plan on the quoted slot (held for its stay, cancellable) and "Watch it land in 3D" follows it in. Instant answer to a trip request from the live parking plan and forecast: a position, the price, a 15-minute hold, customs, curfew and TFR checks, or alternatives (shift the time, drop-and-go, partner airport, temp zone) when full. One inbox for FlightBridge, scheduler exports, email, phone and the portal: small ETA moves re-plan automatically; overbooked stays, duplicates, aircraft swaps and customs problems go to a person. Connections to FlightBridge, schedulers, FBO systems and FlightAware are labelled with exactly what works today | Try "Game weekend, large cabin" (full: here are the options), then "Quiet Wednesday night" (confirmed in milliseconds); open "Why operators book months ahead" |
-| **Parking control** | Two layouts from one engine: game-day tandem packing (columns three or four deep, 3 m between wingtips, hot spots, overflow pad, temp zone) and the 48 marked stands of an ordinary week. RAMPCAST arrangement vs whiteboard; tow sheet; stand allocation chart; reservation board; click a jet to move it, with validation and tow impact. Plans use the departure time owners give, so tows count what really happened | Game-day tandem: whiteboard 958 tows, RAMPCAST 48 (−95%). Marked stands: 546 vs 194 (−64%), 136 with the temp zone |
+| **Parking control** | Two layouts from one engine: game-day tandem packing (columns three or four deep, 3 m between wingtips, hot spots, overflow pad, temp zone) and the 48 marked stands of an ordinary week. RAMPCAST arrangement vs the exact solver (CP-SAT) vs whiteboard; tow sheet; stand allocation chart; reservation board; click a jet to move it, with validation and tow impact. Plans use the departure time owners give, so tows count what really happened | Game-day tandem: whiteboard 958 tows, RAMPCAST 48 (−95%). Marked stands: 546 vs 194 (−64%), 136 with the temp zone |
 | **Airport 3D** | Live 3D world of the field driven by the same parking plan. Game-day packing: tandem rows with 3 m between wingtips, jets in front towed aside so a deeper jet can leave, wing walkers, marshallers with lit wands, cones, staged equipment and the curb queue. All of VNY's traffic shares runway 16R: arrivals 90 s apart, departures 2 min apart, and a departure queue at the hold short line. Pilot details: 16R/34L and 16L/34R with designators, FAA-style signs, distance-remaining boards, windsock, non-movement boundary; the sun and the SoFi bearing follow the real runway heading. Pilot's view from the cockpit (heading, ground speed, altitude), simulated Tower, Ground and Ramp radio with ATIS, seven paint schemes. Same plan and tows as Parking control | Press "Show the chaos": Game day, After the game (night queue), Morning after; click a jet, then "Pilot's view"; switch to Final 16R |
 | Event setup | Event facts, FBO capacity, staff, fuel trucks, need-based priority weights, the data-certainty ladder | "The manager sets the rules; the AI never uses name, status or price" |
 | Plan board | Ordinary week vs Super Bowl week (P10–P90), hour-by-day ramp heatmap, strategies A/B/C with approvers, briefing | Switch Low/Medium/High; approve Strategy B |
 | Live ops | Replay clock, inbound map with an LA-basin inset and the SoFi TFR rings, stand map with boxed-in flags, alerts, ground-handling priority queue | Press play at 600x; open the #1 queue item and approve the car |
 | What-if | Runway closure, demand +20%, Friday arrival bank 3 h late, early customs close; before/after KPIs including staffing; option cards for operators' dispatchers | Run "Friday bank 3 h late" (peak movements 11 → 16/h, techs 12 → 16); show that the pilot decides |
-| After-action | Forecast error vs the naive rule, interval coverage, hours over capacity avoided, CO2 avoided, the audit trail | Close on "what the AI never decides" |
+| After-action | Out-of-sample forecast error (leave one Super Bowl out: 29% vs 42% for "same as an ordinary week"), the replay gap labelled as a consistency check rather than accuracy, hours over capacity avoided, CO2 avoided, the audit trail | Close on "what the AI never decides" |
 | **LA28 stretch** | Same engine on the LA28 Olympics opening week (Tue 11 – Mon 17 Jul 2028, ceremony Fri 14 Jul): ordinary July vs Olympic week, ramp occupancy vs the Super Bowl, side-by-side comparison, five adapted recommendations with approvers, stated assumptions | "The Super Bowl spikes and clears; the Olympics fill the ramp and stay: 107 jets still parked at week end vs 13" |
 
 ### Airport 3D
@@ -102,10 +103,24 @@ python data/scripts/fetch_faa_registry.py                # icao24 -> model -> si
 
 ## Models
 
-- **M1 Baseline:** seasonal forecast of ordinary-week arrivals, with P10–P90.
-- **M2 Event uplift:** a multiplier curve by day relative to the game, built from real analogs (LVI–LX).
-- **M3 Ramp simulator:** Monte Carlo of hourly occupancy, giving P(over capacity) per hour.
-- **M4 Plan optimizer:** reservation caps, drop-and-go quota, nearest-partner overflow, fuel and crews.
+Every model has a card on the AI co-pilot screen (`GET /ai/models`) with its method, inputs and their sources, limits and live evidence.
+
+| Model | Method | Code | Owner |
+|---|---|---|---|
+| Arrivals forecast | Weekday baseline × event uplift scaled to published WingX ratios (1.5× / 1.75× / 2.0×), negative-binomial spread | `rampcast/forecast/` ([model card](rampcast/forecast/MODEL_CARD.md)) | Role 2 |
+| Ramp Monte Carlo | 5,000 simulated weeks; hourly occupancy in large-cabin equivalents; P(over capacity) | `rampcast/forecast/ramp_sim.py` | Role 2 |
+| Strategy optimizer | Three plans; OR-Tools CP-SAT sends overflow to partner FBOs within their spaces; CO₂, staff, risk | `rampcast/engine/strategies.py` | Role 3 |
+| Stand planner, adaptive (default) | Each arrival placed from who is parked now and their stated departures, then whole-week local search | `server/rampcast_server/parking.py` | core |
+| Stand planner, exact | OR-Tools CP-SAT, day by day; "nobody boxed in" as a hard rule with a one-sigma drift margin; jets re-parked on arrival if their slot is still taken | `rampcast/engine/stands.py` | Role 3 + core |
+| Departure drift | Stated departure = actual + Gaussian error (3 h for stays over 20 h, 1 h over 3 h); planners see only the stated time | `parking.py` (`_as_told`) | core |
+| Booking desk | Best free slot for the whole stay, customs, curfew, ramp risk; confirms by itself when every check passes | `server/rampcast_server/bookings.py` | core |
+| Priority queue, alerts, alternates, what-if, explanations | Need-based weights; rule checks; incremental CP-SAT re-plan after a disruption; text built only from cited facts | `rampcast/engine/` | Role 3 |
+
+**Measured on the replayed week** (tows counted from when jets really left; `GET /ai/benchmark`): game-day tandem, whiteboard 958 tows, adaptive 48, CP-SAT 78, nobody turned away; with the temp zone open, adaptive 40, CP-SAT 28. A plan that is perfect on paper breaks when owners leave late, so the adaptive planner is the default and the co-pilot suggests CP-SAT where it measures better.
+
+**Validation.** The 2022 week is reconstructed from published counts, so a daily backtest on it would be circular and is not reported as accuracy. The out-of-sample check leaves one Super Bowl out and predicts its arrival surge from the others: 29% error vs 42% for "same as an ordinary week" (`reports/validation_summary.csv`, two published events).
+
+**Data labels.** Every row in `data/processed/` says how it was made: `reconstructed_2022` (or `opensky_2022_shifted` for a real pull), `_anchor` on the two days whose basin totals are published, or `synthetic` for generated history and other host cities. Nothing generated is labelled published.
 
 ## Human in command
 
