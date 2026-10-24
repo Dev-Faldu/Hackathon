@@ -1,6 +1,7 @@
 """RAMPCAST API. Run: uvicorn rampcast_server.main:app --reload --port 8000 (from server/)."""
 from __future__ import annotations
 
+import dataclasses
 import functools
 import threading
 from contextlib import asynccontextmanager
@@ -12,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import adapters, bookings, config as C, engine, explain, forecast, la28, parking, store
-from .data import Dataset, airfield_movements, generate_sample, load_processed
+from .data import Dataset, Flight, airfield_movements, generate_sample, load_processed
 from .replay import Replay
 
 @asynccontextmanager
@@ -330,7 +331,24 @@ def health():
 
 # ---------- parking control ----------
 
-_pins: dict[str, str] = {}
+LAYOUTS = ("stands", "tandem")
+_pins: dict[str, dict[str, str]] = {lay: {} for lay in LAYOUTS}   # manual placements, per layout
+
+# Bookings accepted at the desk become flights on the ramp (in memory until the server restarts).
+_accepted: dict[str, Flight] = {}
+_accepted_meta: dict[str, dict] = {}
+_accepted_v = [0]
+
+
+def ops_dataset() -> Dataset:
+    """The replay week plus every booking accepted at the desk: what parking, bookings and the 3D plan from."""
+    return _ops_dataset(_accepted_v[0]) if _accepted else live_dataset()
+
+
+@functools.lru_cache(maxsize=4)
+def _ops_dataset(version: int) -> Dataset:
+    base = live_dataset()
+    return dataclasses.replace(base, flights=base.flights + list(_accepted.values()))
 
 
 class AssignRequest(BaseModel):
@@ -339,61 +357,69 @@ class AssignRequest(BaseModel):
     confirm: bool = False
     actor_role: str = "Line supervisor"
     replay_t_local: str | None = None
+    layout: str = "stands"
+
+
+def check_layout(layout: str) -> str:
+    if layout not in LAYOUTS:
+        raise HTTPException(422, f"layout must be one of {', '.join(LAYOUTS)}")
+    return layout
 
 
 @functools.lru_cache(maxsize=32)
-def _parking_plan(method: str, temp: bool, pins_key: str) -> parking.Plan:
-    return parking.build(live_dataset(), method, temp, dict(_pins))
+def _parking_plan(method: str, temp: bool, layout: str, key: str) -> parking.Plan:
+    return parking.build(ops_dataset(), method, temp, dict(_pins[layout]), layout)
 
 
-def parking_plan(method: str, temp: bool) -> parking.Plan:
+def parking_plan(method: str, temp: bool, layout: str = "stands") -> parking.Plan:
     if method not in ("optimized", "first_come"):
         raise HTTPException(422, "method must be optimized or first_come")
-    return _parking_plan(method, temp, parking.pins_key(_pins))
+    check_layout(layout)
+    return _parking_plan(method, temp, layout, f"{parking.pins_key(_pins[layout])}-{_accepted_v[0]}")
 
 
 @router.get("/parking/plan")
-def get_parking_plan(method: str = "optimized", temp: bool = False):
-    ds = live_dataset()
-    plan = parking_plan(method, temp)
-    other = parking_plan("first_come" if method == "optimized" else "optimized", temp)
-    return {"method": method, "temp_zone": temp, "source": ds.source,
+def get_parking_plan(method: str = "optimized", temp: bool = False, layout: str = "stands"):
+    ds = ops_dataset()
+    plan = parking_plan(method, temp, layout)
+    other = parking_plan("first_come" if method == "optimized" else "optimized", temp, layout)
+    return {"method": method, "temp_zone": temp, "layout": layout, "source": ds.source,
             "positions": [p.to_dict() for p in plan.positions],
             "metrics": parking.metrics(ds, plan), "compare": parking.metrics(ds, other),
             "gantt": parking.gantt(ds, plan, ds.bookings), "tows": plan.tows,
-            "pins": dict(_pins), "window": [d.isoformat() for d in C.window_days()]}
+            "pins": dict(_pins[layout]), "booked": sorted(_accepted), "window": [d.isoformat() for d in C.window_days()]}
 
 
 @router.get("/parking/state")
-def get_parking_state(t: str | None = None, method: str = "optimized", temp: bool = False):
-    return parking.state(live_dataset(), parking_plan(method, temp), C.parse_t(t))
+def get_parking_state(t: str | None = None, method: str = "optimized", temp: bool = False, layout: str = "stands"):
+    return parking.state(ops_dataset(), parking_plan(method, temp, layout), C.parse_t(t))
 
 
 @router.get("/parking/reservations")
-def get_parking_reservations(day: str = "2027-02-12", method: str = "optimized", temp: bool = False):
-    return {"day": day, "items": parking.recommendations(live_dataset(), parking_plan(method, temp), day)}
+def get_parking_reservations(day: str = "2027-02-12", method: str = "optimized", temp: bool = False, layout: str = "stands"):
+    return {"day": day, "items": parking.recommendations(ops_dataset(), parking_plan(method, temp, layout), day)}
 
 
 @router.post("/parking/assign")
 def post_parking_assign(req: AssignRequest):
     """Check a manual move; with confirm=true, pin it, re-plan everyone else around it, and log it."""
-    ds = live_dataset()
-    before = parking.metrics(ds, parking_plan("optimized", False))
+    ds, pins = ops_dataset(), _pins[check_layout(req.layout)]
+    before = parking.metrics(ds, parking_plan("optimized", False, req.layout))
     if req.position_id is None:
         if req.confirm:
-            _pins.pop(req.flight_id, None)
-        return {"ok": True, "issues": [], "pins": dict(_pins)}
-    issues = parking.validate_move(ds, parking_plan("optimized", False), req.flight_id, req.position_id)
-    trial = dict(_pins)
+            pins.pop(req.flight_id, None)
+        return {"ok": True, "issues": [], "pins": dict(pins)}
+    issues = parking.validate_move(ds, parking_plan("optimized", False, req.layout), req.flight_id, req.position_id)
+    trial = dict(pins)
     trial[req.flight_id] = req.position_id
-    after = parking.metrics(ds, parking.build(ds, "optimized", False, trial))
+    after = parking.metrics(ds, parking.build(ds, "optimized", False, trial, req.layout))
     if req.confirm and not issues:
-        _pins[req.flight_id] = req.position_id
+        pins[req.flight_id] = req.position_id
         store.audit_append({"action": "edit", "target": f"parking:{req.flight_id}->{req.position_id}",
                             "actor_role": req.actor_role, "note": "Manual stand assignment",
                             "replay_t_local": req.replay_t_local})
     return {"ok": not issues, "issues": issues, "confirmed": bool(req.confirm and not issues),
-            "tows_before": before["tows"], "tows_after": after["tows"], "pins": dict(_pins)}
+            "tows_before": before["tows"], "tows_after": after["tows"], "pins": dict(pins)}
 
 
 # ---------- booking desk ----------
@@ -409,12 +435,15 @@ class TripRequest(BaseModel):
     services: list[str] = Field(default_factory=list)
     channel: str = "FBO portal"
     t: str | None = None              # replay "now", for the hold expiry
+    layout: str = "stands"            # which ramp layout to quote against
 
 
 class AcceptRequest(BaseModel):
     trip_sheet: dict
     actor_role: str = "Customer service"
     replay_t_local: str | None = None
+    layout: str = "stands"
+    channel: str = "FBO portal"
 
 
 def _quote(req: TripRequest) -> dict:
@@ -423,7 +452,7 @@ def _quote(req: TripRequest) -> dict:
     if req.size_class is None and req.aircraft_type not in bookings.AIRCRAFT_TYPES:
         raise HTTPException(422, "give size_class or a known aircraft_type (ICAO designator)")
     try:
-        return bookings.quote(live_dataset(), parking_plan("optimized", False), forecast.occupancy("medium"),
+        return bookings.quote(ops_dataset(), parking_plan("optimized", False, check_layout(req.layout)), forecast.occupancy("medium"),
                               req.model_dump(), C.parse_t(req.t or demo_t()))
     except ValueError as e:
         raise HTTPException(422, f"bad time: {e}") from e
@@ -443,17 +472,43 @@ def post_booking_inbound(req: TripRequest):
 
 @router.post("/bookings/accept")
 def post_booking_accept(req: AcceptRequest):
-    """The operator accepted: log it and return the trip sheet that goes back to FlightBridge and the FBO system."""
+    """The operator accepted: the jet joins the ramp plan on the quoted position, and the trip sheet goes back."""
     sheet = {**req.trip_sheet, "parking": {**req.trip_sheet.get("parking", {}), "status": "confirmed"}}
-    store.audit_append({"action": "approve", "target": f"booking:{sheet.get('request_id')}->{sheet['parking'].get('position')}",
-                        "actor_role": req.actor_role, "note": f"Parking confirmed for {sheet.get('tail') or 'request'}",
+    pos = sheet["parking"].get("position")
+    if not pos:
+        raise HTTPException(409, "nothing to accept: this request has no position (offer an alternative instead)")
+    check_layout(req.layout)
+    f = bookings.flight_from_sheet(sheet, taken=set(_accepted) | {x.flight_id for x in live_dataset().flights})
+    _accepted[f.flight_id] = f
+    _accepted_meta[f.flight_id] = {"request_id": sheet.get("request_id"), "channel": req.channel, "position": pos,
+                                   "received_local": req.replay_t_local or demo_t(), "layout": req.layout}
+    _pins[req.layout][f.flight_id] = pos
+    _accepted_v[0] += 1
+    store.audit_append({"action": "approve", "target": f"booking:{sheet.get('request_id')}->{pos}",
+                        "actor_role": req.actor_role, "note": f"Parking confirmed for {f.flight_id}",
                         "replay_t_local": req.replay_t_local})
-    return {"ok": True, "trip_sheet": sheet}
+    return {"ok": True, "flight_id": f.flight_id, "position": pos, "trip_sheet": {**sheet, "flight_id": f.flight_id}}
+
+
+@router.delete("/bookings/accepted/{flight_id}")
+def delete_booking(flight_id: str):
+    """Cancel an accepted booking: the jet leaves the plan and its position is free again."""
+    if flight_id not in _accepted:
+        raise HTTPException(404, "no accepted booking with that id")
+    _accepted.pop(flight_id)
+    _accepted_meta.pop(flight_id, None)
+    for pins in _pins.values():
+        pins.pop(flight_id, None)
+    _accepted_v[0] += 1
+    store.audit_append({"action": "reject", "target": f"booking:{flight_id}", "actor_role": "Customer service",
+                        "note": "Booking cancelled", "replay_t_local": None})
+    return {"ok": True}
 
 
 @router.get("/bookings/inbox")
-def get_booking_inbox(t: str | None = None):
-    return bookings.inbox(live_dataset(), parking_plan("optimized", False), C.parse_t(t or demo_t()))
+def get_booking_inbox(t: str | None = None, layout: str = "stands"):
+    return bookings.inbox(ops_dataset(), parking_plan("optimized", False, check_layout(layout)), C.parse_t(t or demo_t()),
+                          accepted=_accepted_meta)
 
 
 @router.get("/bookings/connections")

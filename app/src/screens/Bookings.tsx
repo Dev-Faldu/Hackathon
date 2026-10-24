@@ -28,29 +28,46 @@ const DECISION = {
 };
 
 export default function Bookings() {
-  const { tIso, toast } = useApp();
+  const { tIso, toast, layout, setLayout, go, setFocusFlight } = useApp();
   const meta = useApi(() => api.bookingMeta(), []);
-  const inbox = useApi(() => api.bookingInbox(tIso), [tIso.slice(0, 13)]);
+  const [placedV, setPlacedV] = useState(0);
+  const inbox = useApi(() => api.bookingInbox(tIso, layout), [tIso.slice(0, 13), layout, placedV]);
   const [req, setReq] = useState<TripRequest>(PRESETS[0].req);
   const [quote, setQuote] = useState<BookingQuote | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<Record<string, unknown> | null>(null);
+  const [placed, setPlaced] = useState<{ flightId: string; position: string; etaMs: number } | null>(null);
   const [filter, setFilter] = useState<"look" | "all">("look");
 
   const types = meta.data?.aircraft_types ?? [];
   const type = types.find((x) => x.code === req.aircraft_type);
   const ask = async (r: TripRequest = req) => {
-    setBusy(true); setSent(null);
-    try { setQuote(await api.bookingQuote({ ...r, t: tIso })); } catch (e) { toast({ title: "Could not get an answer", body: String(e).slice(0, 120), tone: "alert" }); }
+    setBusy(true); setSent(null); setPlaced(null);
+    try { setQuote(await api.bookingQuote({ ...r, t: tIso, layout })); } catch (e) { toast({ title: "Could not get an answer", body: String(e).slice(0, 120), tone: "alert" }); }
     setBusy(false);
   };
-  useEffect(() => { void ask(PRESETS[0].req); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void ask(req); }, [layout]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const accept = async () => {
     if (!quote) return;
-    const r = await api.bookingAccept(quote.trip_sheet, tIso);
-    setSent(r.trip_sheet);
-    toast({ title: "Parking confirmed", body: `${quote.request_id} sent back to ${req.channel ?? "the operator"} · logged to audit trail`, tone: "ok" });
+    try {
+      const r = await api.bookingAccept(quote.trip_sheet, layout, req.channel ?? "FBO portal", tIso);
+      setSent(r.trip_sheet);
+      setPlaced({ flightId: r.flight_id, position: r.position, etaMs: Date.parse(String(quote.trip_sheet.eta_local)) });
+      setPlacedV((v) => v + 1);
+      toast({ title: `${r.flight_id} placed on ${r.position}`, body: `Sent back to ${req.channel ?? "the operator"} · in the ramp plan and the 3D airfield`, tone: "ok" });
+    } catch (e) { toast({ title: "Could not place the jet", body: String(e).slice(0, 120), tone: "alert" }); }
+  };
+  const cancel = async () => {
+    if (!placed) return;
+    await api.bookingCancel(placed.flightId);
+    toast({ title: `Booking for ${placed.flightId} cancelled`, body: `${placed.position} is free again`, tone: "info" });
+    setPlaced(null); setSent(null); setPlacedV((v) => v + 1);
+  };
+  const watch = () => {
+    if (!placed) return;
+    setFocusFlight({ id: placed.flightId, tMs: placed.etaMs });
+    go("world");
   };
 
   const box = inbox.data;
@@ -135,8 +152,12 @@ export default function Bookings() {
         </Panel>
 
         {/* Answer */}
-        <Panel eyebrow="Answer" title={quote ? `Request ${quote.request_id}` : "Waiting for a request"}
-          actions={quote && <Chip><Timer size={12} /> Answered in <span className="num">{quote.answer_ms < 1 ? "<1" : fmt(quote.answer_ms)}</span> ms</Chip>}>
+        <Panel eyebrow={<span>Answer · against the {layout === "tandem" ? "game-day tandem" : "marked-stand"} ramp</span>}
+          title={quote ? `Request ${quote.request_id}` : "Waiting for a request"}
+          actions={<>
+            <Segmented size="sm" value={layout} onChange={setLayout} options={[{ value: "tandem", label: "Game day" }, { value: "stands", label: "Marked" }]} />
+            {quote && <Chip><Timer size={12} /> Answered in <span className="num">{quote.answer_ms < 1 ? "<1" : fmt(quote.answer_ms)}</span> ms</Chip>}
+          </>}>
           {!quote ? <Skeleton className="h-[360px] w-full" /> : (
             <AnimatePresence mode="wait">
               <motion.div key={quote.request_id + quote.decision} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
@@ -187,8 +208,18 @@ export default function Bookings() {
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  {quote.decision === "confirmed" && <button onClick={accept} className="btn-primary"><Send size={14} /> Accept and send back</button>}
-                  {quote.decision === "approval" && <button onClick={accept} className="btn-primary"><CheckCircle2 size={14} /> Supervisor approves and sends</button>}
+                  {placed ? (
+                    <>
+                      <span className="flex items-center gap-1.5 text-[13px] font-medium text-ok"><CheckCircle2 size={15} /> {placed.flightId} is on the ramp plan at {placed.position}</span>
+                      <button onClick={watch} className="btn-primary"><PlaneLanding size={14} /> Watch it land in 3D</button>
+                      <button onClick={cancel} className="btn-ghost">Cancel booking</button>
+                    </>
+                  ) : (
+                    <>
+                      {quote.decision === "confirmed" && <button onClick={accept} className="btn-primary"><Send size={14} /> Accept and send back</button>}
+                      {quote.decision === "approval" && <button onClick={accept} className="btn-primary"><CheckCircle2 size={14} /> Supervisor approves and sends</button>}
+                    </>
+                  )}
                   {quote.decision === "full" && <span className="text-[12px] text-ink-2">Offer one of the options above. Nothing is booked until the operator picks one.</span>}
                 </div>
                 {sent && (

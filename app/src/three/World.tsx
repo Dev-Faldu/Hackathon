@@ -109,9 +109,20 @@ function Atmosphere() {
   );
 }
 
-function CameraRig({ mode, follow, cinematic, modeNonce }: { mode: CameraMode; follow: boolean; cinematic: boolean; modeNonce: number }) {
+function CameraRig({ mode, follow, cinematic, modeNonce, cockpit }: { mode: CameraMode; follow: boolean; cinematic: boolean; modeNonce: number; cockpit: boolean }) {
   const controls = useRef<OrbitControlsImpl>(null);
   const { camera } = useThree();
+  const look = useMemo(() => new THREE.Vector3(), []);
+  useEffect(() => {
+    // Wider lens in the cockpit, the usual one outside; orbit controls hand back where the pilot was looking.
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.fov = cockpit ? 62 : 40; cam.near = cockpit ? 0.5 : 4; cam.updateProjectionMatrix();
+    if (controls.current) controls.current.enabled = !cockpit;
+    if (!cockpit && controls.current && focus.active) {
+      controls.current.target.set(focus.x, focus.y + 3, focus.z);
+      camera.position.set(focus.x - Math.sin(focus.heading) * 70, focus.y + 30, focus.z - Math.cos(focus.heading) * 70);
+    }
+  }, [cockpit, camera]);
   const flying = useRef(true);
   const goal = useRef({ pos: new THREE.Vector3(...CAMERAS[mode].pos), target: new THREE.Vector3(...CAMERAS[mode].target) });
   useEffect(() => {
@@ -130,6 +141,15 @@ function CameraRig({ mode, follow, cinematic, modeNonce }: { mode: CameraMode; f
     const c = controls.current;
     if (!c) return;
     const k = 1 - Math.exp(-dt * 2.2);
+    if (cockpit && focus.active) {
+      // Pilot's eye: just behind the windscreen, looking along the jet's heading and a little down the nose.
+      const h = focus.heading, pt = focus.pitch, fx = Math.sin(h) * Math.cos(pt), fz = Math.cos(h) * Math.cos(pt), fy = Math.sin(pt);
+      camera.position.set(focus.x + fx * focus.nose, focus.y + focus.eye + fy * focus.nose, focus.z + fz * focus.nose);
+      look.set(camera.position.x + fx * 200, camera.position.y + fy * 200 - 11, camera.position.z + fz * 200);
+      camera.lookAt(look);
+      c.target.copy(look);
+      return;
+    }
     if (follow && focus.active) {
       const target = new THREE.Vector3(focus.x, focus.y + 3, focus.z);
       off.copy(camera.position).sub(c.target);
@@ -156,7 +176,7 @@ export interface WorldProps {
   plans: FlightPlan3D[]; positions: ParkingPosition[]; tempZone: boolean; labels: boolean;
   selected: string | null; onSelect: (id: string | null) => void;
   camera: CameraMode; cameraNonce: number; follow: boolean; cinematic: boolean; tMs: number; playing: boolean; speed: number;
-  quality: "high" | "fast"; tfr: boolean; compactSlots: Slot[] | null;
+  quality: "high" | "fast"; tfr: boolean; compactSlots: Slot[] | null; cockpit: boolean; colorBySize: boolean;
 }
 
 export default function World(p: WorldProps) {
@@ -171,9 +191,9 @@ export default function World(p: WorldProps) {
         <Airport positions={p.positions} tempZone={p.tempZone} labels={p.labels} compactSlots={p.compactSlots} />
         <Surroundings />
         {p.tfr && <TfrCurtain />}
-        <Traffic plans={p.plans} selected={p.selected} onSelect={p.onSelect} />
+        <Traffic plans={p.plans} selected={p.selected} onSelect={p.onSelect} colorBySize={p.colorBySize} />
       </Suspense>
-      <CameraRig mode={p.camera} follow={p.follow} cinematic={p.cinematic} modeNonce={p.cameraNonce} />
+      <CameraRig mode={p.camera} follow={p.follow} cinematic={p.cinematic} modeNonce={p.cameraNonce} cockpit={p.cockpit} />
       <EffectComposer multisampling={p.quality === "high" ? 4 : 0} enableNormalPass={false}>
         {p.quality === "high" ? <N8AO halfRes aoRadius={8} intensity={2.4} distanceFalloff={1.2} quality="performance" /> : <></>}
         <Bloom mipmapBlur luminanceThreshold={1.05} luminanceSmoothing={0.2} intensity={1.1} />

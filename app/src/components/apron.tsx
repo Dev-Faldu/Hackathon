@@ -3,6 +3,7 @@ import { Car, Fuel, Truck, Warehouse } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { cx, dayShort, hhmm, SIZE_COLOR, SIZE_LABEL } from "../lib/format";
 import type { GanttBar, Occupant, ParkingPosition } from "../lib/types";
+import { COLUMN_PATTERN, L_PITCH, M_PITCH } from "../three/compact";
 
 /** Top view of a business jet, nose to the right, inside a 100 x 100 box. */
 const JET = [
@@ -256,5 +257,126 @@ export function StandGantt({ rows, windowDays, nowMs, selected, onSelect, tempZo
       <line x1={x(nowMs)} x2={x(nowMs)} y1={18} y2={H} stroke="#2563EB" strokeWidth="1.6" />
       <circle cx={x(nowMs)} cy={18} r="3.5" fill="#2563EB" />
     </svg>
+  );
+}
+
+// ---------- game-day tandem layout ----------
+// Same slots as the 3D airfield (three/compact.ts) and the server's tandem layout. Schematic, not to scale.
+const TX0 = 24, TW = 560, LANE_H = 14, SLOT_H = 25, ROW_GAP = 12, TROW0 = 92;
+const TROW_H = LANE_H + 4 * SLOT_H + ROW_GAP;
+const PATTERN_M = COLUMN_PATTERN.reduce((a, l) => a + (l ? L_PITCH : M_PITCH), 0);
+const COL_X = COLUMN_PATTERN.reduce<number[]>((xs, l, i) => [...xs, (xs[i] ?? 0) + ((l ? L_PITCH : M_PITCH) / PATTERN_M) * TW], [0]);
+
+function tandemRect(p: ParkingPosition): { x: number; y: number; w: number; h: number } {
+  if (p.kind === "stand") {
+    const ri = "ABCD".indexOf(p.row), c = p.column - 1, large = COLUMN_PATTERN[c];
+    const h = large ? (4 * SLOT_H) / 3 : SLOT_H;
+    return { x: TX0 + COL_X[c] + 1.5, y: TROW0 + ri * TROW_H + LANE_H + (p.depth - 1) * h + 1, w: COL_X[c + 1] - COL_X[c] - 3, h: h - 2 };
+  }
+  if (p.kind === "hot") return { x: TX0 + (p.column - 1) * 96, y: 634, w: 90, h: 36 };
+  if (p.kind === "temp") return { x: 640 + (p.depth - 1) * 54, y: 98 + (p.column - 1) * 31, w: 51, h: 28 };
+  return { x: 816 + (p.column - 1) * 21.5, y: 120 + (p.depth - 1) * 54, w: 19.5, h: 51 };   // overflow pad, 8 columns, 5 deep
+}
+
+/** Game-day apron: tandem columns three or four deep, 3 m between wingtips, hot spots, temp zone and overflow pad. */
+export function TandemMap({ positions, occupants, towSoon, nowMs, selected, onSelect, tempZone, overflowNow }: ApronProps) {
+  const byPos = useMemo(() => new Map(occupants.filter((o) => o.position).map((o) => [o.position!, o])), [occupants]);
+  const [hover, setHover] = useState<{ o: Occupant; x: number; y: number } | null>(null);
+  return (
+    <div className="relative">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full select-none" role="img" aria-label="Game-day tandem parking map">
+        <defs>
+          <pattern id="hatch-t" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(220,38,38,0.18)" strokeWidth="3" />
+          </pattern>
+        </defs>
+        <rect x="12" y="10" width={W - 24} height="30" rx="6" fill="#2B3646" />
+        <line x1="70" x2={W / 2 - 120} y1="25" y2="25" stroke="white" strokeWidth="2" strokeDasharray="18 14" opacity="0.85" />
+        <line x1={W / 2 + 120} x2={W - 70} y1="25" y2="25" stroke="white" strokeWidth="2" strokeDasharray="18 14" opacity="0.85" />
+        <text x="26" y="30" fontSize="12" fontWeight="700" fill="white">16R</text>
+        <text x={W - 26} y="30" fontSize="12" fontWeight="700" fill="white" textAnchor="end">34L</text>
+        <text x={W / 2} y="31" fontSize="10" fill="#CBD5E1" textAnchor="middle" letterSpacing="0.12em">RUNWAY 16R/34L · 8,001 FT</text>
+        <rect x="12" y="50" width={W - 24} height="22" rx="5" fill="rgba(234,179,8,0.10)" />
+        <line x1="150" x2={W - 190} y1="61" y2="61" stroke="#EAB308" strokeWidth="1.6" strokeDasharray="10 6" />
+        <text x="28" y="65" fontSize="9.5" fill="#92400E" letterSpacing="0.1em">TAXIWAY A</text>
+        <text x={W - 28} y="65" fontSize="9.5" fill="#92400E" textAnchor="end" letterSpacing="0.06em">GAME-DAY PACKING · SCHEMATIC</text>
+
+        {"ABCD".split("").map((r, ri) => {
+          const y0 = TROW0 + ri * TROW_H;
+          return (
+            <g key={r}>
+              <rect x={TX0 - 6} y={y0} width={TW + 12} height={LANE_H} rx="5" fill="rgba(15,30,60,0.06)" />
+              <line x1={TX0} x2={TX0 + TW} y1={y0 + LANE_H / 2} y2={y0 + LANE_H / 2} stroke="#EAB308" strokeWidth="1.2" strokeDasharray="6 5" />
+              <text x={TX0 + 2} y={y0 + 10} fontSize="9" fill="#4A5B73" letterSpacing="0.1em" style={{ paintOrder: "stroke" }} stroke="#F4F7FB" strokeWidth="3">
+                ROW {r} · TANDEM · 3 M WINGTIP CLEARANCE
+              </text>
+              <rect x={TX0 + TW + 10} y={y0 + LANE_H} width="38" height={4 * SLOT_H} rx="6" fill="url(#hatch-t)" stroke="rgba(220,38,38,0.35)" />
+              <text x={TX0 + TW + 29} y={y0 + LANE_H + 2 * SLOT_H + 3} fontSize="8.5" fill="#B91C1C" textAnchor="middle" transform={`rotate(-90 ${TX0 + TW + 29} ${y0 + LANE_H + 2 * SLOT_H})`}>GSE STAGING</text>
+            </g>
+          );
+        })}
+
+        <rect x="632" y="84" width="170" height="414" rx="12" fill={tempZone ? "rgba(192,38,211,0.05)" : "rgba(15,30,60,0.03)"}
+          stroke={tempZone ? "#C026D3" : "rgba(15,30,60,0.14)"} strokeDasharray="6 4" />
+        <text x="640" y="95" fontSize="8.5" fill={tempZone ? "#A21CAF" : "#7A8AA0"} letterSpacing="0.08em">{tempZone ? "TEMP ZONE · OPEN" : "TEMP ZONE · CLOSED"}</text>
+        {!tempZone && <text x="640" y="300" fontSize="10.5" fill="#7A8AA0"><tspan x="640">39 slots if strategy C</tspan><tspan x="640" dy="14">is approved</tspan></text>}
+        <rect x="810" y="84" width="178" height="414" rx="12" fill="rgba(15,30,60,0.03)" stroke="rgba(15,30,60,0.14)" />
+        <text x="818" y="104" fontSize="8.5" fill="#4A5B73" letterSpacing="0.08em">OVERFLOW PAD · 5 DEEP</text>
+
+        <rect x={TX0 - 6} y="620" width={6 * 96 + 6} height="62" rx="10" fill="rgba(37,99,235,0.04)" stroke="rgba(37,99,235,0.18)" strokeDasharray="5 4" />
+        <text x={TX0 + 2} y="631" fontSize="9.5" fill="#1D4ED8" letterSpacing="0.1em">DROP-AND-GO HOT SPOTS · MAX 3 H</text>
+        <rect x={TX0 - 6} y="690" width="440" height="66" rx="12" fill="white" stroke="rgba(15,30,60,0.14)" />
+        <text x={TX0 + 12} y="716" fontSize="13" fontWeight="600" fill="#0B1B33">FBO terminal · Sepulveda Jet Center</text>
+        <text x={TX0 + 12} y="736" fontSize="10.5" fill="#4A5B73">Cars queue at the curb on game day</text>
+
+        {positions.map((p) => {
+          const r = tandemRect(p);
+          const o = byPos.get(p.id);
+          const color = o ? SIZE_COLOR[o.size_class] : "";
+          const depMs = o ? Date.parse(o.depart_local) : 0;
+          const leavingSoon = o && depMs - nowMs <= 60 * 60 * 1000 && depMs > nowMs;
+          const tow = o && towSoon.has(o.flight_id);
+          const isSel = o && selected === o.flight_id;
+          const narrow = r.w < 40;
+          return (
+            <g key={p.id} className="cursor-pointer" onClick={() => onSelect(o ? o.flight_id : null, p.id)}
+              onMouseEnter={() => o && setHover({ o, x: r.x + r.w / 2, y: r.y })} onMouseLeave={() => setHover(null)}>
+              <rect x={r.x} y={r.y} width={r.w} height={r.h} rx="4"
+                fill={o ? color : "rgba(255,255,255,0.85)"} fillOpacity={o ? 0.2 : 1}
+                stroke={isSel ? "#2563EB" : tow ? "#D97706" : o ? color : "rgba(15,30,60,0.14)"}
+                strokeWidth={isSel ? 2.4 : tow ? 1.8 : o ? 1.2 : 0.8} strokeDasharray={o ? (tow ? "4 2" : undefined) : "2 2"} />
+              {leavingSoon && (
+                <motion.rect x={r.x - 1.5} y={r.y - 1.5} width={r.w + 3} height={r.h + 3} rx="5" fill="none" stroke="#16A34A" strokeWidth="1.4"
+                  animate={{ opacity: [0.9, 0.15, 0.9] }} transition={{ duration: 1.6, repeat: Infinity }} />
+              )}
+              {o && !narrow && (
+                <Fragment>
+                  <g transform={`translate(${r.x + r.w / 2 + 7},${r.y + 2}) rotate(90)`}>
+                    <Jet x={0} y={0} spanFt={Math.min(o.wingspan_ft, 70)} pxPerFt={(r.h - 4) / 70} color={color} />
+                  </g>
+                  <text x={r.x + 3} y={r.y + r.h - 4} fontSize="8" fontWeight="600" fill="#0B1B33" className="num">{o.flight_id.replace("VNY-", "")}</text>
+                  {tow && <text x={r.x + r.w - 3} y={r.y + 9} fontSize="7.5" fontWeight="700" fill="#B45309" textAnchor="end">TOW</text>}
+                </Fragment>
+              )}
+              {!o && !narrow && <text x={r.x + 3} y={r.y + r.h - 4} fontSize="7.5" fill="#94A3B8">{p.id}</text>}
+            </g>
+          );
+        })}
+        {overflowNow > 0 && (
+          <text x={TX0 + TW} y={TROW0 - 8} fontSize="10.5" fontWeight="600" fill="#DC2626" textAnchor="end">{overflowNow} aircraft without a slot now</text>
+        )}
+      </svg>
+      {hover && (
+        <div className="glass-strong pointer-events-none absolute z-10 w-[220px] px-3 py-2.5 text-[12px]"
+          style={{ left: `calc(${(hover.x / W) * 100}% - 110px)`, top: `calc(${(hover.y / H) * 100}% - 112px)` }}>
+          <div className="num font-semibold">{hover.o.flight_id} · {hover.o.position}</div>
+          <div className="text-ink-2">{SIZE_LABEL[hover.o.size_class]} · {hover.o.wingspan_ft} ft span · from {hover.o.origin}</div>
+          <div className="mt-1 grid grid-cols-2 gap-y-0.5">
+            <span className="text-ink-2">In</span><span className="num text-right">{dayShort(hover.o.arrive_local)} {hhmm(hover.o.arrive_local)}</span>
+            <span className="text-ink-2">Out</span><span className="num text-right">{dayShort(hover.o.depart_local)} {hhmm(hover.o.depart_local)}</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

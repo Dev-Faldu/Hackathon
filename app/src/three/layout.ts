@@ -35,25 +35,29 @@ export const DIMS: Record<SizeClass, { span: number; length: number; r: number; 
 const ROWS = "ABCD";
 
 export interface Pt { x: number; z: number }
+/** A parking position in the world: the stand, the lane point that serves it, the route in, which way a towed
+ *  jet is set aside along the lane, and how wide the box is. */
+export interface Geometry { stand: Pt; lane: Pt; via: Pt[]; clear: Pt; width: number }
 
-/** Where a parking position sits, and the lane point an aircraft uses to reach it. */
-export function positionGeometry(p: ParkingPosition): { stand: Pt; lane: Pt; via: Pt[] } {
+/** Where a marked stand sits, and the lane point an aircraft uses to reach it. */
+export function positionGeometry(p: ParkingPosition): Geometry {
   if (p.kind === "stand") {
     const r = ROWS.indexOf(p.row), x = COL_X(p.column);
-    return { stand: { x, z: STAND_Z(r, p.depth) }, lane: { x, z: ROW_LANE_Z(r) }, via: [{ x: ACCESS_X, z: TWY.z }, { x: ACCESS_X, z: ROW_LANE_Z(r) }] };
+    return { stand: { x, z: STAND_Z(r, p.depth) }, lane: { x, z: ROW_LANE_Z(r) }, via: [{ x: ACCESS_X, z: TWY.z }, { x: ACCESS_X, z: ROW_LANE_Z(r) }],
+      clear: { x: 1, z: 0 }, width: STAND_SIZE.w };
   }
   if (p.kind === "hot") {
     const x = HOT_X(p.column);
-    return { stand: { x, z: HOT_Z }, lane: { x, z: HOT_LANE_Z }, via: [{ x: ACCESS_X, z: TWY.z }, { x: ACCESS_X, z: HOT_LANE_Z }] };
+    return { stand: { x, z: HOT_Z }, lane: { x, z: HOT_LANE_Z }, via: [{ x: ACCESS_X, z: TWY.z }, { x: ACCESS_X, z: HOT_LANE_Z }], clear: { x: 1, z: 0 }, width: 60 };
   }
   const x = TEMP_X(p.column), z = TEMP_Z(p.column);
-  return { stand: { x, z }, lane: { x: ACCESS_E_X, z }, via: [{ x: ACCESS_E_X, z: TWY.z }] };
+  return { stand: { x, z }, lane: { x: ACCESS_E_X, z }, via: [{ x: ACCESS_E_X, z: TWY.z }], clear: { x: 0, z: 1 }, width: 56 };
 }
 
-function padGeometry(i: number): { stand: Pt; lane: Pt; via: Pt[] } {
-  const c = i % PAD.cols, r = Math.floor(i / PAD.cols) % 4;
-  const x = PAD.x + c * PAD.cell, z = PAD.z + r * PAD.cell + 30;
-  return { stand: { x, z }, lane: { x, z: PAD.z }, via: [{ x: PAD.x - 40, z: TWY.z }, { x: PAD.x - 40, z: PAD.z }] };
+/** Overflow pad cells (8 columns, 5 deep, the same boxes as the game-day pad) for jets with no position. */
+function padCell(i: number): Geometry {
+  const c = i % 8, d = Math.floor(i / 8) % 5, x = -660 + c * 33.5;
+  return { stand: { x, z: PAD.z + 34.5 + d * 33 }, lane: { x, z: PAD.z }, via: [{ x: PAD.x - 40, z: TWY.z }, { x: PAD.x - 40, z: PAD.z }], clear: { x: 1, z: 0 }, width: 33.5 };
 }
 
 // ---------- polylines ----------
@@ -82,7 +86,7 @@ const TAXI_MS_PER_M = 1000 / 8.5;      // ~16 kt taxi speed
 export type Phase = "approach" | "rollout" | "taxi_in" | "parked" | "tow" | "pushback" | "taxi_out" | "queue" | "lineup" | "takeoff" | "climb";
 
 /** A tow that pulls a jet out of a tandem slot, parks it aside on the taxilane, then puts it back. */
-export interface TowMove { t: number; dx: number; dz: number }
+export interface TowMove { t: number; dx: number; dz: number; dur?: number }
 export const TOW_ASIDE_MS = 10 * MIN;
 
 export interface FlightPlan3D {
@@ -121,15 +125,49 @@ export function flightMetas(plan: ParkingPlan): FlightMeta[] {
   })));
 }
 
-export function buildPlans(plan: ParkingPlan): FlightPlan3D[] {
+/** Every visit in the server's parking plan, in the world. `resolve` places game-day tandem slots by id.
+ *  Each tow in the plan becomes a set-aside: the jet in front is pulled out onto the lane while the deeper jet
+ *  gets in or out, then pushed back into its slot. */
+export function buildPlans(plan: ParkingPlan, resolve?: (id: string) => Geometry | null): FlightPlan3D[] {
   const posById = new Map(plan.positions.map((p) => [p.id, p]));
-  const towsBy = new Map<string, number[]>();
-  plan.tows.forEach((t) => towsBy.set(t.flight_id, [...(towsBy.get(t.flight_id) ?? []), Date.parse(t.t_local)]));
-  let padIdx = 0;
-  return flightMetas(plan).map((m) => {
+  const geomOf = new Map<string, Geometry>();
+  // Jets with no position wait on the overflow pad, in a cell that is free for their whole stay.
+  const padBusy: [number, number][][] = Array.from({ length: 40 }, () => []);
+  const padFor = (m: FlightMeta) => {
+    const L = Date.parse(m.arriveIso), D = Date.parse(m.departIso);
+    const i = Math.max(0, padBusy.findIndex((b) => !b.some(([a, z]) => a < D + 10 * MIN && L < z + 10 * MIN)));
+    padBusy[i].push([L, D]);
+    return padCell(i);
+  };
+  const plans = flightMetas(plan).sort((a, b) => Date.parse(a.arriveIso) - Date.parse(b.arriveIso)).map((m) => {
     const pos = posById.get(m.position);
-    return planFor(m, pos ? positionGeometry(pos) : padGeometry(padIdx++), towsBy.get(m.id) ?? []);
+    const g = (resolve && pos ? resolve(pos.id) : null) ?? (pos && pos.kind !== "pad" ? positionGeometry(pos) : padFor(m));
+    geomOf.set(m.id, g);
+    const f = planFor(m, g);
+    f.towMoves = [];
+    return f;
   });
+  const byId = new Map(plans.map((f) => [f.id, f]));
+  const groups = new Map<string, typeof plan.tows>();
+  plan.tows.forEach((t) => { const k = `${t.for_flight}|${t.kind}`; groups.set(k, [...(groups.get(k) ?? []), t]); });
+  groups.forEach((tows) => {
+    // Several jets in front: the front one comes out first and goes furthest, the next follows 90 s later,
+    // and they go back in reverse order, so the column empties and refills like a real tow crew does it.
+    tows.sort((a, b) => (posById.get(a.from)?.depth ?? 0) - (posById.get(b.from)?.depth ?? 0));
+    const n = tows.length, stagger = 90_000, total = TOW_ASIDE_MS + (n - 1) * 2 * MIN;
+    const innerDur = total - 2 * stagger * (n - 1), innerHold = stagger * (n - 1) + 0.35 * innerDur;
+    const deep = byId.get(tows[0].for_flight);
+    if (!deep) return;
+    // The innermost jet's hold covers the deep jet's last minute of taxi-in, or its whole pushback.
+    const t0 = tows[0].kind === "arrival" ? deep.taxiInEnd - MIN - innerHold : deep.pushStart - 12_000 - innerHold;
+    tows.forEach((t, i) => {
+      const front = byId.get(t.flight_id), g = geomOf.get(t.flight_id);
+      if (!front || !g) return;
+      const step = (n - i) * (g.width + 6);
+      front.towMoves!.push({ t: t0 + i * stagger, dur: total - 2 * stagger * i, dx: g.clear.x * step, dz: g.clear.z * step });
+    });
+  });
+  return plans;
 }
 
 export interface Pose { visible: boolean; x: number; y: number; z: number; heading: number; pitch: number; phase: Phase; tug: boolean }
@@ -158,9 +196,10 @@ export function poseAt(f: FlightPlan3D, t: number): Pose {
   if (t < f.pushStart && f.ghost) return HIDDEN;
   if (t < f.pushStart) {
     for (const mv of f.towMoves ?? []) {
-      if (t >= mv.t && t < mv.t + TOW_ASIDE_MS) {
-        // Out of the slot (25%), aside along the taxilane (10%), hold while the deep jet leaves (35%), back (10%), in (20%).
-        const k = (t - mv.t) / TOW_ASIDE_MS, ox = f.lane.x - f.stand.x, oz = f.lane.z - f.stand.z;
+      const dur = mv.dur ?? TOW_ASIDE_MS;
+      if (t >= mv.t && t < mv.t + dur) {
+        // Out of the slot (25%), aside along the taxilane (10%), hold while the deep jet passes (35%), back (10%), in (20%).
+        const k = (t - mv.t) / dur, ox = f.lane.x - f.stand.x, oz = f.lane.z - f.stand.z;
         let x: number, z: number;
         if (k < 0.25) { const e = ease(k / 0.25); x = f.stand.x + ox * e; z = f.stand.z + oz * e; }
         else if (k < 0.35) { const e = ease((k - 0.25) / 0.1); x = f.lane.x + mv.dx * e; z = f.lane.z + mv.dz * e; }

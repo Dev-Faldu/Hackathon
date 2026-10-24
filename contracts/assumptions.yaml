@@ -98,6 +98,15 @@ parking:                            # parking positions beyond the 48 stands (as
   hot_spot_max_hours: 3
   temp_zone_stands: 12              # taxiway closed for parking (strategy C), needs airport + FAA approval
   tows_per_block: 2                 # out and back for each boxed-in event
+  departure_uncertainty_h:          # assumption: how far actual departures drift from the time the owner gave (1 sigma)
+    over_20h: 3                     # long stays: owners leave when the party ends
+    over_3h: 1
+  tandem:                           # game-day packing layout (assumptions; slot sizes = largest jet allowed + 3 m)
+    hot_spots: 6
+    temp_rows: 13                   # temporary taxiway zone, 3 deep, only if strategy C is approved
+    temp_depth: 3
+    pad_columns: 8                  # overflow pad west of the apron, 5 deep
+    pad_depth: 5
 
 parking_fees_usd:                   # assumption: per night, before event surcharge; drop-and-go is a flat handling fee
   light: 150

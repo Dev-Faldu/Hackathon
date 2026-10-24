@@ -164,6 +164,36 @@ def test_booking_inbox_counts_add_up(client):
     assert sum(box["by_channel"].values()) > 0 and "FlightBridge" in box["by_channel"]
 
 
+def test_tandem_layout_is_one_plan_for_every_screen(client):
+    tandem = client.get("/parking/plan", params={"layout": "tandem"}).json()
+    stands = client.get("/parking/plan", params={"layout": "stands"}).json()
+    assert tandem["layout"] == "tandem" and len(tandem["positions"]) > len(stands["positions"])
+    ids = {p["id"] for p in tandem["positions"]}
+    assert {"A1-1", "A1-3", "A2-4", "H6", "P8-5"} <= ids and "A1-4" not in ids   # large columns 3 deep, medium 4 deep
+    # Packing wingtip to wingtip takes more jets with fewer tows than a whiteboard on the same slots.
+    assert tandem["metrics"]["overflow_aircraft"] <= stands["metrics"]["overflow_aircraft"]
+    assert tandem["metrics"]["tows"] < tandem["compare"]["tows"]
+    assert all(t["kind"] in ("arrival", "departure") for t in tandem["tows"])
+    st = client.get("/parking/state", params={"t": T, "layout": "tandem"}).json()
+    assert all(o["position"] in ids for o in st["occupants"] if o["position"])
+
+
+def test_accepted_booking_joins_the_plan_and_can_be_cancelled(client):
+    q = client.post("/bookings/quote", json={"aircraft_type": "CL35", "tail": "N350RC", "arrive_local": "2027-02-10T16:00",
+                                             "depart_local": "2027-02-11T10:00", "layout": "tandem"}).json()
+    assert q["position"] is not None
+    a = client.post("/bookings/accept", json={"trip_sheet": q["trip_sheet"], "layout": "tandem", "channel": "FlightBridge"}).json()
+    plan = client.get("/parking/plan", params={"layout": "tandem"}).json()
+    where = [g["position"] for g in plan["gantt"] if any(b["flight_id"] == a["flight_id"] for b in g["bars"])]
+    assert where == [q["position"]["id"]] and a["flight_id"] in plan["booked"]
+    box = client.get("/bookings/inbox", params={"t": "2027-02-10T12:00", "layout": "tandem"}).json()
+    assert any(i.get("booked") and i["flight"] == a["flight_id"] for i in box["items"])
+    assert client.delete(f"/bookings/accepted/{a['flight_id']}").json()["ok"]
+    assert a["flight_id"] not in client.get("/parking/plan", params={"layout": "tandem"}).json()["booked"]
+    full = client.post("/bookings/accept", json={"trip_sheet": {"parking": {"position": None}}, "layout": "tandem"})
+    assert full.status_code == 409
+
+
 def test_build_replay_feeds_the_loader(tmp_path, monkeypatch):
     """Raw OpenSky CSVs -> replay_2027.jsonl -> load_processed, without network."""
     import csv as _csv

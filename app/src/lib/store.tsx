@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "./api";
 import { toLocalIso } from "./format";
-import type { Meta, Scenario } from "./types";
+import type { Layout, Meta, Scenario } from "./types";
 
 export type Screen = "setup" | "bookings" | "parking" | "world" | "plan" | "live" | "whatif" | "after" | "la28";
 export interface Toast { id: number; title: string; body?: string; tone?: "ok" | "info" | "alert" }
@@ -27,6 +27,10 @@ interface Ctx {
   bumpDecisions: () => void;
   simple: boolean;            // first-time view: summaries first, detail one click away
   setSimple: (v: boolean) => void;
+  layout: Layout;             // one ramp layout for Parking control, the Booking desk and the 3D
+  setLayout: (l: Layout) => void;
+  focusFlight: { id: string; tMs: number } | null;   // "watch it land": the 3D picks this up on open
+  setFocusFlight: (f: { id: string; tMs: number } | null) => void;
 }
 
 const readSimple = () => { try { return localStorage.getItem("rampcast.view") !== "detailed"; } catch { return true; } };
@@ -53,6 +57,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSimpleState(v);
     try { localStorage.setItem("rampcast.view", v ? "simple" : "detailed"); } catch { /* private window: keep it for this visit */ }
   }, []);
+  const [layout, setLayoutState] = useState<Layout>(() => { try { return localStorage.getItem("rampcast.layout") === "stands" ? "stands" : "tandem"; } catch { return "tandem"; } });
+  const setLayout = useCallback((l: Layout) => {
+    setLayoutState(l);
+    try { localStorage.setItem("rampcast.layout", l); } catch { /* keep it for this visit */ }
+  }, []);
+  const [focusFlight, setFocusFlight] = useState<{ id: string; tMs: number } | null>(null);
   const seeded = useRef(false);
 
   const refreshMeta = useCallback(() => {
@@ -102,6 +112,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value: Ctx = {
     meta, refreshMeta, screen, go, scenario, setScenario, tMs, tIso: toLocalIso(tMs), setT, playing, setPlaying,
     speed, setSpeed, windowMs, toasts, toast, decisionsVersion, bumpDecisions: () => setDV((v) => v + 1), simple, setSimple,
+    layout, setLayout, focusFlight, setFocusFlight,
   };
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

@@ -22,10 +22,33 @@ const NAV: { id: Screen; label: string; icon: ReactNode; hint: string }[] = [
   { id: "la28", label: "LA28 stretch", icon: <Medal size={17} />, hint: "Olympics opening week" },
 ];
 
+/** Phones and small tablets: the same screens as a scrolling strip under a slim header. */
+export function MobileNav() {
+  const { screen, go } = useApp();
+  return (
+    <header className="glass sticky top-0 z-50 m-2 mb-0 flex flex-col gap-2 px-3 py-2 md:hidden">
+      <div className="flex items-center gap-2">
+        <div className="grid h-7 w-7 place-items-center rounded-[9px] bg-runway text-white"><Plane size={14} className="-rotate-45" /></div>
+        <span className="text-[14px] font-semibold tracking-[0.04em]">RAMPCAST</span>
+        <span className="text-[11px] text-ink-2">Event ops co-pilot</span>
+      </div>
+      <nav className="-mx-1 flex gap-1 overflow-x-auto pb-0.5">
+        {NAV.map((n) => (
+          <button key={n.id} onClick={() => go(n.id)}
+            className={cx("flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium",
+              screen === n.id ? "bg-runway text-white" : "bg-white/60 text-ink-2")}>
+            {n.icon}{n.label}
+          </button>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
 export function Sidebar() {
   const { screen, go, meta } = useApp();
   return (
-    <aside className="glass sticky top-4 m-4 mr-0 flex h-[calc(100vh-2rem)] w-[236px] shrink-0 flex-col p-3">
+    <aside className="glass sticky top-4 m-4 mr-0 hidden h-[calc(100vh-2rem)] w-[236px] shrink-0 flex-col p-3 md:flex">
       <div className="flex items-center gap-2.5 px-2 pb-5 pt-2">
         <div className="grid h-9 w-9 place-items-center rounded-[11px] bg-runway text-white shadow-[0_6px_18px_rgba(37,99,235,0.35)]">
           <Plane size={18} className="-rotate-45" />

@@ -21,7 +21,8 @@ from datetime import datetime, timedelta
 from . import config as C
 from .data import Dataset, Flight, _short_id
 from .engine import customs_close
-from .parking import Plan, Position, _column_cost, _ideal_depth, span
+from .engine import _airport_ll
+from .parking import COLUMN_KINDS, Plan, Position, _column_cost, _ideal_depth, span
 
 A = C.assumptions
 
@@ -76,18 +77,19 @@ def _best_position(f: Flight, plan: Plan, by_pos: dict[str, list[Flight]]) -> tu
     stay_h = (f.departed_vny - f.landed).total_seconds() / 3600
     columns: dict[tuple[str, int], list[Position]] = defaultdict(list)
     for p in plan.positions:
-        if p.kind == "stand":
+        if p.kind in COLUMN_KINDS:
             columns[(p.row, p.column)].append(p)
     best: tuple[float, Position, int] | None = None
     for p in plan.positions:
         if not _fits(f, p, by_pos, plan, buf):
             continue
         tows = 0
-        if p.kind == "stand":
+        if p.kind in COLUMN_KINDS:
             members = [(g, q) for q in columns[(p.row, p.column)] for g in by_pos[q.id]]
             tows = _column_cost(f, p, members) * A()["parking"]["tows_per_block"]
         score = tows * 10 + (abs(p.depth - _ideal_depth(f)) if p.kind == "stand" else 0) \
-            + (-5 if p.kind == "hot" and stay_h <= A()["parking"]["hot_spot_max_hours"] else 0) + (3 if p.kind == "temp" else 0)
+            + (-5 if p.kind == "hot" and stay_h <= A()["parking"]["hot_spot_max_hours"] else 0) \
+            + {"stand": 0, "hot": 0, "temp": 3, "pad": 8}[p.kind]
         if best is None or score < best[0]:
             best = (score, p, tows)
     return (best[1], best[2]) if best else None
@@ -98,6 +100,11 @@ def _position_label(p: Position) -> str:
         return f"Hot spot {p.column} by the terminal (drop-and-go)"
     if p.kind == "temp":
         return f"Temporary stand {p.id} on the closed taxiway"
+    if p.kind == "pad":
+        return f"Overflow pad {p.id}, west of the apron"
+    if "-" in p.id:   # game-day tandem slot
+        place = "front of the column" if p.depth == 1 else f"{('second', 'third', 'fourth')[min(p.depth, 4) - 2]} in the column"
+        return f"Tandem slot {p.id}: row {p.row}, column {p.column}, {place}"
     return f"Stand {p.id}: row {p.row}, column {p.column}, {('front', 'middle', 'back')[min(p.depth, 3) - 1]} of the column"
 
 
@@ -228,6 +235,7 @@ def quote(ds: Dataset, plan: Plan, occ: dict, req: dict, now: datetime) -> dict:
         "risk": risk, "answer_ms": answer_ms,
         # What goes back to the operator's trip sheet and into the FBO system when the request is accepted.
         "trip_sheet": {"request_id": rid, "tail": req.get("tail") or None, "aircraft_type": req.get("aircraft_type") or None,
+                       "size_class": size, "origin": (req.get("origin") or "").upper() or None, "international": bool(req.get("international")),
                        "airport": "KVNY", "fbo": a["fbo"]["name"], "eta_local": C.iso_local(arrive), "etd_local": C.iso_local(depart),
                        "parking": {"status": decision, "position": found[0].id if found else None, "price_usd": price,
                                    "hold_expires_local": C.iso_local(hold) if found else None},
@@ -235,12 +243,43 @@ def quote(ds: Dataset, plan: Plan, occ: dict, req: dict, now: datetime) -> dict:
     }
 
 
-def inbox(ds: Dataset, plan: Plan, t: datetime) -> dict:
+def flight_from_sheet(sheet: dict, taken: set[str]) -> Flight:
+    """An accepted trip sheet becomes a flight on the ramp plan; its id is the tail when there is one."""
+    arrive, depart = C.parse_t(sheet["eta_local"]), C.parse_t(sheet["etd_local"])
+    base = (sheet.get("tail") or sheet.get("request_id") or "BOOKED").upper()
+    fid, n = base, 2
+    while fid in taken:
+        fid, n = f"{base}-{n}", n + 1
+    origin = sheet.get("origin") or ""
+    try:
+        lat, lon = _airport_ll(origin) if origin else (0.0, 0.0)
+    except Exception:  # unknown airport: no map position, still parks
+        lat, lon = 0.0, 0.0
+    stay_h = (depart - arrive).total_seconds() / 3600
+    return Flight(flight_id=fid, tail_hash="", size_class=sheet.get("size_class") or "mid", origin=origin, origin_name=origin,
+                  origin_lat=lat, origin_lon=lon, is_international=bool(sheet.get("international")),
+                  departed_origin=arrive - timedelta(hours=2), landed=arrive, departed_vny=depart,
+                  stay_type="drop_and_go" if stay_h <= 3 else "overnight", source="booking", booking_code=sheet.get("request_id"))
+
+
+def inbox(ds: Dataset, plan: Plan, t: datetime, accepted: dict[str, dict] | None = None) -> dict:
     """Every request received by time t, from every channel, each checked against the plan and live tracking."""
     a, b = A(), A()["bookings"]
     channels = list(b["channel_mix"].items())
     rows: list[dict] = []
+    for fid, meta in (accepted or {}).items():
+        f = next((x for x in ds.flights if x.flight_id == fid), None)
+        if f is None:
+            continue
+        pid = plan.assignment.get(fid)
+        rows.append({"request_id": meta.get("request_id") or fid, "received_local": meta["received_local"], "channel": meta["channel"],
+                     "flight": fid, "flight_id": fid, "size_class": f.size_class, "origin": f.origin, "eta_local": C.iso_local(f.landed),
+                     "etd_local": C.iso_local(f.departed_vny), "position": pid, "lead_days": round((f.landed - C.parse_t(meta["received_local"])).total_seconds() / 86400, 1),
+                     "status": "auto", "issues": [], "notes": [f"Booked at the desk and placed on {pid}." if pid else "Booked at the desk."],
+                     "booked": True})
     for f in ds.flights:
+        if f.source == "booking":
+            continue
         if _h("walkin", f.flight_id) < b["walk_in_share"]:
             continue
         lo, hi = b["lead_days"].get(f.stay_type, [1, 14])

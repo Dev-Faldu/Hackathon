@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AfterAction, Alert, AssignResult, AuditRow, Briefing, Explanation, Forecast, Meta, Occupancy, ParkingMethod,
   ParkingPlan, ParkingState, Queue, ReplayState, Reservation, Scenario, Settings, StrategiesResponse, WhatIf, La28Report,
-  BookingMeta, BookingQuote, Inbox, TripRequest } from "./types";
+  BookingMeta, BookingQuote, Inbox, Layout, TripRequest } from "./types";
 import type { Movement } from "../three/layout";
 
 const BASE = "/api";
@@ -32,21 +32,23 @@ export const api = {
   afteraction: (s: Scenario) => http<AfterAction>(`/afteraction?scenario=${s}`),
   la28: (s: Scenario) => http<La28Report>(`/la28?scenario=${s}`),
   bookingQuote: (r: TripRequest) => http<BookingQuote>("/bookings/quote", { method: "POST", body: JSON.stringify(r) }),
-  bookingAccept: (trip_sheet: Record<string, unknown>, replay_t_local?: string) =>
-    http<{ ok: boolean; trip_sheet: Record<string, unknown> }>("/bookings/accept", { method: "POST", body: JSON.stringify({ trip_sheet, replay_t_local }) }),
-  bookingInbox: (t?: string) => http<Inbox>(`/bookings/inbox?${q(t)}`),
+  bookingAccept: (trip_sheet: Record<string, unknown>, layout: Layout, channel: string, replay_t_local?: string) =>
+    http<{ ok: boolean; flight_id: string; position: string; trip_sheet: Record<string, unknown> }>("/bookings/accept",
+      { method: "POST", body: JSON.stringify({ trip_sheet, layout, channel, replay_t_local }) }),
+  bookingCancel: (flightId: string) => http<{ ok: boolean }>(`/bookings/accepted/${encodeURIComponent(flightId)}`, { method: "DELETE" }),
+  bookingInbox: (t: string | undefined, layout: Layout) => http<Inbox>(`/bookings/inbox?${q(t)}&layout=${layout}`),
   bookingMeta: () => http<BookingMeta>("/bookings/connections"),
   airfieldMovements: () => http<{ source: string; movements: Movement[] }>("/airfield/movements"),
   settings: () => http<Settings>("/settings"),
   putSettings: (patch: Partial<Settings>) => http<Settings>("/settings", { method: "PUT", body: JSON.stringify(patch) }),
   audit: () => http<{ entries: AuditRow[] }>("/audit"),
-  parkingPlan: (m: ParkingMethod, temp: boolean) => http<ParkingPlan>(`/parking/plan?method=${m}&temp=${temp}`),
-  parkingState: (t: string, m: ParkingMethod, temp: boolean) =>
-    http<ParkingState>(`/parking/state?${q(t)}&method=${m}&temp=${temp}`),
-  reservations: (day: string, m: ParkingMethod, temp: boolean) =>
-    http<{ day: string; items: Reservation[] }>(`/parking/reservations?day=${day}&method=${m}&temp=${temp}`),
-  assign: (flight_id: string, position_id: string | null, confirm: boolean, replay_t_local?: string) =>
-    http<AssignResult>("/parking/assign", { method: "POST", body: JSON.stringify({ flight_id, position_id, confirm, replay_t_local }) }),
+  parkingPlan: (m: ParkingMethod, temp: boolean, layout: Layout) => http<ParkingPlan>(`/parking/plan?method=${m}&temp=${temp}&layout=${layout}`),
+  parkingState: (t: string, m: ParkingMethod, temp: boolean, layout: Layout) =>
+    http<ParkingState>(`/parking/state?${q(t)}&method=${m}&temp=${temp}&layout=${layout}`),
+  reservations: (day: string, m: ParkingMethod, temp: boolean, layout: Layout) =>
+    http<{ day: string; items: Reservation[] }>(`/parking/reservations?day=${day}&method=${m}&temp=${temp}&layout=${layout}`),
+  assign: (flight_id: string, position_id: string | null, confirm: boolean, layout: Layout, replay_t_local?: string) =>
+    http<AssignResult>("/parking/assign", { method: "POST", body: JSON.stringify({ flight_id, position_id, confirm, layout, replay_t_local }) }),
   decide: (action: "approve" | "edit" | "reject", target: string, note = "", replay_t_local?: string) =>
     http<AuditRow>("/audit", { method: "POST", body: JSON.stringify({ action, target, note, replay_t_local }) }),
 };

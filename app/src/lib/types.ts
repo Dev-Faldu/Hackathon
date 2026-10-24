@@ -108,21 +108,25 @@ export interface AfterAction {
 
 // ---------- parking control ----------
 export type ParkingMethod = "optimized" | "first_come";
-export interface ParkingPosition { id: string; kind: "stand" | "hot" | "temp"; row: string; column: number; depth: number; max_wingspan_ft: number }
+export type Layout = "tandem" | "stands";   // game-day tandem packing, or the 48 marked stands of an ordinary week
+export interface ParkingPosition { id: string; kind: "stand" | "hot" | "temp" | "pad"; row: string; column: number; depth: number; max_wingspan_ft: number }
 export interface ParkingMetrics {
   method: ParkingMethod; temp_zone: boolean; tows: number; boxed_in_events: number; overflow_aircraft: number;
   hot_spot_uses: number; temp_zone_uses: number; peak_stands_used: number; stands: number; utilization_pct: number;
-  revenue_est_usd: number; aircraft_parked: number;
+  revenue_est_usd: number; aircraft_parked: number; layout: Layout; pad_uses: number; positions: number;
 }
 export interface GanttBar {
   flight_id: string; booking_code: string | null; size_class: SizeClass; start: string; end: string; stay_type: string;
   origin: string; tow_involved: boolean;
 }
-export interface Tow { t_local: string; flight_id: string; size_class: SizeClass; from: string; to: string; reason: string; for_flight: string }
+export interface Tow {
+  t_local: string; flight_id: string; size_class: SizeClass; from: string; to: string; reason: string; for_flight: string;
+  kind: "arrival" | "departure"; for_flight_t: string;   // the deeper jet's own landing or departure time
+}
 export interface ParkingPlan {
-  method: ParkingMethod; temp_zone: boolean; source: string; positions: ParkingPosition[]; metrics: ParkingMetrics;
+  method: ParkingMethod; temp_zone: boolean; layout: Layout; source: string; positions: ParkingPosition[]; metrics: ParkingMetrics;
   compare: ParkingMetrics; gantt: { position: string; kind: string; bars: GanttBar[] }[]; tows: Tow[];
-  pins: Record<string, string>; window: string[];
+  pins: Record<string, string>; booked: string[]; window: string[];
 }
 export interface Occupant {
   flight_id: string; booking_code: string | null; size_class: SizeClass; wingspan_ft: number; position: string | null;
@@ -132,7 +136,7 @@ export interface ParkingState {
   t_local: string; occupants: Occupant[]; tows_next_3h: Tow[];
   arrivals_next_3h: { flight_id: string; booking_code: string | null; size_class: SizeClass; arrive_local: string; position: string | null; origin: string }[];
   departures_next_3h: { flight_id: string; size_class: SizeClass; depart_local: string; position: string | null }[];
-  stands_used: number; hot_used: number; temp_used: number; overflow_now: number;
+  stands_used: number; hot_used: number; temp_used: number; pad_used: number; overflow_now: number;
 }
 export interface Reservation {
   flight_id: string; booking_code: string | null; size_class: SizeClass; origin: string; origin_name: string;
@@ -170,7 +174,7 @@ export interface BookingQuote {
 export interface InboxItem {
   request_id: string; received_local: string; channel: string; flight: string; flight_id: string; size_class: SizeClass;
   origin: string; eta_local: string; etd_local: string; position: string | null; lead_days: number;
-  status: "auto" | "look"; issues: { kind: string; text: string }[]; notes: string[];
+  status: "auto" | "look"; issues: { kind: string; text: string }[]; notes: string[]; booked?: boolean;
 }
 export interface Inbox {
   t_local: string; total: number; auto: number; look: number; by_channel: Record<string, number>;
@@ -180,5 +184,5 @@ export interface Connection { name: string; kind: string; flow: string; status: 
 export interface BookingMeta { connections: Connection[]; aircraft_types: { code: string; name: string; size_class: SizeClass }[]; services: string[] }
 export interface TripRequest {
   arrive_local: string; depart_local: string; aircraft_type?: string; size_class?: SizeClass; tail?: string; origin?: string;
-  international?: boolean; services?: string[]; channel?: string; t?: string;
+  international?: boolean; services?: string[]; channel?: string; t?: string; layout?: Layout;
 }

@@ -2,7 +2,7 @@
 import type { Phase } from "./layout";
 
 export const sim = { ms: 0, night: 0 };
-export const focus = { active: false, x: 0, y: 0, z: 0, heading: 0 };
+export const focus = { active: false, x: 0, y: 0, z: 0, heading: 0, pitch: 0, eye: 2.5, nose: 6, speedKt: 0, altFt: 0, phase: "parked" as Phase };
 export const trafficStats: Record<Phase | "visible", number> = {
   visible: 0, approach: 0, rollout: 0, taxi_in: 0, parked: 0, tow: 0, pushback: 0, taxi_out: 0, queue: 0, lineup: 0, takeoff: 0, climb: 0,
 };

@@ -57,9 +57,18 @@ export function jetLights(size: SizeClass): JetLights {
   };
 }
 
-export function jetGeometry(size: SizeClass): THREE.BufferGeometry {
-  if (cache.has("jet-" + size)) return cache.get("jet-" + size)!;
-  const { span, length: L, r, color } = DIMS[size];
+/** Paint schemes seen on a busy FBO ramp: white with a coloured cheatline and tail, plus one dark scheme. */
+export const LIVERIES: { paint: string; accent: string }[] = [
+  { paint: "#F4F6F9", accent: "#1D4ED8" }, { paint: "#F4F6F9", accent: "#B91C1C" }, { paint: "#F4F6F9", accent: "#0F766E" },
+  { paint: "#F4F6F9", accent: "#111827" }, { paint: "#F4F6F9", accent: "#B45309" }, { paint: "#2B2F36", accent: "#C9A227" },
+  { paint: "#E8E4DA", accent: "#5B6B7A" },
+];
+
+export function jetGeometry(size: SizeClass, accent: string = DIMS[size].color, paint: string = PAINT): THREE.BufferGeometry {
+  const key = `jet-${size}-${accent}-${paint}`;
+  if (cache.has(key)) return cache.get(key)!;
+  const { span, length: L, r } = DIMS[size];
+  const color = accent;
   const cy = r + 1.0;
   const parts: THREE.BufferGeometry[] = [];
 
@@ -67,7 +76,7 @@ export function jetGeometry(size: SizeClass): THREE.BufferGeometry {
   fus.rotateX(Math.PI / 2);
   fus.scale(1, 1.04, 1);
   fus.translate(0, cy, 0);
-  parts.push(tint(fus, PAINT));
+  parts.push(tint(fus, paint));
 
   // Cockpit glass, cabin windows, cheatline
   parts.push(box(1.25 * r, 0.32 * r, 0.11 * L, 0, cy + 0.52 * r, 0.40 * L, GLASS));
@@ -84,7 +93,7 @@ export function jetGeometry(size: SizeClass): THREE.BufferGeometry {
   for (const side of [1, -1] as const) {
     const w = wing(span / 2, r * 0.5, 0.06 * L, -0.17 * L, -0.15 * L, -0.25 * L, 0.24, side);
     w.translate(0, wy, 0);
-    parts.push(tint(w, PAINT));
+    parts.push(tint(w, paint === PAINT ? PAINT : "#3A3F47"));
     parts.push(box(0.12, 1.3, 0.08 * L, side * (span / 2 - 0.05), wy + 0.75, -0.21 * L, color));
   }
 
@@ -103,7 +112,7 @@ export function jetGeometry(size: SizeClass): THREE.BufferGeometry {
   for (const side of [1, -1] as const) {
     const st = wing(span * 0.18, 0.1, -0.42 * L, -0.52 * L, -0.50 * L, -0.56 * L, 0.16, side);
     st.translate(0, cy + 0.6 * r + finH - 0.08, 0);
-    parts.push(tint(st, PAINT));
+    parts.push(tint(st, paint));
   }
 
   // Aft-mounted engines with pylons and dark intakes
@@ -134,7 +143,7 @@ export function jetGeometry(size: SizeClass): THREE.BufferGeometry {
 
   const merged = mergeGeometries(parts, false)!;
   merged.computeBoundingSphere();
-  cache.set("jet-" + size, merged);
+  cache.set(key, merged);
   return merged;
 }
 

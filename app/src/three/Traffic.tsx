@@ -8,7 +8,7 @@ import type { SizeClass } from "../lib/types";
 import { CURB, lightMats } from "./Airport";
 import { DIMS, type FlightPlan3D, poseAt, TOW_ASIDE_MS } from "./layout";
 import { crewStats, focus, sim, trafficStats } from "./state";
-import { coneGeometry, fuelTruckGeometry, jetGeometry, jetLights, personGeometry, suvGeometry, tugGeometry, wandGeometry } from "./models";
+import { coneGeometry, fuelTruckGeometry, jetGeometry, jetLights, LIVERIES, personGeometry, suvGeometry, tugGeometry, wandGeometry } from "./models";
 
 
 const SIZES: SizeClass[] = ["light", "mid", "super_mid", "large", "other"];
@@ -30,21 +30,34 @@ function pool(geom: THREE.BufferGeometry, mat: THREE.Material, n: number, shadow
   return m;
 }
 
-export function Traffic({ plans, selected, onSelect }: {
-  plans: FlightPlan3D[]; selected: string | null; onSelect: (id: string | null) => void;
+function liveryOf(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return (h >>> 0) % LIVERIES.length;
+}
+
+interface JetGroup { size: SizeClass; liv: number; list: FlightPlan3D[]; mesh: THREE.InstancedMesh }
+
+export function Traffic({ plans, selected, onSelect, colorBySize }: {
+  plans: FlightPlan3D[]; selected: string | null; onSelect: (id: string | null) => void; colorBySize: boolean;
 }) {
   const paint = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.3, envMapIntensity: 1.1 }), []);
   const vehMat = useMemo(() => new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.45, metalness: 0.35 }), []);
-  const bySize = useMemo(() => {
-    const out = {} as Record<SizeClass, FlightPlan3D[]>;
-    SIZES.forEach((s) => { out[s] = plans.filter((p) => p.size === s); });
-    return out;
-  }, [plans]);
-  const jets = useMemo(() => {
-    const out = {} as Record<SizeClass, THREE.InstancedMesh>;
-    SIZES.forEach((s) => { out[s] = pool(jetGeometry(s), paint, Math.max(1, bySize[s].length)); });
-    return out;
-  }, [bySize, paint]);
+  // One instanced mesh per size and paint scheme; "colour by size" paints every tail by class instead.
+  const groups = useMemo(() => {
+    const m = new Map<string, JetGroup>();
+    for (const f of plans) {
+      const liv = colorBySize ? -1 : liveryOf(f.id), key = `${f.size}|${liv}`;
+      if (!m.has(key)) m.set(key, { size: f.size, liv, list: [], mesh: null as unknown as THREE.InstancedMesh });
+      m.get(key)!.list.push(f);
+    }
+    for (const g of m.values()) {
+      const L = g.liv < 0 ? null : LIVERIES[g.liv];
+      g.mesh = pool(jetGeometry(g.size, L?.accent ?? DIMS[g.size].color, L?.paint), paint, g.list.length);
+    }
+    return [...m.values()];
+  }, [plans, paint, colorBySize]);
+  const last = useRef({ x: 0, z: 0, y: 0, t: 0, id: "" });
   const bulb = useMemo(() => new THREE.SphereGeometry(0.32, 8, 6), []);
   const lights = useMemo(() => ({
     red: pool(bulb, lightMats.red, plans.length * 2 + 1, false),
@@ -83,8 +96,8 @@ export function Traffic({ plans, selected, onSelect }: {
       m.setMatrixAt(i, o3.matrix);
     };
     focus.active = false;
-    for (const s of SIZES) {
-      const mesh = jets[s], list = bySize[s], L = navLights[s], dim = DIMS[s];
+    for (const grp of groups) {
+      const mesh = grp.mesh, list = grp.list, s = grp.size, L = navLights[s], dim = DIMS[s];
       for (let i = 0; i < list.length; i++) {
         const f = list[i];
         const p = poseAt(f, t);
@@ -116,7 +129,7 @@ export function Traffic({ plans, selected, onSelect }: {
             v.set(side * (dim.span / 2 + 1.5), 0, -0.2 * dim.length - back).applyMatrix4(am);
             person(people.walker, nWalk++, v.x, v.z, p.heading);
           };
-          const aside = p.phase === "tow" && f.towMoves?.some((mv) => t >= mv.t && t < mv.t + TOW_ASIDE_MS);
+          const aside = p.phase === "tow" && f.towMoves?.some((mv) => t >= mv.t && t < mv.t + (mv.dur ?? TOW_ASIDE_MS));
           if (aside) towsAside++;
           if (p.phase === "tow" || p.phase === "pushback") { walk(1); walk(-1); if (aside) walk(1, dim.length * 0.4); }
           if (p.phase === "taxi_in" && t > f.taxiInEnd - MARSHAL_MS) {
@@ -175,6 +188,15 @@ export function Traffic({ plans, selected, onSelect }: {
         }
         if (f.id === selected) {
           focus.active = true; focus.x = p.x; focus.y = p.y; focus.z = p.z; focus.heading = p.heading;
+          focus.pitch = p.pitch; focus.eye = L.centerY + dim.r * 0.35; focus.nose = 0.36 * dim.length; focus.phase = p.phase;
+          // Ground speed and height for the pilot's-view readout, from how far the jet moved in sim time.
+          const lp = last.current, dt = (t - lp.t) / 1000;
+          if (lp.id === f.id && dt > 0.05 && dt < 120) {
+            const v = (Math.hypot(p.x - lp.x, p.z - lp.z) / dt) * 1.944;
+            focus.speedKt = focus.speedKt * 0.85 + v * 0.15;
+          } else if (lp.id !== f.id) focus.speedKt = 0;
+          if (lp.id !== f.id || dt > 0.05) last.current = { x: p.x, z: p.z, y: p.y, t, id: f.id };
+          focus.altFt = p.y * 3.281;
           if (ring.current) {
             ring.current.visible = p.y < 3; // ground ring only while on the ground
             ring.current.position.set(p.x, 0.2, p.z);
@@ -200,16 +222,16 @@ export function Traffic({ plans, selected, onSelect }: {
     clear(vehicles.tug, nTug); clear(vehicles.fuel, nFuel); clear(vehicles.suv, nSuv);
   });
 
-  const click = (s: SizeClass) => (e: ThreeEvent<PointerEvent>) => {
+  const click = (g: JetGroup) => (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    const id = e.instanceId !== undefined ? bySize[s][e.instanceId]?.id : undefined;
+    const id = e.instanceId !== undefined ? g.list[e.instanceId]?.id : undefined;
     if (id) onSelect(id);
   };
 
   return (
     <group>
-      {SIZES.map((s) => (
-        <primitive key={s} object={jets[s]} onPointerDown={click(s)}
+      {groups.map((g) => (
+        <primitive key={`${g.size}|${g.liv}`} object={g.mesh} onPointerDown={click(g)}
           onPointerOver={() => { document.body.style.cursor = "pointer"; }} onPointerOut={() => { document.body.style.cursor = ""; }} />
       ))}
       <primitive object={lights.red} /><primitive object={lights.green} /><primitive object={lights.white} /><primitive object={lights.amber} /><primitive object={lights.land} />

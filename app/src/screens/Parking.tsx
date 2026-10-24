@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRightLeft, CheckCircle2, CircleDollarSign, Clock, MousePointerClick, PlaneLanding, PlaneTakeoff, Shuffle, SquareParking, Truck, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { ApronMap, StandGantt } from "../components/apron";
+import { ApronMap, StandGantt, TandemMap } from "../components/apron";
 import { ReplayBar, TopBar } from "../components/Shell";
 import { ApproveBar, Chip, ErrorNote, Fold, g, Glance, Kpi, KpiRow, Panel, Segmented, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
@@ -10,7 +10,8 @@ import { useApp, useReplayTick } from "../lib/store";
 import type { AssignResult, Occupant, ParkingMethod, ParkingPlan, Reservation } from "../lib/types";
 
 export default function Parking() {
-  const { tMs, tIso, toast, bumpDecisions } = useApp();
+  const { tMs, tIso, toast, bumpDecisions, layout, setLayout } = useApp();
+  const tandem = layout === "tandem";
   const [method, setMethod] = useState<ParkingMethod>("optimized");
   const [temp, setTemp] = useState(false);
   const [pinsV, setPinsV] = useState(0);
@@ -25,9 +26,9 @@ export default function Parking() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const plan = useApi(() => api.parkingPlan(method, temp), [method, temp, pinsV]);
-  const st = useApi(() => api.parkingState(tick.bucketIso, method, temp), [tick.bucketMs, method, temp, pinsV]);
-  const res = useApi(() => api.reservations(boardDay, method, temp), [boardDay, method, temp, pinsV]);
+  const plan = useApi(() => api.parkingPlan(method, temp, layout), [method, temp, layout, pinsV]);
+  const st = useApi(() => api.parkingState(tick.bucketIso, method, temp, layout), [tick.bucketMs, method, temp, layout, pinsV]);
+  const res = useApi(() => api.reservations(boardDay, method, temp, layout), [boardDay, method, temp, layout, pinsV]);
   const m = plan.data?.metrics, cmp = plan.data?.compare;
   const opt = method === "optimized" ? m : cmp, base = method === "optimized" ? cmp : m;
   const towCut = opt && base && base.tows ? Math.round((1 - opt.tows / base.tows) * 100) : 0;
@@ -37,6 +38,8 @@ export default function Parking() {
   return (
     <div>
       <TopBar title="Parking control" subtitle="Where every jet parks, what must be towed, and how full the ramp gets. The line supervisor approves every move.">
+        <Segmented value={layout} onChange={(v) => { setLayout(v); setSelected(null); }}
+          options={[{ value: "tandem", label: "Game-day tandem" }, { value: "stands", label: "Marked stands" }]} />
         <button onClick={() => setTemp(!temp)}
           className={cx("btn-ghost", temp && "border-tfr/40 bg-tfr/10 text-tfr")} title="Open 12 temporary taxiway stands (strategy C)">
           <span className={cx("inline-block h-2 w-2 rounded-full", temp ? "bg-tfr" : "bg-ink-3")} /> Temp zone {temp ? "open" : "closed"}
@@ -50,14 +53,15 @@ export default function Parking() {
 
       <div className="mt-4">
         <Glance steps={["Click a jet on the apron", "Check the tow sheet", "Approve the tows"]}>
-          {opt && base ? <>Parking each jet by when it leaves needs <b className="num">{opt.tows}</b> tows this week, against <b className="num">{base.tows}</b> for a first-free-stand whiteboard
-            (<b className="text-ok">{towCut}% fewer</b>).{(m?.overflow_aircraft ?? 0) > 0 ? <> <b className="num">{m!.overflow_aircraft}</b> jets still need overflow{temp ? "" : ": opening the temp zone helps"}.</> : null}</> : "Loading the parking plan…"}
+          {opt && base ? <>{tandem ? "Game-day packing, wingtip to wingtip," : "On the 48 marked stands,"} parking each jet by when its owner says it leaves needs <b className="num">{opt.tows}</b> tows this week,
+            against <b className="num">{base.tows}</b> for a first-free-slot whiteboard (<b className="text-ok">{towCut}% fewer</b>).{(m?.overflow_aircraft ?? 0) > 0 ? <> <b className="num">{m!.overflow_aircraft}</b> jets still need overflow{temp ? "" : ": opening the temp zone helps"}.</> : null}</> : "Loading the parking plan…"}
         </Glance>
       </div>
       <KpiRow keep={3}>
-        <Kpi label="Stands in use now" value={st.data?.stands_used ?? 0} unit={`/ ${m?.stands ?? 48}`}
+        <Kpi label={tandem ? "Tandem slots in use" : "Stands in use now"} value={st.data?.stands_used ?? 0} unit={`/ ${m?.stands ?? 48}`}
           tone={st.data && st.data.stands_used >= (m?.stands ?? 48) ? "alert" : "runway"}
-          sub={st.data ? `${st.data.hot_used} on hot spots · ${st.data.temp_used} temp · ${st.data.overflow_now} without a position` : "…"} info={g("stands_now")} />
+          sub={st.data ? `${st.data.hot_used} on hot spots · ${st.data.temp_used} temp${tandem ? ` · ${st.data.pad_used} on the pad` : ""} · ${st.data.overflow_now} without a position` : "…"}
+          info={tandem ? g("tandem") : g("stands_now")} />
         <Kpi label="Tows this week" value={m?.tows ?? 0} tone={method === "optimized" ? "ok" : "alert"}
           sub={opt && base ? <span>RAMPCAST <b className="num">{opt.tows}</b> vs whiteboard <b className="num">{base.tows}</b> · <span className="font-semibold text-ok">−{towCut}%</span></span> : "…"} info={g("tows")} />
         <Kpi label="Overflow aircraft" value={m?.overflow_aircraft ?? 0} tone={(m?.overflow_aircraft ?? 0) > 0 ? "alert" : "ok"}
@@ -69,12 +73,16 @@ export default function Parking() {
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Panel eyebrow={<span className="flex items-center gap-1.5"><SquareParking size={12} /> Apron · {dayLabel(tIso)} {hhmm(tIso)}</span>}
-          title={method === "optimized" ? "RAMPCAST arrangement: long stays deep, quick turns up front" : "Whiteboard: first free stand that fits"}
+          title={method === "optimized" ? (tandem ? "Game-day packing: long stays deep, quick turns up front" : "RAMPCAST arrangement: long stays deep, quick turns up front")
+            : "Whiteboard: first free slot that fits"}
           actions={<Chip><MousePointerClick size={12} /> Click a jet to inspect or move it</Chip>}>
-          {plan.data && st.data ? (
+          {plan.data && st.data && plan.data.layout === layout ? (tandem ? (
+            <TandemMap positions={plan.data.positions} occupants={st.data.occupants} towSoon={towSoon} nowMs={tMs}
+              selected={selected} onSelect={(f) => setSelected(f)} tempZone={temp} overflowNow={st.data.overflow_now} />
+          ) : (
             <ApronMap positions={plan.data.positions} occupants={st.data.occupants} towSoon={towSoon} nowMs={tMs}
               selected={selected} onSelect={(f) => setSelected(f)} tempZone={temp} overflowNow={st.data.overflow_now} />
-          ) : <Skeleton className="aspect-[1000/770] w-full" />}
+          )) : <Skeleton className="aspect-[1000/770] w-full" />}
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-ink-2">
             {(["light", "mid", "super_mid", "large"] as const).map((k) => (
               <span key={k} className="flex items-center gap-1.5"><i className="inline-block h-2.5 w-2.5 rounded-[3px]" style={{ background: SIZE_COLOR[k] }} />{SIZE_LABEL[k]}</span>
@@ -139,7 +147,7 @@ function Inspector({ flightId, occ, plan, onClose, onMoved, tIso, toast }: {
     if (!target) return;
     setBusy(true);
     try {
-      const r = await api.assign(flightId, target, confirm, tIso);
+      const r = await api.assign(flightId, target, confirm, plan?.layout ?? "stands", tIso);
       setCheck(r);
       if (confirm && r.confirmed) {
         toast({ title: `${flightId} moved to ${target}`, body: `Tows this week ${r.tows_before} → ${r.tows_after} · logged`, tone: "ok" });
