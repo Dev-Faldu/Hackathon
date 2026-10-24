@@ -12,6 +12,8 @@ from rampcast_server.data import load_processed
 PROCESSED = C.ROOT / "data" / "processed"
 HOTEL_ZONES = {"Beverly Hills", "Santa Monica", "Downtown LA", "Inglewood", "Burbank"}
 SIZE_CLASSES = {"large", "super_mid", "mid", "light", "other"}
+ROW_SOURCES = ("reconstructed_2022", "opensky_2022_shifted", "synthetic")
+OTHER_EVENTS = {"SB_LVIII_2024", "SB_LX_2026", "SB_LVII_2023"}
 SOURCES = {"opensky_2022_shifted", "reconstructed_2022"}  # a real pull, or the calibrated reconstruction
 BANNED_FIELDS = {"name", "passenger_name", "passenger", "vip", "tier", "payment", "price", "credit_card", "loyalty"}
 
@@ -111,7 +113,9 @@ def test_flights_parquet_contract():
     assert len(df) > 500
     assert set(df["size_class"].unique()).issubset(SIZE_CLASSES)
     assert set(df["direction"].unique()) == {"arrival", "departure"}
-    assert set(df["source"].unique()).issubset({"published", "assumed"})
+    assert all(str(x).startswith(ROW_SOURCES) for x in df["source"].unique())
+    # Rows from other host Super Bowls are generated, and say so
+    assert (df[df["event_name"].isin(OTHER_EVENTS)]["source"] == "synthetic").all()
 
     # Check tail_hash format (16 hex chars)
     hashes = df["tail_hash"].dropna()
@@ -132,7 +136,11 @@ def test_daily_counts_contract():
         "event_name", "day_offset", "source"
     ]
     assert list(df.columns) == expected_cols
-    assert set(df["source"].unique()).issubset({"published", "assumed"})
+    assert all(str(x).startswith(ROW_SOURCES) for x in df["source"].unique())
+    # Only the two days whose basin totals are published carry the anchor label, and nothing claims to be published
+    anchors = df[df["source"].str.endswith("_anchor")]
+    assert set(anchors["date"]) == {"2022-02-11", "2022-02-14"}
+    assert not df["source"].str.startswith("published").any()
 
     # Ensure size class sums match total arrivals for tracked arrival days
     tracked = df[df["arrivals"].notna()]
@@ -158,6 +166,7 @@ def test_kvny_historical_and_uplift_datasets():
     assert years == {2019, 2020, 2022, 2023, 2024, 2025, 2026}
     assert 2021 not in years
     assert (kdf["airport"] == "KVNY").all()
+    assert (kdf["source"] == "synthetic").all(), "generated history must not pass as FAA counts"
 
     # Uplift dataset across multiple host Super Bowls
     u_path = PROCESSED / "super_bowl_uplifts.csv"
@@ -165,6 +174,7 @@ def test_kvny_historical_and_uplift_datasets():
     udf = pd.read_csv(u_path)
     assert set(udf["event_name"].unique()) == {"SB_LVIII_2024", "SB_LX_2026", "SB_LVII_2023"}
     assert all(udf["uplift_ratio"] > 0)
+    assert (udf["source"] == "synthetic").all()
 
 
 def test_load_processed_dataset_loader():

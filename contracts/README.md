@@ -31,13 +31,15 @@ Conventions:
 | airport | string | `KVNY` | the basin airport this row is about |
 | event_name | string | `SB_LVI_2022` | null for ordinary weeks |
 | day_offset | int | `-2` | days relative to game day, null for ordinary weeks |
-| source | string | `published` | `published` (anchors/benchmarks) or `assumed` |
+| source | string | `reconstructed_2022` | how the row was made: the run's label (`reconstructed_2022`, or `opensky_2022_shifted` for a real pull), the same with `_anchor` on the two days whose basin totals are published (arrivals Fri 11 Feb, departures Mon 14 Feb; the airport split is still assumed), or `synthetic` for generated rows |
 
 ### `daily_counts.csv`
 
 `date, airport, arrivals, departures, arr_light, arr_mid, arr_super_mid, arr_large, arr_other, event_name, day_offset, source`
 
-Dates without arrival tracking are left blank/missing for arrival columns instead of fake zeroes.
+Dates without arrival tracking are left blank/missing for arrival columns instead of fake zeroes. `source` uses the same labels as `flights.parquet`.
+
+`kvny_historical_counts.csv` (KVNY, Jan–Mar 2019–2026 without 2021) and `super_bowl_uplifts.csv` (Las Vegas 2024, Bay Area 2026, Phoenix 2023) are **synthetic**: shaped like OPSNET/TFMSC counts and published event ratios, but drawn at random. The forecast uses the published ratios in `assumptions.yaml` `forecast.analogs` instead; swap in real exports before fitting anything to these files.
 
 ### `replay_2027.jsonl`: one JSON event per line, sorted by `t_utc`
 

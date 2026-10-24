@@ -6,14 +6,16 @@ Produces all files in data/processed/ according to contracts/README.md:
 3. replay_2027.jsonl - Replayed flight events shifted +1827 days to 2027 Super Bowl week
 4. bookings.json    - Synthetic passenger & ground transport bookings for our FBO
 5. stands.json      - Sepulveda Jet Center ramp configuration & stand layout
-6. kvny_historical_counts.csv - FAA OPSNET/TFMSC daily counts for KVNY (Jan–Mar of 2019, 2020, 2022–2026)
-7. super_bowl_uplifts.csv     - Event uplift curves for 2024 Las Vegas, 2026 Bay Area, 2023 Phoenix, 2022 LA
+6. kvny_historical_counts.csv - SYNTHETIC placeholder daily counts for KVNY, Jan–Mar of 2019, 2020, 2022–2026,
+                                shaped like FAA OPSNET/TFMSC counts until a real export replaces it
+7. super_bowl_uplifts.csv     - SYNTHETIC uplift curves for 2024 Las Vegas, 2026 Bay Area, 2023 Phoenix
 
 Features:
-- Fixed fake-zero days: marks the 6 untracked arrival days as missing/NaN instead of 0.
-- Source column: shows 'published' for verified anchors/benchmarks and 'assumed' for modeled allocations.
-- Multi-host Super Bowl dataset: 2024 Vegas (882 bizjets), 2026 Bay Area (1,000+ bizjets), 2023 Phoenix (900+ bizjets).
-- KVNY 7-year multi-season history for M1 baseline fitting.
+- Untracked arrival days are missing (NaN), never a fake 0.
+- Source column on every row: the run's label for the 2022 rebuild ("reconstructed_2022", or "opensky_2022_shifted"
+  for a real pull), "<label>_anchor" on the two days whose basin totals are published (Fri 11 Feb arrivals,
+  Mon 14 Feb departures), and "synthetic" for generated rows (KVNY history, other host Super Bowls).
+  Readers treat any label starting with "reconstructed" or "synthetic" as not observed.
 
 Usage:
     python data/scripts/build_processed.py
@@ -52,6 +54,10 @@ GAME_DATE_2022 = dt.date(2022, 2, 13)
 GAME_DATE_2027 = dt.date(2027, 2, 14)
 ANALOG_WINDOW = (dt.date(2022, 2, 5), dt.date(2022, 2, 15))
 BASELINE_WINDOW = (dt.date(2022, 1, 15), dt.date(2022, 1, 31))
+
+# How a row was made: the 2022 rebuild (or a real OpenSky pull), or generated. Never "published" on its own: even
+# on the two anchor days only the basin total is published; the airport split is assumed.
+SOURCE_PREFIXES = ("reconstructed_2022", "opensky_2022_shifted", "synthetic")
 
 # Dates where arrivals were not tracked (departures only from prior arrivals)
 # In daily_counts.csv, arrivals must be missing (NaN) on these days, NOT zero.
@@ -309,14 +315,16 @@ def build_bookings(replay_path: Path, out_path: Path) -> int:
 
 # ---------- Multi-Year KVNY Historical Daily Counts (FAA OPSNET/TFMSC) ----------
 def build_kvny_historical_counts() -> pd.DataFrame:
-    """Generate daily counts for KVNY across Jan–Mar of 2019, 2020, 2022–2026 (skipping 2021).
-    Calibrated to FAA OPSNET / TFMSC published counts, aggregated by local LA date.
+    """Synthetic daily counts for KVNY across Jan–Mar of 2019, 2020, 2022–2026 (skipping 2021).
+
+    Random draws shaped like OPSNET/TFMSC daily counts (weekday/weekend levels, the March 2020 drop). They are not
+    FAA data: every row is labelled "synthetic". Replace with a real OPSNET/TFMSC export to fit a multi-year baseline.
     """
     rng = random.Random(2027)
     records = []
     years = [2019, 2020, 2022, 2023, 2024, 2025, 2026]  # Skip 2021 as requested
 
-    # FAA OPSNET published baseline ranges for Van Nuys (itinerant GA / bizjets)
+    # Assumed levels for Van Nuys business jets (weekday ~88, Monday ~80, Saturday ~58, Sunday ~66 arrivals)
     for y in years:
         cur = dt.date(y, 1, 1)
         end = dt.date(y, 3, 31)
@@ -343,25 +351,21 @@ def build_kvny_historical_counts() -> pd.DataFrame:
             is_sb_2022 = (cur >= dt.date(2022, 2, 5)) and (cur <= dt.date(2022, 2, 15))
             ev_name = "SB_LVI_2022" if is_sb_2022 else ""
             day_off = str((cur - GAME_DATE_2022).days) if is_sb_2022 else ""
-            source = "published"
+            source = "synthetic"
 
             if cur == FRIDAY_PEAK:
-                arr_count = 135  # Published anchor: 27% of 501 basin arrivals
+                arr_count = 135  # 27% (assumed share) of the published 501 basin arrivals
                 dep_count = 48
-                source = "published"
             elif cur == MONDAY:
                 arr_count = 47
-                dep_count = 148  # Published anchor: 27% of 548 basin departures
-                source = "published"
+                dep_count = 148  # 27% (assumed share) of the published 548 basin departures
             elif is_sb_2022:
                 # Event days
                 arr_count = max(40, int(round(arr_base * (1.35 if dow == 3 else 1.2))))
                 dep_count = max(40, int(round(dep_base)))
-                source = "published"
             else:
                 arr_count = max(25, int(round(arr_base)))
                 dep_count = max(25, int(round(dep_base)))
-                source = "published"  # FAA OPSNET benchmark
 
             # Size class allocation
             c_lrg = int(round(arr_count * 0.32))
@@ -395,10 +399,13 @@ def build_kvny_historical_counts() -> pd.DataFrame:
 # ---------- Other Super Bowl Host Airports (2024 Vegas, 2026 Bay Area, 2023 Phoenix) ----------
 def build_other_super_bowls() -> tuple[list[dict], list[dict], list[dict]]:
     """Build daily counts and flight records for:
-    - 2024 Las Vegas: KLAS, KHND, KVGT (game Feb 11, 2024; 882 private planes published by WingX)
-    - 2026 Bay Area: KSJC, KSFO, KOAK, KPAO (game Feb 8, 2026; 1,000+ arrivals published by WingX)
-    - 2023 Phoenix: KPHX, KSDL, KDVT (game Feb 12, 2023; 920+ arrivals published by NBAA)
+    - 2024 Las Vegas: KLAS, KHND, KVGT (game Feb 11, 2024)
+    - 2026 Bay Area: KSJC, KSFO, KOAK, KPAO (game Feb 8, 2026)
+    - 2023 Phoenix: KPHX, KSDL, KDVT (game Feb 12, 2023)
     Range: 7 days before to 2 days after, plus 4 ordinary baseline weeks before.
+
+    Every row is "synthetic": the daily totals, airport splits and shapes are team assumptions, not counts. The
+    published event-level ratios the forecast uses live in contracts/assumptions.yaml (forecast.analogs), with sources.
     """
     rng = random.Random(2024)
     daily_records = []
@@ -503,7 +510,7 @@ def build_other_super_bowls() -> tuple[list[dict], list[dict], list[dict]]:
                     "arr_other": 0,
                     "event_name": "",
                     "day_offset": "",
-                    "source": "published",
+                    "source": "synthetic",
                 })
             cur += dt.timedelta(days=1)
 
@@ -515,9 +522,7 @@ def build_other_super_bowls() -> tuple[list[dict], list[dict], list[dict]]:
             day_total = int(round(b_daily * factor))
             allocated = _allocate(day_total, ap_shares)
 
-            is_friday = (off == -2)
             is_monday = (off == 1)
-            is_pub = is_friday or is_monday
 
             basin_arr_actual = sum(allocated.values())
             uplift_records.append({
@@ -530,7 +535,7 @@ def build_other_super_bowls() -> tuple[list[dict], list[dict], list[dict]]:
                 "arrivals": basin_arr_actual,
                 "baseline_p50": b_daily,
                 "uplift_ratio": round(basin_arr_actual / b_daily, 2),
-                "source": "published" if is_pub else "assumed",
+                "source": "synthetic",
             })
 
             for ap, count in allocated.items():
@@ -556,7 +561,7 @@ def build_other_super_bowls() -> tuple[list[dict], list[dict], list[dict]]:
                     "arr_other": 0,
                     "event_name": ev["name"],
                     "day_offset": str(off),
-                    "source": "published" if is_pub else "assumed",
+                    "source": "synthetic",
                 })
 
                 # Synthesize individual flight entries for flights.parquet
@@ -579,7 +584,7 @@ def build_other_super_bowls() -> tuple[list[dict], list[dict], list[dict]]:
                         "airport": ap,
                         "event_name": ev["name"],
                         "day_offset": off,
-                        "source": "published" if is_pub else "assumed",
+                        "source": "synthetic",
                     })
 
             cur += dt.timedelta(days=1)
@@ -593,7 +598,8 @@ def build_other_super_bowls() -> tuple[list[dict], list[dict], list[dict]]:
     return daily_records, flight_records, uplift_records
 
 
-def build_flights_parquet_and_daily_counts(flights_dir: Path, reg_path: Path, out_parquet: Path, out_csv: Path) -> tuple[int, int]:
+def build_flights_parquet_and_daily_counts(flights_dir: Path, reg_path: Path, out_parquet: Path, out_csv: Path,
+                                          label: str = "reconstructed_2022") -> tuple[int, int]:
     """Build flights.parquet and daily_counts.csv with source column and missing fake-zero days."""
     sizes = {}
     models = {}
@@ -624,7 +630,7 @@ def build_flights_parquet_and_daily_counts(flights_dir: Path, reg_path: Path, ou
 
         # Published anchors: Friday peak arrival & Monday departure exodus
         is_published = (direction == "arrival" and date_obj == FRIDAY_PEAK) or (direction == "departure" and date_obj == MONDAY)
-        source = "published" if is_published else "assumed"
+        source = f"{label}_anchor" if is_published else label
 
         with open(path, newline="") as f:
             reader = csv.DictReader(f)
@@ -714,7 +720,7 @@ def build_flights_parquet_and_daily_counts(flights_dir: Path, reg_path: Path, ou
             c_smid = np.nan
             c_lrg = np.nan
             c_oth = np.nan
-            src = "assumed"
+            src = label
         else:
             arr_val = len(arrs)
             counts_by_size = arrs["size_class"].value_counts().to_dict()
@@ -724,7 +730,7 @@ def build_flights_parquet_and_daily_counts(flights_dir: Path, reg_path: Path, ou
             c_lrg = counts_by_size.get("large", 0)
             c_oth = counts_by_size.get("other", 0)
             is_pub = (d_obj == FRIDAY_PEAK) or (d_obj == MONDAY)
-            src = "published" if is_pub else "assumed"
+            src = f"{label}_anchor" if is_pub else label
 
         daily_records.append({
             "date": d_str,
@@ -823,7 +829,7 @@ def verify_processed_data() -> bool:
         assert list(pdf.columns) == expected, f"Columns mismatch: {pdf.columns}"
         assert set(pdf["size_class"].unique()).issubset({"large", "super_mid", "mid", "light", "other"})
         assert set(pdf["direction"].unique()) == {"arrival", "departure"}
-        assert set(pdf["source"].unique()).issubset({"published", "assumed"})
+        assert all(str(x).startswith(SOURCE_PREFIXES) for x in pdf["source"].unique()), "unknown source label"
         print(f"✓ flights.parquet verified: {len(pdf)} rows with source column matching contract")
 
     # 5. daily_counts.csv
@@ -838,7 +844,7 @@ def verify_processed_data() -> bool:
             "arr_super_mid", "arr_large", "arr_other", "event_name", "day_offset", "source"
         ]
         assert list(cdf.columns) == expected, f"daily_counts columns mismatch: {cdf.columns}"
-        assert set(cdf["source"].unique()).issubset({"published", "assumed"})
+        assert all(str(x).startswith(SOURCE_PREFIXES) for x in cdf["source"].unique()), "unknown source label"
 
         # Check fake-zero days are NaN/missing
         fake_zero_strs = {d.isoformat() for d in FAKE_ZERO_ARRIVAL_DAYS}
@@ -892,7 +898,7 @@ def main():
     print("\nStep 5: Building flights.parquet & daily_counts.csv with source and multi-event datasets...")
     parquet_file = PROCESSED_DIR / "flights.parquet"
     counts_file = PROCESSED_DIR / "daily_counts.csv"
-    build_flights_parquet_and_daily_counts(raw_dir / flights_dir, raw_dir / registry, parquet_file, counts_file)
+    build_flights_parquet_and_daily_counts(raw_dir / flights_dir, raw_dir / registry, parquet_file, counts_file, source)
 
     print("\nStep 6: Verifying contracts...")
     verify_processed_data()
