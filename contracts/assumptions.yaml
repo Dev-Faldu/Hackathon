@@ -130,3 +130,48 @@ bookings:                           # instant booking desk and the shared inbox 
     overnight: [2, 30]
     drop_and_go: [0, 7]
     pre_window: [7, 40]
+
+forecast:                           # Role 2 forecast (rampcast/forecast). Each value has a source or is labelled an assumption.
+  monte_carlo_runs: 5000
+  seed: 61
+  airport: KVNY
+  baseline_dates: ["2022-01-15", "2022-01-21"]   # ordinary days in daily_counts.csv (reconstructed_2022); 2022-01-17 is MLK Day
+  window_offsets: [-5, 1]           # 2027-02-09 (Tue) to 2027-02-15 (Mon, Presidents' Day); game day = 0
+  traffic_level_2027: 1.0           # assumption: 2027 ordinary traffic relative to the 2022 baseline days
+  count_dispersion: 1.5             # assumption: variance / mean of daily arrivals (negative binomial); 1.0 = Poisson
+  week_level_sd: 0.10               # assumption: lognormal sd of a week-wide demand factor (a busy week is busy every day)
+  uplift:
+    anchor_offsets: [-3, 0]         # Thu..Sun before the game: the window the published arrival ratios describe
+    shape_source: reconstructed_2022   # assumption: day-to-day shape from Role 1's rebuilt 2022 KVNY week
+    fixed_offsets: [1]              # Monday after the game: same arrival multiplier in every scenario
+    scenario_rule: {low: min, medium: mean, high: max}   # spread across the analogs used for level
+  analogs:                          # published WingX figures; each has its own window and denominator
+    - {event: SB_LVIII_2024, region: Las Vegas, metric: arrivals_ratio, value: 1.5, use: level,
+       window: "event-weekend average daily arrivals vs February-to-date daily average",
+       source: "WingX via AIN, 2024-02-13", url: "https://www.ainonline.com/aviation-news/business-aviation/2024-02-13/super-bowl-draws-flocks-aircraft-numbers-down-previous"}
+    - {event: SB_LX_2026, region: Bay Area, metric: arrivals_ratio, value: 2.0, use: level,
+       window: "Feb 5-8 2026 (Thu-Sun) arrivals vs normal February",
+       source: "WingX via GlobalAir, 2026", url: "https://www.globalair.com/articles/bay-area-airports-report-3x-the-normal-business-jets-traffic-during-super-bowl/11933"}
+    - {event: SB_LX_2026, region: Bay Area, metric: monday_departures_ratio, value: 3.0, use: check,
+       window: "day-after departures vs typical February daily average",
+       source: "WingX via GlobalAir, 2026", url: "https://www.globalair.com/articles/bay-area-airports-report-3x-the-normal-business-jets-traffic-during-super-bowl/11933"}
+    - {event: SB_LVI_2022, region: Los Angeles, metric: monday_departures_ratio, value: 1.65, use: check,
+       window: "548 day-after departures, +65% vs typical activity",
+       source: "WingX via AIN, 2022-02-18", url: "https://www.ainonline.com/aviation-news/business-aviation/2022-02-18/super-bowl-brings-super-bounty-la-area-fbos"}
+  fbo_reports_2022:                 # AIN informal FBO poll, 2022-02-18; used only as a plausibility range
+    - {fbo: Castle & Cooke, airport: KVNY, metric: aircraft_in_week, value: 70}
+    - {fbo: Million Air, airport: KBUR, metric: aircraft_in_week_prior, value: 170}
+    - {fbo: Million Air, airport: KBUR, metric: aircraft_on_ramp_at_kickoff, value: 45}
+    - {fbo: Ross Aviation, airport: KLGB, metric: jets_on_ramp_game_day, value: 75}
+  stays:
+    drop_and_go_share: 0.30         # reconstructed_2022: 30% of paired KVNY arrivals left within 2 h
+    drop_and_go_minutes: [55, 120]
+    ordinary_nights: [1, 2]         # assumption: visits that are not for the game stay 1-2 nights
+    ordinary_departure_hours: [8, 17]
+    stay_through_game_from_offset: -3   # assumption: non-drop-and-go arrivals from Thursday on stay through the game
+    leave_after_game_share: 0.48    # reconstructed_2022: 126 stayers left on game day, 137 on Monday
+    after_game_hours: [20.5, 23.5]  # local; after the game-day TFR ends at 20:30 (tfr_game_day)
+    monday_departure_hours: [7.0, 14.0]
+  game_day_arrival_damping: 0.35    # assumption: arrival rate during the game-day TFR window relative to normal
+  pre_window_aircraft: 18           # assumption (engine default): transient aircraft already parked at 2027-02-09 00:00
+  pre_window_departure_days: [0, 1] # they leave on window day 0 or 1, between ordinary_departure_hours
