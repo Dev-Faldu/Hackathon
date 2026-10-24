@@ -1,9 +1,10 @@
 import { motion, AnimatePresence, animate, useMotionValue, useTransform } from "framer-motion";
-import { Check, CheckCircle2, ChevronDown, Info, Pencil, X, AlertTriangle } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Check, CheckCircle2, ChevronDown, Info, Lightbulb, Pencil, X, AlertTriangle } from "lucide-react";
+import { Children, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { cx } from "../lib/format";
+import { GLOSSARY } from "../lib/glossary";
 import { useApp } from "../lib/store";
 
 export function Panel({ title, eyebrow, actions, children, className, strong, bodyClass }: {
@@ -165,11 +166,13 @@ export function ErrorNote({ error, onRetry }: { error: string; onRetry?: () => v
 
 /** Renders Claude/template text and turns [fact.id] citations into small chips. */
 export function CitedText({ text }: { text: string }) {
+  const { simple } = useApp();
   const parts = text.split(/(\[[A-Za-z0-9_.\-]+\])/g);
   return (
     <p className="text-[14px] leading-[1.6] text-ink">
       {parts.map((p, i) =>
         /^\[[A-Za-z0-9_.\-]+\]$/.test(p) ? (
+          simple ? <sup key={i} title={`From engine fact ${p.slice(1, -1)}`} className="ml-px text-[9px] text-runway">●</sup> :
           <span key={i} title={p.slice(1, -1)}
             className="mx-0.5 inline-flex -translate-y-px items-center rounded-md bg-runway/10 px-1 py-px align-middle font-mono text-[10px] text-runway">
             {p.slice(1, -1).replace(".kpis.", " · ").replace("status_quo.", "")}
@@ -228,5 +231,76 @@ export function InfoTip({ what, source, label = "What this number means" }: { wh
           {source && <div className="mt-1.5 border-t border-hairline pt-1.5 text-[11px] text-ink-2"><span className="font-medium">Source:</span> {source}</div>}
         </div>, document.body)}
     </>
+  );
+}
+
+/** The (i) for a glossary term, as the `info` prop of a Kpi. */
+export const g = (key: keyof typeof GLOSSARY) => ({ what: GLOSSARY[key].what, source: GLOSSARY[key].source });
+
+/** The screen in one sentence, and what to do next. Shown first so a new user knows where to look. */
+export function Glance({ children, steps }: { children: ReactNode; steps?: ReactNode[] }) {
+  return (
+    <div className="glass-strong mb-4 flex flex-wrap items-start gap-3 px-4 py-3">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-runway/10 text-runway"><Lightbulb size={16} /></span>
+      <div className="min-w-0 flex-1">
+        <div className="label">In short</div>
+        <div className="text-[14px] leading-snug text-ink">{children}</div>
+      </div>
+      {steps && steps.length > 0 && (
+        <ol className="flex flex-wrap items-center gap-1.5 self-center">
+          {steps.map((st, i) => (
+            <li key={i} className="flex items-center gap-1.5 rounded-full border border-hairline bg-white/75 px-2.5 py-1 text-[12px] text-ink">
+              <span className="num grid h-4 w-4 place-items-center rounded-full bg-runway text-[10px] font-semibold text-white">{i + 1}</span>{st}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+/** A row of numbers. In the simple view only the first few show; the rest wait behind "More numbers". */
+export function KpiRow({ children, keep = 3, className }: { children: ReactNode; keep?: number; className?: string }) {
+  const { simple } = useApp();
+  const all = Children.toArray(children);
+  const [open, setOpen] = useState(false);
+  const shown = simple && !open ? all.slice(0, keep) : all;
+  const hidden = all.length - shown.length;
+  return (
+    <div className={className}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${shown.length > 4 ? 180 : 220}px, 1fr))` }}>{shown}</div>
+      {simple && (hidden > 0 || open) && (
+        <button onClick={() => setOpen(!open)} className="mt-2 flex items-center gap-1 text-[12px] font-medium text-runway hover:underline">
+          <ChevronDown size={14} className={cx("transition-transform", open && "rotate-180")} /> {open ? "Fewer numbers" : `${hidden} more number${hidden > 1 ? "s" : ""}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** A secondary panel: shown in the detailed view; one line that opens it in the simple view. */
+export function Fold({ title, summary, children, className }: { title: ReactNode; summary?: ReactNode; children: ReactNode; className?: string }) {
+  const { simple } = useApp();
+  const [open, setOpen] = useState(false);
+  if (!simple) return <>{children}</>;
+  if (open) {
+    return (
+      <div className={className}>
+        <button onClick={() => setOpen(false)} className="mb-1 flex items-center gap-1 text-[12px] font-medium text-runway hover:underline">
+          <ChevronDown size={14} className="rotate-180" /> Hide {typeof title === "string" ? title.toLowerCase() : "detail"}
+        </button>
+        <div className="[&>*]:!mt-0">{children}</div>
+      </div>
+    );
+  }
+  return (
+    <button onClick={() => setOpen(true)} aria-expanded={false}
+      className={cx("glass flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left transition hover:bg-white/70", className)}>
+      <div className="min-w-0">
+        <div className="text-[14px] font-semibold text-ink">{title}</div>
+        {summary && <div className="text-[12.5px] text-ink-2">{summary}</div>}
+      </div>
+      <span className="flex shrink-0 items-center gap-1 text-[12px] font-medium text-runway">Show <ChevronDown size={15} /></span>
+    </button>
   );
 }

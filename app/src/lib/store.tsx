@@ -25,7 +25,11 @@ interface Ctx {
   toast: (t: Omit<Toast, "id">) => void;
   decisionsVersion: number;
   bumpDecisions: () => void;
+  simple: boolean;            // first-time view: summaries first, detail one click away
+  setSimple: (v: boolean) => void;
 }
+
+const readSimple = () => { try { return localStorage.getItem("rampcast.view") !== "detailed"; } catch { return true; } };
 
 const AppCtx = createContext<Ctx | null>(null);
 const SCREENS: Screen[] = ["setup", "bookings", "parking", "world", "plan", "live", "whatif", "after", "la28"];
@@ -44,6 +48,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [speed, setSpeed] = useState(600);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [decisionsVersion, setDV] = useState(0);
+  const [simple, setSimpleState] = useState(readSimple);
+  const setSimple = useCallback((v: boolean) => {
+    setSimpleState(v);
+    try { localStorage.setItem("rampcast.view", v ? "simple" : "detailed"); } catch { /* private window: keep it for this visit */ }
+  }, []);
   const seeded = useRef(false);
 
   const refreshMeta = useCallback(() => {
@@ -92,7 +101,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value: Ctx = {
     meta, refreshMeta, screen, go, scenario, setScenario, tMs, tIso: toLocalIso(tMs), setT, playing, setPlaying,
-    speed, setSpeed, windowMs, toasts, toast, decisionsVersion, bumpDecisions: () => setDV((v) => v + 1),
+    speed, setSpeed, windowMs, toasts, toast, decisionsVersion, bumpDecisions: () => setDV((v) => v + 1), simple, setSimple,
   };
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }

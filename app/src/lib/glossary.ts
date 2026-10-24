@@ -1,0 +1,34 @@
+// Plain-language meaning of every number and term on screen, with where it comes from.
+// Used by the (i) tips next to numbers and by the glossary in the sidebar.
+export interface Term { term: string; what: string; source?: string }
+
+export const GLOSSARY: Record<string, Term> = {
+  arrivals_week: { term: "Arrivals this week", what: "Business jets expected to land at our FBO, Tuesday to Monday of game week. The middle estimate (P50).", source: "Forecast shaped by 2022 Super Bowl LVI (LA) and 2026 Bay Area flight counts; our FBO's share is 30% of VNY (assumptions.yaml)." },
+  peak_day: { term: "Peak day", what: "The day with the most arrivals. P90 is the busy case: 9 weeks in 10 stay below it.", source: "Same forecast as arrivals this week." },
+  p10_p90: { term: "P10 · P50 · P90", what: "A range instead of one guess. P50 is the middle estimate; 1 week in 10 comes in below P10 and 1 in 10 above P90.", source: "120 simulated weeks of the ramp (Monte Carlo)." },
+  large_equiv: { term: "Large-jet spaces", what: "Ramp space counted in large-cabin jets: a light jet takes 0.4 of a space, a midsize 0.6, a super-mid 0.8, a Gulfstream or Global 1.", source: "large_equiv_factor in assumptions.yaml." },
+  ramp_demand: { term: "Peak ramp demand", what: "The most ramp space needed at one moment if every jet that wants to park could, in large-jet spaces. Above the capacity line, some jets cannot park.", source: "Hour-by-hour simulation of the forecast week; capacity 48 (assumptions.yaml)." },
+  hours_over: { term: "Hours over capacity", what: "Hours in the week when more jets want to park than the ramp holds.", source: "Hour-by-hour simulation; capacity minus the 10% reservation buffer." },
+  hours_with_plan: { term: "With the suggested plan", what: "Hours over capacity left after the recommended strategy (hot spots, partner airports or the temporary zone).", source: "Same simulation, re-run with the strategy applied." },
+  fuel_week: { term: "Fuel this week", what: "Jet A the FBO should expect to pump, in thousands of gallons.", source: "About 1,100 gallons per departure, blended across sizes (assumption)." },
+  occupancy: { term: "Ramp occupancy", what: "How full the ramp is right now, as a share of its capacity. Over 100% means some jets have no space.", source: "Replay of the 2022 week, rebuilt from published counts." },
+  inbound: { term: "Inbound now", what: "Jets in the air heading to our FBO at this moment of the replay.", source: "Replay; a live build reads FlightAware or ADS-B." },
+  on_ground: { term: "Aircraft on ground", what: "Our jets parked or moving on the ramp right now.", source: "Replay." },
+  overflow_now: { term: "Need overflow", what: "Jets on the ground right now with no stand that fits; they need a hot spot, the temporary zone or a partner airport.", source: "Draft stand plan." },
+  conflicts: { term: "Departure-order conflicts", what: "Times in the week a jet is parked behind one that leaves later, so someone must tow.", source: "Draft stand plan." },
+  stands_now: { term: "Stands in use", what: "Marked stands taken at this moment, out of 48.", source: "Parking plan at the replay time." },
+  tows: { term: "Tows this week", what: "Each time a tug must pull a jet out and back so another can get in or out. Fewer tows means less risk of hangar rash and fewer tug drivers.", source: "Parking plan; 2 tows per boxed-in event (assumptions.yaml)." },
+  boxed_in: { term: "Boxed-in events", what: "A jet parked behind one that leaves later. Each one costs two tows.", source: "Parking plan." },
+  overflow_aircraft: { term: "Overflow aircraft", what: "Jets this week with no stand that fits for their whole stay.", source: "Parking plan." },
+  hot_spot: { term: "Hot spot", what: "A short-term position by the terminal for drop-and-go: passengers off, jet leaves within 3 hours.", source: "4 hot spots, 3 h max (assumptions.yaml)." },
+  revenue: { term: "Parking revenue (estimate)", what: "Parking fees for the week at the fictional FBO's rates, before services.", source: "parking_fees_usd in assumptions.yaml." },
+  mape: { term: "Forecast error (MAPE)", what: "How far the daily forecast was from what actually landed, on average, in percent. Lower is better.", source: "Backtest on the 2022 Super Bowl week." },
+  coverage: { term: "P10–P90 coverage", what: "Share of days where the real number landed inside the forecast range. 80% is the target for a P10–P90 band.", source: "Backtest on the 2022 week." },
+  co2: { term: "CO₂ avoided", what: "Tonnes of CO₂ saved by sending overflow to the nearest partner airport instead of ad-hoc repositioning further away.", source: "9.75 kg CO₂ per gallon (EPA); distances in assumptions.yaml. An estimate." },
+  decisions: { term: "Decisions logged", what: "Every proposal a person approved, edited or rejected, with their role and time.", source: "Audit trail (logs/audit.jsonl)." },
+  tfr: { term: "TFR", what: "Temporary flight restriction: airspace closed around the stadium on game day except for cleared flights.", source: "2022 and 2026 precedent; the LXI NOTAM is not yet published." },
+  temp_zone: { term: "Temporary zone", what: "A section of taxiway closed and used for parking. Needs airport and FAA approval.", source: "Strategy C; 12 stands (assumptions.yaml)." },
+  tandem: { term: "Tandem parking", what: "Jets parked one behind another in a column, with about 3 m between wingtips. Fits far more jets, but a deep jet can only leave once the ones in front are towed aside.", source: "Event-day practice; box sizes = largest jet allowed + 3 m." },
+  wing_walker: { term: "Wing walker", what: "A ramp agent who walks beside a wingtip during every tow or tight taxi to stop a collision.", source: "Standard ramp safety practice." },
+  lead_days: { term: "Booked ahead", what: "How many days before landing a parking request arrived.", source: "bookings.lead_days in assumptions.yaml." },
+};

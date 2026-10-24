@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { TopBar } from "../components/Shell";
-import { Chip, Disclosure, ErrorNote, InfoTip, Kpi, Panel, Segmented, Skeleton } from "../components/ui";
+import { Chip, Disclosure, ErrorNote, InfoTip, Kpi, KpiRow, Panel, Segmented, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
 import { cx, dayShort, fmt, hhmm, SIZE_COLOR, SIZE_LABEL } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -203,7 +203,7 @@ export default function Bookings() {
       </div>
 
       {/* One inbox for every channel */}
-      <div className="mt-5 grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <KpiRow keep={3} className="mt-5">
         <Kpi label="Requests received" value={box?.total ?? 0} tone="runway" sub="By the replay time, all channels"
           info={{ what: "Every parking request received so far for this week, from FlightBridge, schedulers, email, phone and the FBO portal. Duplicates count separately.", source: "Rebuilt from the replay week's flights; channel mix and lead times are assumptions in assumptions.yaml (bookings)." }} />
         <Kpi label="Answered automatically" value={box ? Math.round((box.auto / Math.max(1, box.total)) * 100) : 0} unit="%" tone="ok"
@@ -214,7 +214,7 @@ export default function Bookings() {
         <Kpi label="Booked ahead (median)" value={box?.median_lead_days ?? 0} digits={1} unit="days"
           sub="How early requests arrive today"
           info={{ what: "Half of this week's requests arrived more than this many days before landing. Event stays come in weeks ahead.", source: "Lead-time ranges in assumptions.yaml (bookings.lead_days)." }} />
-      </div>
+      </KpiRow>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <Panel eyebrow="One inbox for every channel" title="Incoming requests"

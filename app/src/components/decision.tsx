@@ -6,21 +6,25 @@ import { cx, fmt } from "../lib/format";
 import { useApp } from "../lib/store";
 import type { Strategy } from "../lib/types";
 import { MiniBar } from "./charts";
-import { ApproveBar, Chip, CitedText, Panel, Skeleton } from "./ui";
+import { ApproveBar, Chip, CitedText, InfoTip, Panel, Skeleton } from "./ui";
 
-const KPI_ROWS: { key: keyof Strategy["kpis"]; label: string; unit?: string; lowerIsBetter: boolean; digits?: number }[] = [
-  { key: "overflow_aircraft", label: "Overflow aircraft", lowerIsBetter: true },
-  { key: "hours_over_capacity", label: "Hours over capacity", unit: "h", lowerIsBetter: true },
-  { key: "empty_legs", label: "Empty repositioning legs", lowerIsBetter: true },
-  { key: "co2_t", label: "CO₂ from those legs", unit: "t", lowerIsBetter: true, digits: 1 },
-  { key: "peak_line_staff", label: "Line techs at peak", lowerIsBetter: true },
+const KPI_ROWS: { key: keyof Strategy["kpis"]; label: string; unit?: string; lowerIsBetter: boolean; digits?: number; what: string }[] = [
+  { key: "overflow_aircraft", label: "Overflow aircraft", lowerIsBetter: true, what: "Jets this week that find no space on our ramp and must park somewhere else." },
+  { key: "hours_over_capacity", label: "Hours over capacity", unit: "h", lowerIsBetter: true, what: "Hours in the week when more jets want to park than the ramp holds." },
+  { key: "empty_legs", label: "Empty repositioning legs", lowerIsBetter: true, what: "Flights with no passengers: a jet flying to another airport to park, then back to pick up its passengers." },
+  { key: "co2_t", label: "CO₂ from those legs", unit: "t", lowerIsBetter: true, digits: 1, what: "Tonnes of CO₂ from the empty legs, at 9.75 kg per gallon of jet fuel (EPA)." },
+  { key: "peak_line_staff", label: "Line techs at peak", lowerIsBetter: true, what: "Line service staff needed in the busiest hour to fuel, tow and marshal." },
 ];
 
 export function StrategyCards({ strategies, recommended, approved }: {
   strategies: Strategy[]; recommended?: string; approved?: string | null;
 }) {
+  const { simple } = useApp();
+  const [all, setAll] = useState(false);
+  const rows = simple && !all ? KPI_ROWS.slice(0, 2) : KPI_ROWS;
   const max = (k: keyof Strategy["kpis"]) => Math.max(...strategies.map((s) => Number(s.kpis[k]) || 0));
   return (
+    <>
     <div className="grid gap-4 xl:grid-cols-3">
       {strategies.map((s, i) => (
         <motion.article key={s.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
@@ -38,13 +42,13 @@ export function StrategyCards({ strategies, recommended, approved }: {
             </div>
           </div>
           <div className="mt-4 space-y-2.5">
-            {KPI_ROWS.map((r) => {
+            {rows.map((r) => {
               const v = Number(s.kpis[r.key]);
               const best = Math.min(...strategies.map((x) => Number(x.kpis[r.key])));
               return (
                 <div key={r.key}>
                   <div className="mb-1 flex items-baseline justify-between text-[12px]">
-                    <span className="text-ink-2">{r.label}</span>
+                    <span className="flex items-center gap-1 text-ink-2">{r.label} <InfoTip what={r.what} /></span>
                     <span className={cx("num font-semibold", v === best && "text-ok")}>{fmt(v, r.digits ?? 0)}{r.unit ? ` ${r.unit}` : ""}</span>
                   </div>
                   <MiniBar value={v} max={max(r.key)} tone={v === best ? "#16A34A" : "#2563EB"} />
@@ -54,8 +58,8 @@ export function StrategyCards({ strategies, recommended, approved }: {
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-1.5">
             <Chip tone={s.kpis.risk === "high" ? "alert" : s.kpis.risk === "medium" ? "watch" : "ok"}>Risk: {s.kpis.risk}</Chip>
-            <Chip>{fmt(s.kpis.fuel_gal_week)} gal Jet A / week</Chip>
-            {s.kpis.co2_saved_vs_adhoc_t > 0 && <Chip tone="ok">−{fmt(s.kpis.co2_saved_vs_adhoc_t, 1)} t CO₂ vs ad hoc</Chip>}
+            {rows.length === KPI_ROWS.length && <Chip>{fmt(s.kpis.fuel_gal_week)} gal Jet A / week</Chip>}
+            {rows.length === KPI_ROWS.length && s.kpis.co2_saved_vs_adhoc_t > 0 && <Chip tone="ok">−{fmt(s.kpis.co2_saved_vs_adhoc_t, 1)} t CO₂ vs ad hoc</Chip>}
           </div>
           <div className="mt-3 border-t border-hairline pt-3">
             <div className="label mb-1.5 flex items-center gap-1"><Users size={12} /> Approvers</div>
@@ -73,6 +77,12 @@ export function StrategyCards({ strategies, recommended, approved }: {
         </motion.article>
       ))}
     </div>
+    {simple && (
+      <button onClick={() => setAll(!all)} className="mt-2 text-[12px] font-medium text-runway hover:underline">
+        {all ? "Show fewer numbers" : "Compare all numbers: empty legs, CO₂, staff, fuel"}
+      </button>
+    )}
+    </>
   );
 }
 

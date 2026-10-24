@@ -1,4 +1,9 @@
 import { motion } from "framer-motion";
+import { AnimatePresence, motion as m } from "framer-motion";
+import { BookOpen, X as XIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { GLOSSARY } from "../lib/glossary";
 import { BarChart3, Box, CalendarCheck, Database, FlaskConical, Medal, Pause, Play, Plane, Radar, Settings2, ShieldCheck, Sparkles, SquareParking } from "lucide-react";
 import type { ReactNode } from "react";
 import { cx, dayLabel, hhmm, sourceOf } from "../lib/format";
@@ -48,6 +53,7 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="mt-auto space-y-2 px-1 pb-1">
+        <GlossaryButton />
         <div className="rounded-control border border-hairline bg-white/50 p-3">
           <div className="label mb-1.5">Data</div>
           <div className="flex items-center gap-1.5 text-[12px] font-medium">
@@ -67,8 +73,54 @@ export function Sidebar() {
   );
 }
 
+function GlossaryButton() {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const terms = Object.values(GLOSSARY).filter((t) => !q || (t.term + t.what).toLowerCase().includes(q.toLowerCase()));
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  return (
+    <>
+      <button onClick={() => setOpen(true)} className="flex w-full items-center gap-2 rounded-control border border-hairline bg-white/60 px-3 py-2 text-[12.5px] font-medium text-ink transition hover:bg-white">
+        <BookOpen size={14} className="text-runway" /> What the numbers mean
+      </button>
+      {createPortal(<AnimatePresence>
+        {open && (
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(false)}
+            className="fixed inset-0 z-[90] grid place-items-center bg-ink/20 p-6 backdrop-blur-sm">
+            <m.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 12, opacity: 0 }} onClick={(e) => e.stopPropagation()}
+              role="dialog" aria-label="Glossary" className="glass-strong flex max-h-[82vh] w-full max-w-[720px] flex-col p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="label">Glossary</div>
+                  <h2 className="text-[20px] font-semibold tracking-[-0.015em]">What every number means, and where it comes from</h2>
+                </div>
+                <button onClick={() => setOpen(false)} aria-label="Close" className="rounded-full p-1.5 text-ink-2 hover:bg-white"><XIcon size={16} /></button>
+              </div>
+              <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search: tows, P90, TFR…" className="inp mt-3" />
+              <dl className="mt-3 space-y-2.5 overflow-auto pr-1">
+                {terms.map((t) => (
+                  <div key={t.term} className="rounded-[14px] border border-hairline bg-white/70 px-3.5 py-2.5">
+                    <dt className="text-[13.5px] font-semibold text-ink">{t.term}</dt>
+                    <dd className="text-[12.5px] leading-snug text-ink-2">{t.what}</dd>
+                    {t.source && <dd className="mt-1 text-[11.5px] text-ink-3">Source: {t.source}</dd>}
+                  </div>
+                ))}
+              </dl>
+            </m.div>
+          </m.div>
+        )}
+      </AnimatePresence>, document.body)}
+    </>
+  );
+}
+
 export function TopBar({ title, subtitle, children, event }: { title: string; subtitle: string; children?: ReactNode; event?: ReactNode }) {
-  const { scenario, setScenario, meta } = useApp();
+  const { scenario, setScenario, meta, simple, setSimple } = useApp();
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 pb-5">
       <div>
@@ -79,8 +131,13 @@ export function TopBar({ title, subtitle, children, event }: { title: string; su
         <h1 className="text-[28px] font-semibold tracking-[-0.025em]">{title}</h1>
         <p className="mt-0.5 text-[13.5px] text-ink-2">{subtitle}</p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {children}
+        <div className="flex items-center gap-2">
+          <span className="label">View</span>
+          <Segmented value={simple ? "simple" : "detailed"} onChange={(v) => setSimple(v === "simple")}
+            options={[{ value: "simple", label: "Simple" }, { value: "detailed", label: "Detailed" }]} />
+        </div>
         <div className="flex items-center gap-2">
           <span className="label">Demand</span>
           <Segmented value={scenario} onChange={setScenario}

@@ -3,7 +3,7 @@ import { ArrowRightLeft, CheckCircle2, CircleDollarSign, Clock, MousePointerClic
 import { useEffect, useMemo, useState } from "react";
 import { ApronMap, StandGantt } from "../components/apron";
 import { ReplayBar, TopBar } from "../components/Shell";
-import { ApproveBar, Chip, ErrorNote, Kpi, Panel, Segmented, Skeleton } from "../components/ui";
+import { ApproveBar, Chip, ErrorNote, Fold, g, Glance, Kpi, KpiRow, Panel, Segmented, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
 import { cx, dayLabel, dayShort, fmt, hhmm, SIZE_COLOR, SIZE_LABEL } from "../lib/format";
 import { useApp, useReplayTick } from "../lib/store";
@@ -48,18 +48,24 @@ export default function Parking() {
       <ReplayBar />
       {plan.error && <div className="mt-4"><ErrorNote error={plan.error} onRetry={plan.reload} /></div>}
 
-      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
+      <div className="mt-4">
+        <Glance steps={["Click a jet on the apron", "Check the tow sheet", "Approve the tows"]}>
+          {opt && base ? <>Parking each jet by when it leaves needs <b className="num">{opt.tows}</b> tows this week, against <b className="num">{base.tows}</b> for a first-free-stand whiteboard
+            (<b className="text-ok">{towCut}% fewer</b>).{(m?.overflow_aircraft ?? 0) > 0 ? <> <b className="num">{m!.overflow_aircraft}</b> jets still need overflow{temp ? "" : ": opening the temp zone helps"}.</> : null}</> : "Loading the parking plan…"}
+        </Glance>
+      </div>
+      <KpiRow keep={3}>
         <Kpi label="Stands in use now" value={st.data?.stands_used ?? 0} unit={`/ ${m?.stands ?? 48}`}
           tone={st.data && st.data.stands_used >= (m?.stands ?? 48) ? "alert" : "runway"}
-          sub={st.data ? `${st.data.hot_used} on hot spots · ${st.data.temp_used} temp · ${st.data.overflow_now} without a position` : "…"} />
+          sub={st.data ? `${st.data.hot_used} on hot spots · ${st.data.temp_used} temp · ${st.data.overflow_now} without a position` : "…"} info={g("stands_now")} />
         <Kpi label="Tows this week" value={m?.tows ?? 0} tone={method === "optimized" ? "ok" : "alert"}
-          sub={opt && base ? <span>RAMPCAST <b className="num">{opt.tows}</b> vs whiteboard <b className="num">{base.tows}</b> · <span className="font-semibold text-ok">−{towCut}%</span></span> : "…"} />
-        <Kpi label="Boxed-in events" value={m?.boxed_in_events ?? 0} sub="A jet stuck behind one leaving later" tone={method === "optimized" ? "ok" : "watch"} />
+          sub={opt && base ? <span>RAMPCAST <b className="num">{opt.tows}</b> vs whiteboard <b className="num">{base.tows}</b> · <span className="font-semibold text-ok">−{towCut}%</span></span> : "…"} info={g("tows")} />
         <Kpi label="Overflow aircraft" value={m?.overflow_aircraft ?? 0} tone={(m?.overflow_aircraft ?? 0) > 0 ? "alert" : "ok"}
-          sub={temp ? "With temporary taxiway stands open" : "Open the temp zone to absorb more"} />
-        <Kpi label="Hot-spot turns" value={m?.hot_spot_uses ?? 0} sub="Drop-and-go kept off the stands" />
-        <Kpi label="Parking revenue (est.)" value={(m?.revenue_est_usd ?? 0) / 1000} digits={1} unit="k USD" sub={`${m?.utilization_pct ?? 0}% stand utilization · fees in assumptions`} />
-      </div>
+          sub={temp ? "With temporary taxiway stands open" : "Open the temp zone to absorb more"} info={g("overflow_aircraft")} />
+        <Kpi label="Boxed-in events" value={m?.boxed_in_events ?? 0} sub="A jet stuck behind one leaving later" tone={method === "optimized" ? "ok" : "watch"} info={g("boxed_in")} />
+        <Kpi label="Hot-spot turns" value={m?.hot_spot_uses ?? 0} sub="Drop-and-go kept off the stands" info={g("hot_spot")} />
+        <Kpi label="Parking revenue (est.)" value={(m?.revenue_est_usd ?? 0) / 1000} digits={1} unit="k USD" sub={`${m?.utilization_pct ?? 0}% stand utilization · fees in assumptions`} info={g("revenue")} />
+      </KpiRow>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Panel eyebrow={<span className="flex items-center gap-1.5"><SquareParking size={12} /> Apron · {dayLabel(tIso)} {hhmm(tIso)}</span>}
@@ -93,6 +99,7 @@ export default function Parking() {
         )}
       </AnimatePresence>
 
+      <Fold className="mt-5" title="Every stand, every stay" summary="The whole week on one chart: one bar per jet, amber where a tow is involved">
       <Panel className="mt-5" eyebrow="Stand allocation chart · whole week" title="Every stand, every stay"
         actions={<>{plan.data && Object.keys(plan.data.pins).length > 0 && <Chip tone="runway">{Object.keys(plan.data.pins).length} manual placements</Chip>}
           <Chip tone="watch">Amber outline: tow involved</Chip></>}>
@@ -101,9 +108,12 @@ export default function Parking() {
             : <Skeleton className="h-[400px]" />}
         </div>
       </Panel>
+      </Fold>
 
+      <Fold className="mt-3" title="Where each arrival should park" summary={`Reservation board for ${dayLabel(boardDay)}: stand, hot spot, temp zone or overflow`}>
       <ReservationBoard day={boardDay} setDay={setBoardDay} days={plan.data?.window ?? []} items={res.data?.items ?? []}
         loading={res.loading && !res.data} onSelect={setSelected} />
+      </Fold>
     </div>
   );
 }

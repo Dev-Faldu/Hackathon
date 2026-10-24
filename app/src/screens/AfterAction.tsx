@@ -1,7 +1,7 @@
 import { CircleSlash, FileCheck2, Leaf, Target } from "lucide-react";
 import { ForecastChart } from "../components/charts";
 import { TopBar } from "../components/Shell";
-import { Chip, ErrorNote, Kpi, Panel, Skeleton } from "../components/ui";
+import { Chip, ErrorNote, Fold, g, Glance, Kpi, KpiRow, Panel, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
 import { fmt, sourceOf } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -23,16 +23,20 @@ export default function AfterAction() {
     <div>
       <TopBar title="After-action" subtitle="Did the forecast hold up, what did the plan change, and who approved what." />
       {aa.error && <ErrorNote error={aa.error} onRetry={aa.reload} />}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <Glance>
+        {d ? <>The forecast missed the real week by <b className="num">{d.mape_pct}%</b> a day on average{d.naive_mape_pct != null ? <>, against <b className="num">{d.naive_mape_pct}%</b> for “same as an ordinary week”</> : null}.
+          The plan cut hours over capacity from <b className="num">{d.hours_over_capacity_no_plan}</b> to <b className="num">{d.hours_over_capacity_with_plan}</b>, and every decision is in the audit trail.</> : "Loading the backtest…"}
+      </Glance>
+      <KpiRow keep={3}>
         <Kpi label="Forecast error (MAPE)" value={d?.mape_pct ?? 0} digits={1} unit="%" tone="runway"
-          sub={d?.naive_mape_pct != null ? <>vs <span className="num">{d.naive_mape_pct}%</span> for "ordinary week" rule</> : "…"} />
-        <Kpi label="P10–P90 coverage" value={d?.interval_coverage_pct ?? 0} unit="%" sub="Days where the actual fell inside the band" />
+          sub={d?.naive_mape_pct != null ? <>vs <span className="num">{d.naive_mape_pct}%</span> for "ordinary week" rule</> : "…"} info={g("mape")} />
         <Kpi label="Hours over capacity" value={d?.hours_over_capacity_with_plan ?? 0} unit="h" tone="ok"
-          sub={<>with Strategy {d?.strategy ?? "–"} · <span className="num">{d?.hours_over_capacity_no_plan ?? "–"}</span> h without a plan</>} />
+          sub={<>with Strategy {d?.strategy ?? "–"} · <span className="num">{d?.hours_over_capacity_no_plan ?? "–"}</span> h without a plan</>} info={g("hours_with_plan")} />
         <Kpi label="CO₂ avoided" value={d?.strategy_kpis.co2_saved_vs_adhoc_t ?? 0} digits={1} unit="t" tone="ok"
-          sub="Nearest-partner overflow vs ad-hoc repositioning (estimate)" />
-        <Kpi label="Decisions logged" value={d?.audit.length ?? 0} sub="Approve · edit · reject" />
-      </div>
+          sub="Nearest-partner overflow vs ad-hoc repositioning (estimate)" info={g("co2")} />
+        <Kpi label="P10–P90 coverage" value={d?.interval_coverage_pct ?? 0} unit="%" sub="Days where the actual fell inside the band" info={g("coverage")} />
+        <Kpi label="Decisions logged" value={d?.audit.length ?? 0} sub="Approve · edit · reject" info={g("decisions")} />
+      </KpiRow>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.6fr_1fr]">
         <Panel eyebrow="Backtest" title="Forecast vs what actually arrived" actions={<Chip tone={real ? "ok" : "watch"}>{sourceOf(d?.source).chip}</Chip>}>
@@ -65,6 +69,7 @@ export default function AfterAction() {
         </Panel>
       </div>
 
+      <Fold className="mt-5" title="Audit trail" summary={d ? `${d.audit.length} decisions logged, each with the role and time` : "…"}>
       <Panel className="mt-5" eyebrow={<span className="flex items-center gap-1.5"><FileCheck2 size={12} /> Audit trail</span>}
         title="Every proposal a person approved, edited or rejected">
         {d && d.audit.length === 0 && <p className="text-[13px] text-ink-2">No decisions yet. Approve a strategy on the Plan board or an alert in Live ops.</p>}
@@ -91,6 +96,7 @@ export default function AfterAction() {
         )}
         {d && <p className="mt-3 text-[11.5px] text-ink-2">Peak occupancy {fmt(d.peak_occupancy, 1)} of {d.capacity} · {d.stand_conflicts_week} departure-order conflicts in the draft stand plan.</p>}
       </Panel>
+      </Fold>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { CalendarRange } from "lucide-react";
 import { RampHeatmap, ForecastChart } from "../components/charts";
 import { BriefingPanel, StrategyCards } from "../components/decision";
 import { TopBar } from "../components/Shell";
-import { Chip, ErrorNote, Kpi, Panel, Skeleton } from "../components/ui";
+import { Chip, ErrorNote, Fold, g, Glance, Kpi, KpiRow, Panel, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
 import { fmt } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -25,15 +25,19 @@ export default function PlanBoard() {
       <TopBar title="Plan board" subtitle="Ordinary week vs Super Bowl week, the hours the ramp overflows, and three ways to handle it." />
       {(fc.error || st.error) && <div className="mb-4"><ErrorNote error={(fc.error || st.error)!} onRetry={() => { fc.reload(); st.reload(); }} /></div>}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 2xl:grid-cols-6">
-        <Kpi label="Arrivals this week" value={week} sub={<>vs <span className="num">{ordinary}</span> in an ordinary week (×{ordinary ? (week / ordinary).toFixed(1) : "–"})</>} tone="runway" />
-        <Kpi label="Peak day" value={peakDay?.p50 ?? 0} unit="arrivals" sub={peakDay ? `${new Date(peakDay.date + "T12:00:00-08:00").toLocaleDateString("en-US", { weekday: "long" })} · P90 ${peakDay.p90}` : ""} />
+      <Glance steps={["Read the forecast", "Compare the three strategies", "Approve one"]}>
+        {fc.data && st.data ? <>Super Bowl week brings about <b className="num">{week}</b> jets to our FBO, against <b className="num">{ordinary}</b> in an ordinary week.
+          With no plan the ramp is full for <b className="num">{st.data.status_quo.hours_over_capacity}</b> hours{recCard ? <>; Strategy {recCard.id} cuts that to <b className="num">{recCard.kpis.hours_over_capacity}</b></> : null}.</> : "Loading the forecast…"}
+      </Glance>
+      <KpiRow keep={3}>
+        <Kpi label="Arrivals this week" value={week} sub={<>vs <span className="num">{ordinary}</span> in an ordinary week (×{ordinary ? (week / ordinary).toFixed(1) : "–"})</>} tone="runway" info={g("arrivals_week")} />
+        <Kpi label="Hours over capacity" value={st.data?.status_quo.hours_over_capacity ?? 0} unit="h" tone="alert" sub="If nothing changes" info={g("hours_over")} />
+        <Kpi label="With suggested plan" value={recCard?.kpis.hours_over_capacity ?? 0} unit="h" tone="ok" sub={recCard ? `Strategy ${recCard.id}: ${recCard.name}` : "…"} info={g("hours_with_plan")} />
+        <Kpi label="Peak day" value={peakDay?.p50 ?? 0} unit="arrivals" sub={peakDay ? `${new Date(peakDay.date + "T12:00:00-08:00").toLocaleDateString("en-US", { weekday: "long" })} · busy case ${peakDay.p90}` : ""} info={g("peak_day")} />
         <Kpi label="Peak ramp demand" value={st.data?.status_quo.peak_demand ?? 0} digits={1} unit={`/ ${st.data?.capacity ?? "–"}`}
-          tone={st.data && st.data.status_quo.peak_demand > st.data.capacity ? "alert" : "ok"} sub="Large-cabin equivalents, unconstrained" />
-        <Kpi label="Hours over capacity" value={st.data?.status_quo.hours_over_capacity ?? 0} unit="h" tone="alert" sub="If nothing changes" />
-        <Kpi label="With suggested plan" value={recCard?.kpis.hours_over_capacity ?? 0} unit="h" tone="ok" sub={recCard ? `Strategy ${recCard.id}: ${recCard.name}` : "…"} />
-        <Kpi label="Fuel this week" value={recCard ? recCard.kpis.fuel_gal_week / 1000 : 0} digits={0} unit="k gal" sub="Jet A, blended uplift per departure" />
-      </div>
+          tone={st.data && st.data.status_quo.peak_demand > st.data.capacity ? "alert" : "ok"} sub="Large-jet spaces wanted at the busiest hour" info={g("ramp_demand")} />
+        <Kpi label="Fuel this week" value={recCard ? recCard.kpis.fuel_gal_week / 1000 : 0} digits={0} unit="k gal" sub="Jet A, blended uplift per departure" info={g("fuel_week")} />
+      </KpiRow>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.6fr_1fr]">
         <Panel eyebrow="Forecast · daily arrivals at our FBO" title="Ordinary week vs Super Bowl week"
@@ -47,6 +51,8 @@ export default function PlanBoard() {
         <BriefingPanel />
       </div>
 
+      <Fold className="mt-5" title="When the ramp overflows, hour by hour"
+        summary={occ.data ? `${occ.data.hours.filter((h) => h.p_over_capacity >= 0.5).length} hours this week with a better-than-even chance the ramp is full` : "…"}>
       <Panel className="mt-5" eyebrow="Ramp occupancy · P50 by hour" title="When the ramp overflows"
         actions={<Chip tone="alert"><CalendarRange size={12} /> {occ.data ? `${occ.data.hours.filter((h) => h.p_over_capacity >= 0.5).length} h with ≥50% chance of overflow` : "…"}</Chip>}>
         {occ.data ? <RampHeatmap hours={occ.data.hours} capacity={occ.data.capacity} /> : (
@@ -54,6 +60,7 @@ export default function PlanBoard() {
             <p className="text-[12px] text-ink-2">Running {fmt(120)} simulated weeks…</p></div>
         )}
       </Panel>
+      </Fold>
 
       <div className="mb-3 mt-7 flex items-end justify-between">
         <div>

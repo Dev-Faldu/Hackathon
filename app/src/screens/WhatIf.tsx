@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Ban, CloudFog, CloudRain, Globe2, Loader2, PlaneLanding, TrendingUp, Zap } from "lucide-react";
 import { useState } from "react";
 import { TopBar } from "../components/Shell";
-import { ApproveBar, Chip, CitedText, ErrorNote, Panel } from "../components/ui";
+import { ApproveBar, Chip, CitedText, ErrorNote, Fold, Glance, Panel } from "../components/ui";
 import { api } from "../lib/api";
 import { cx, fmt, hhmm, SIZE_LABEL } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -54,6 +54,10 @@ export default function WhatIf() {
   return (
     <div>
       <TopBar title="What-if" subtitle="Inject a disruption. RAMPCAST re-plans in seconds and shows every ripple; people decide what to do." />
+      <Glance steps={["Pick a disruption", "Read what changed", "Approve or reject"]}>
+        {result ? <>{result.affected_flights.length > 0 ? <><b className="num">{result.affected_flights.length}</b> inbound jets are affected. </> : null}The table shows how each strategy holds up; the explanation says who decides.</>
+          : "What happens if the runway closes, demand jumps or a bank of arrivals runs late? Pick one below and see every knock-on effect."}
+      </Glance>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {PRESETS.map((p) => (
           <button key={p.id} onClick={() => run(p.id, p.modifiers)}
@@ -153,6 +157,7 @@ export default function WhatIf() {
           </div>
 
           {result.affected_flights.length > 0 && (
+            <Fold title={`Option cards for the ${result.affected_flights.length} affected jets`} summary="Alternate airports and drive times, sent to each operator's dispatcher; the pilot in command decides">
             <Panel eyebrow="Option cards for operators' dispatchers" title={`${result.affected_flights.length} inbound jets affected`}
               actions={<Chip tone="tfr">Pilot in command decides</Chip>}>
               <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
@@ -191,6 +196,7 @@ export default function WhatIf() {
                 Approving sends the option card to the operator's dispatcher. RAMPCAST never contacts ATC or the cockpit, and never chooses the airport.
               </p>
             </Panel>
+            </Fold>
           )}
         </motion.div>
       )}
