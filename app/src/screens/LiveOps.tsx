@@ -5,7 +5,7 @@ import { FlightMap, PulseDot, RampMap } from "../components/maps";
 import { ReplayBar, TopBar } from "../components/Shell";
 import { ApproveBar, Chip, Kpi, Panel, Skeleton } from "../components/ui";
 import { api, useApi } from "../lib/api";
-import { cx, hhmm, SIZE_LABEL } from "../lib/format";
+import { cx, hhmm, SIZE_LABEL, sourceOf } from "../lib/format";
 import { useApp, useReplayTick } from "../lib/store";
 import type { Alert } from "../lib/types";
 
@@ -21,7 +21,7 @@ export default function LiveOps() {
   return (
     <div>
       <TopBar title="Live ops" subtitle="Every inbound jet, the ramp, and who needs a car first. Suggestions only; people approve.">
-        <Chip tone="runway" className="py-1"><PulseDot /> {s?.source === "opensky_2022_shifted" ? "Real 2022 replay" : "Sample replay"}</Chip>
+        <Chip tone="runway" className="py-1"><PulseDot /> {sourceOf(s?.source).replay}</Chip>
       </TopBar>
       <ReplayBar />
 

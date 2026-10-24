@@ -12,7 +12,7 @@ from datetime import date, timedelta
 import numpy as np
 
 from . import config as C, engine, forecast, parking
-from .data import ORIGINS, Dataset, Profile, daily_arrivals, generate_sample
+from .data import ORIGINS, Dataset, Profile, daily_arrivals, generate_sample, load_processed
 
 START = date(2028, 7, 11)  # Tuesday; Opening Ceremony Friday 14 July 2028
 EVENT = {"name": "LA28 Olympic Games · opening week", "ceremony_date": "2028-07-14",
@@ -89,7 +89,8 @@ def report(scenario: str) -> dict:
     over = [h for h, v in enumerate(occ50) if v > cap]
 
     ds = dataset(scenario)
-    sb = generate_sample(scenario, seed=2027, count_noise=0.12)
+    # The Super Bowl side is the 2022 week the app replays (real or rebuilt), else the seeded week.
+    sb = load_processed() or generate_sample(scenario, seed=2027, count_noise=0.12)
     end = C.window_start_local() + timedelta(hours=C.n_hours())
 
     def profile_stats(x: Dataset) -> dict:
