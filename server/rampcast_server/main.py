@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import adapters, config as C, engine, explain, forecast, la28, parking, store
-from .data import Dataset, generate_sample, load_processed
+from .data import Dataset, airfield_movements, generate_sample, load_processed
 from .replay import Replay
 
 @asynccontextmanager
@@ -281,6 +281,17 @@ def get_afteraction(scenario: str = "medium"):
             "strategy": chosen, "strategy_kpis": card["kpis"],
             "peak_occupancy": round(float(occ.max()), 1), "capacity": engine.capacity(),
             "stand_conflicts_week": replay().conflicts, "audit": store.audit_list()[-50:]}
+
+
+@router.get("/airfield/movements")
+def get_airfield_movements():
+    """The other FBOs' traffic at VNY in the same replayed week, so the 3D runway carries the whole field."""
+    return {"source": live_dataset().source, "movements": _airfield()}
+
+
+@functools.lru_cache(maxsize=1)
+def _airfield() -> list[dict]:
+    return airfield_movements()
 
 
 @router.get("/la28")

@@ -8,8 +8,9 @@ import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { ParkingPosition } from "../lib/types";
 import { Airport, lightMats } from "./Airport";
+import type { Slot } from "./compact";
 import { createSkyDome, updateSkyDome } from "./sky";
-import { type FlightPlan3D, sun } from "./layout";
+import { COMPASS_OFFSET_DEG, type FlightPlan3D, sun } from "./layout";
 import { CAMERAS, type CameraMode, focus, sim } from "./state";
 import { Surroundings } from "./Surroundings";
 import { TfrCurtain } from "./Tfr";
@@ -51,7 +52,7 @@ function Atmosphere() {
 
   useFrame(() => {
     const { el, az } = sun(sim.ms);
-    const phi = THREE.MathUtils.degToRad(90 - el), theta = THREE.MathUtils.degToRad(az);
+    const phi = THREE.MathUtils.degToRad(90 - el), theta = THREE.MathUtils.degToRad(az - COMPASS_OFFSET_DEG);
     sunVec.setFromSphericalCoords(1, phi, theta);
     const day = THREE.MathUtils.clamp(el / 12, 0, 1);
     const dusk = THREE.MathUtils.clamp(1 - Math.abs(el - 2) / 9, 0, 1);
@@ -155,7 +156,7 @@ export interface WorldProps {
   plans: FlightPlan3D[]; positions: ParkingPosition[]; tempZone: boolean; labels: boolean;
   selected: string | null; onSelect: (id: string | null) => void;
   camera: CameraMode; cameraNonce: number; follow: boolean; cinematic: boolean; tMs: number; playing: boolean; speed: number;
-  quality: "high" | "fast"; tfr: boolean;
+  quality: "high" | "fast"; tfr: boolean; compactSlots: Slot[] | null;
 }
 
 export default function World(p: WorldProps) {
@@ -167,7 +168,7 @@ export default function World(p: WorldProps) {
       <SimClock tMs={p.tMs} playing={p.playing} speed={p.speed} />
       <Atmosphere />
       <Suspense fallback={null}>
-        <Airport positions={p.positions} tempZone={p.tempZone} labels={p.labels} />
+        <Airport positions={p.positions} tempZone={p.tempZone} labels={p.labels} compactSlots={p.compactSlots} />
         <Surroundings />
         {p.tfr && <TfrCurtain />}
         <Traffic plans={p.plans} selected={p.selected} onSelect={p.onSelect} />

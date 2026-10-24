@@ -278,6 +278,33 @@ def _short_id(fid: str) -> str:
     return f"VNY-{fid[-4:]}" if fid.startswith("F") and fid[-4:].isdigit() else fid
 
 
+def _ours(fid: str, share: float) -> bool:
+    """Our FBO's share of VNY traffic: a stable hash of the flight id, so the split never changes."""
+    return int(hashlib.sha256(fid.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF <= share
+
+
+def airfield_movements() -> list[dict]:
+    """Every other VNY business-jet visit in the replay (the other FBOs), for the 3D airfield."""
+    replay = C.PROCESSED / "replay_2027.jsonl"
+    if not replay.exists():
+        return []
+    share = C.assumptions()["fbo"].get("share_of_airport_arrivals", 0.3)
+    events: dict[str, dict] = {}
+    with open(replay) as f:
+        for line in f:
+            e = json.loads(line)
+            events.setdefault(e["flight_id"], {})[e["event"]] = e
+    out = []
+    for fid, ev in events.items():
+        if "landed" not in ev or _ours(fid, share):
+            continue
+        landed = C.parse_t(ev["landed"]["t_utc"])
+        dep = C.parse_t(ev["departed_vny"]["t_utc"]) if "departed_vny" in ev else landed + timedelta(hours=26)
+        out.append({"id": _short_id(fid), "size_class": ev["landed"].get("size_class", "other"),
+                    "landed": C.iso_local(landed), "departed": C.iso_local(dep), "origin": ev["landed"].get("origin")})
+    return sorted(out, key=lambda x: x["landed"])
+
+
 def load_processed() -> Dataset | None:
     """Build our FBO's flights from the real replay if the data pipeline has produced it."""
     replay = C.PROCESSED / "replay_2027.jsonl"
@@ -293,7 +320,7 @@ def load_processed() -> Dataset | None:
     for fid, ev in events.items():
         if "landed" not in ev or ev["landed"].get("airport") != "KVNY":
             continue
-        if int(hashlib.sha256(fid.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF > share:
+        if not _ours(fid, share):
             continue
         m = ev["meta"]
         landed = C.parse_t(ev["landed"]["t_utc"])
