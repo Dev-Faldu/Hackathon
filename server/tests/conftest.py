@@ -3,6 +3,7 @@ import os
 
 os.environ["RAMPCAST_DISABLE_CLAUDE"] = "1"
 os.environ.setdefault("RAMPCAST_DISABLE_LOCAL_LLM", "1")
+os.environ.setdefault("RAMPCAST_NO_SNAPSHOT", "1")   # tests exercise the live engine; one test checks the snapshot
 os.environ.setdefault("RAMPCAST_STANDS_DET_TIME", "0.3")
 
 import pytest  # noqa: E402

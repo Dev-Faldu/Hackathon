@@ -1,5 +1,5 @@
 # RAMPCAST: one-command setup and run.
-.PHONY: setup dev api app test build data
+.PHONY: setup dev api app test build data snapshot
 
 setup:            ## install Python and Node dependencies
 	python3 -m venv server/.venv
@@ -21,6 +21,9 @@ test:             ## server tests + app typecheck
 
 build:            ## production build of the app
 	cd app && npx vite build
+
+snapshot:         ## precompute the slow answers so a fresh start loads in milliseconds (rerun after changing code, data or assumptions)
+	cd server && .venv/bin/python -m rampcast_server.snapshot
 
 data:             ## build all processed data files for Role 1 (contracts/README.md)
 	server/.venv/bin/python3 data/scripts/build_processed.py

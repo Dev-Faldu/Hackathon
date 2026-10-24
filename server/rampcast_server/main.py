@@ -18,13 +18,14 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from rampcast.engine import audit, models as M, whatif
 
-from . import adapters, ai, bookings, config as C, engine, explain, forecast, la28, parking, store
+from . import adapters, ai, bookings, config as C, engine, explain, forecast, la28, parking, snapshot, store
 from .data import Dataset, Flight, airfield_movements, generate_sample, load_processed
 from .replay import Replay
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Warm the slow caches in one background thread, in the order the screens need them (see _warm_up).
+    # Precomputed answers first (milliseconds), then warm what is left in one background thread (see _warm_up).
+    snapshot.load()
     threading.Thread(target=_warm_up, daemon=True).start()
     yield
 
@@ -58,6 +59,35 @@ def _settings_key() -> str:
     return json.dumps(store.get_settings(), sort_keys=True, default=str)
 
 
+def _default_state() -> bool:
+    """True while nobody has changed what the snapshot was computed in: settings, moved jets, accepted bookings."""
+    return not _accepted and not any(_pins.values()) and store.get_settings() == store.default_settings()
+
+
+def _snap(name: str, fn, needs_default: bool = True):
+    """A precomputed answer when one holds for the current state, else compute it (and keep it for the next save)."""
+    if needs_default and not _default_state():
+        return fn()
+    hit = snapshot.get(name)
+    if hit is not None:
+        return hit
+    value = fn()
+    if not needs_default or _default_state():
+        snapshot.put(name, value)
+    return value
+
+
+def _prime_from_snapshot() -> None:
+    """Hand saved exact-solver plans back to the parking engine, so it does not solve them again."""
+    if not _default_state():
+        return
+    for layout in LAYOUTS:
+        for temp in (False, True):
+            hit = snapshot.get(f"cpsat:{layout}:{temp}")
+            if hit:
+                parking.prime_cpsat(ops_dataset(), layout, temp, hit["assignment"], hit["method"])
+
+
 # ---------- warm-up: a slow laptop computes the week in about a minute; the app says so meanwhile ----------
 
 _warm = {"done": False, "step": "starting"}
@@ -65,7 +95,7 @@ _warm = {"done": False, "step": "starting"}
 
 def _warm_up() -> None:
     steps = [
-        ("the 2022 week", lambda: (live_dataset(), demo_t(), replay())),
+        ("the 2022 week", lambda: (live_dataset(), demo_t(), replay(), _prime_from_snapshot())),
         ("the forecast", lambda: (get_forecast("medium"), get_occupancy("medium"))),
         ("the parking plans", lambda: [parking_plan(m, t, lay) for lay in ("tandem", "stands")
                                        for m in ("optimized", "first_come") for t in (False, True)]),
@@ -80,11 +110,46 @@ def _warm_up() -> None:
             log.warning("warm-up step %s failed: %s", name, e)
     _warm["done"] = True
     # Slower extras, after every screen has its numbers: booking-desk ramp risk, LA28, the exact-solver benchmark.
-    for fn in (lambda: forecast.occupancy("medium"), lambda: la28.report("medium"), lambda: get_ai_benchmark("tandem", False)):
+    for fn in (_ref_occupancy, lambda: get_la28("medium"), lambda: get_ai_benchmark("tandem", False),
+               lambda: get_ai_models("medium", "tandem")):
         try:
             fn()
         except Exception as e:
             log.warning("warm-up extra failed: %s", e)
+    if _default_state():
+        try:
+            snapshot.save()  # next start answers from disk; only writes if something new was computed
+        except OSError as e:
+            log.warning("could not save the snapshot: %s", e)
+
+
+def _ref_occupancy() -> dict:
+    """The reference ramp forecast the booking desk prices risk with."""
+    return _snap("ref_occupancy:medium", lambda: forecast.occupancy("medium"))
+
+
+def build_snapshot() -> None:
+    """Compute every slow answer in the default state and save the snapshot (`make snapshot`)."""
+    if not _default_state():
+        raise SystemExit("Settings were changed on Event setup (logs/settings.json): reset them before building a snapshot.")
+    snapshot.load()
+    for sc in C.SCENARIOS:
+        get_forecast(sc)
+        get_occupancy(sc)
+        _strategies(sc, {})
+        _plan_strategies(sc, {})
+        get_la28(sc)
+        print("scenario", sc, "done", flush=True)
+    _ref_occupancy()
+    get_afteraction("medium")
+    for layout in LAYOUTS:
+        for temp in (False, True):
+            get_ai_benchmark(layout, temp)
+            print("benchmark", layout, temp, "done", flush=True)
+    for sc in C.SCENARIOS:
+        for layout in LAYOUTS:
+            get_ai_models(sc, layout)
+    print("saved", snapshot.save(force=True))
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 router = APIRouter()
 
@@ -245,15 +310,21 @@ def meta():
 @router.get("/forecast")
 def get_forecast(scenario: str = "medium"):
     scenario = check_scenario(scenario)
-    with _single(("simulation", scenario)):  # forecast and occupancy share one Monte Carlo run
-        return adapters.call("rampcast.forecast.api", "get_forecast", forecast.forecast, scenario)
+
+    def run():
+        with _single(("simulation", scenario)):  # forecast and occupancy share one Monte Carlo run
+            return adapters.call("rampcast.forecast.api", "get_forecast", forecast.forecast, scenario)
+    return _snap(f"forecast:{scenario}", run, needs_default=False)
 
 
 @router.get("/ramp/occupancy")
 def get_occupancy(scenario: str = "medium"):
     scenario = check_scenario(scenario)
-    with _single(("simulation", scenario)):
-        return adapters.call("rampcast.forecast.api", "get_occupancy", forecast.occupancy, scenario)
+
+    def run():
+        with _single(("simulation", scenario)):
+            return adapters.call("rampcast.forecast.api", "get_occupancy", forecast.occupancy, scenario)
+    return _snap(f"occupancy:{scenario}", run)
 
 
 def _strategies(scenario: str, modifiers: dict) -> dict:
@@ -262,13 +333,15 @@ def _strategies(scenario: str, modifiers: dict) -> dict:
         if modifiers.get("runway_closed"):
             ds, _ = engine.apply_runway_closure(ds, modifiers["runway_closed"])
         return engine.strategies(ds)
-    return _memo_call(("strategies", scenario, json.dumps(modifiers, sort_keys=True, default=str), _settings_key()), run)
+    compute = lambda: _memo_call(("strategies", scenario, json.dumps(modifiers, sort_keys=True, default=str), _settings_key()), run)  # noqa: E731
+    return _snap(f"strategies:{scenario}", compute) if not modifiers else compute()
 
 
 def _plan_strategies(scenario: str, mods: dict) -> dict:
     """POST /plan/strategies' answer (Role 3's CP-SAT plans), computed once per scenario, modifiers and settings."""
-    return _memo_call(("plan_strategies", scenario, json.dumps(mods, sort_keys=True, default=str), _settings_key()),
-                      lambda: adapters.call("rampcast.engine.api", "get_strategies", _strategies, scenario, mods))
+    compute = lambda: _memo_call(("plan_strategies", scenario, json.dumps(mods, sort_keys=True, default=str), _settings_key()),  # noqa: E731
+                                 lambda: adapters.call("rampcast.engine.api", "get_strategies", _strategies, scenario, mods))
+    return _snap(f"plan_strategies:{scenario}", compute) if not mods else compute()
 
 
 @router.post("/plan/strategies", response_model=M.StrategiesResponse)
@@ -366,7 +439,7 @@ def get_afteraction(scenario: str = "medium"):
         covered += day["p10"] <= a <= day["p90"]
     naive = [day["baseline_p50"] for day in fc["days"]]
     naive_ape = [abs(n - a) / a * 100 for n, a in zip(naive, actual) if a]
-    strat = engine.strategies(ds)
+    strat = _snap("live_strategies", lambda: _memo_call(("live_strategies", _settings_key()), lambda: engine.strategies(ds)))
     chosen = store.approved_strategy() or "B"
     card = next(c for c in strat["strategies"] if c["id"] == chosen)
     occ = engine.occupancy_hourly(ds.flights)
@@ -407,7 +480,8 @@ def _airfield() -> list[dict]:
 @router.get("/la28")
 def get_la28(scenario: str = "medium"):
     """Stretch goal: the same engine on an LA28 Olympic opening-week profile."""
-    return la28.report(check_scenario(scenario))
+    scenario = check_scenario(scenario)
+    return _snap(f"la28:{scenario}", lambda: la28.report(scenario))
 
 
 @router.get("/settings")
@@ -486,7 +560,10 @@ def parking_plan(method: str, temp: bool, layout: str = "stands") -> parking.Pla
     check_layout(layout)
     key = f"{parking.pins_key(_pins[layout])}-{_accepted_v[0]}"
     with _single(("parking_plan", method, temp, layout, key)):
-        return _parking_plan(method, temp, layout, key)
+        plan = _parking_plan(method, temp, layout, key)
+    if method == "cpsat" and _default_state():  # keep the solved plan so the next start does not solve it again
+        snapshot.put(f"cpsat:{layout}:{temp}", {"assignment": plan.assignment, "method": plan.solver})
+    return plan
 
 
 @router.get("/parking/plan")
@@ -563,7 +640,7 @@ def _quote(req: TripRequest) -> dict:
     if req.size_class is None and req.aircraft_type not in bookings.AIRCRAFT_TYPES:
         raise HTTPException(422, "give size_class or a known aircraft_type (ICAO designator)")
     try:
-        return bookings.quote(ops_dataset(), parking_plan("optimized", False, check_layout(req.layout)), forecast.occupancy("medium"),
+        return bookings.quote(ops_dataset(), parking_plan("optimized", False, check_layout(req.layout)), _ref_occupancy(),
                               req.model_dump(), C.parse_t(req.t or demo_t()))
     except ValueError as e:
         raise HTTPException(422, f"bad time: {e}") from e
@@ -648,9 +725,11 @@ def get_ai_benchmark(layout: str = "tandem", temp: bool = False):
         lock = _bench_locks.setdefault(key, threading.Lock())
     with lock:  # a second request for the same benchmark waits for the first instead of solving again
         if key not in _bench:
-            ds = ops_dataset()
-            rows = {m: parking.metrics(ds, parking_plan(m, temp, layout)) for m in parking.METHODS}
-            _bench[key] = ai.benchmark(rows, layout, temp)
+            def run():
+                ds = ops_dataset()
+                rows = {m: parking.metrics(ds, parking_plan(m, temp, layout)) for m in parking.METHODS}
+                return ai.benchmark(rows, layout, temp)
+            _bench[key] = _snap(f"benchmark:{layout}:{temp}", run)
     return _bench[key]
 
 
@@ -668,6 +747,17 @@ def _drift_evidence(ds: Dataset) -> list[dict]:
 @router.get("/ai/models")
 def get_ai_models(scenario: str = "medium", layout: str = "stands"):
     scenario, layout = check_scenario(scenario), check_layout(layout)
+    name = f"ai_models:{scenario}:{layout}"
+    if _default_state() and (hit := snapshot.get(name)) is not None:
+        return hit
+    out = _ai_models(scenario, layout)
+    cp_ready = any(m["id"] == "stand_cpsat" and m["evidence"] and m["evidence"][0]["value"] != "not run yet" for m in out["models"])
+    if cp_ready and _default_state():
+        snapshot.put(name, out)
+    return out
+
+
+def _ai_models(scenario: str, layout: str) -> dict:
     fc, occ = get_forecast(scenario), get_occupancy(scenario)
     f_ev, r_ev = ai.forecast_evidence(fc, occ)
     ds = ops_dataset()

@@ -27,6 +27,8 @@ No keys or accounts are needed: briefings, what-if explanations and answers to t
 
 Open a specific replay moment with `http://localhost:5173/?t=2027-02-12T10:00:00-08:00#live`.
 
+**Fast start.** The slow answers (the 5,000-week forecast, the three strategies, LA28, the exact-solver plans, the co-pilot's model cards) are precomputed in `server/snapshot/`, so a fresh start answers in milliseconds. After changing code, data or `assumptions.yaml`, run `make snapshot` (about 3 minutes) and commit the new file; without it the server computes once on its next start and saves one. Answers that depend on what someone changed in the app (settings, a moved jet, an accepted booking) always come from the live engine.
+
 **Data.** Parking control, Live ops, Airport 3D and After-action replay the Super Bowl LVI week (Feb 2022, same stadium) shifted +1,827 days to 2027. `make data` (Role 1 pipeline, `data/scripts/build_processed.py`) builds every file in `data/processed/`:
 - With a real OpenSky pull on disk (`make fetch`, needs internet and a free OpenSky account), it uses those flights and the app labels them "Real 2022 replay (OpenSky)".
 - Without one, it rebuilds the week across 11 LA-basin airports from the published counts (501 business-jet arrivals on Friday 11 Feb, 548 departures on Monday 14 Feb, about 2× normal traffic), with real feeder airports, local arrival hours and each jet's departure paired to its arrival. The app labels it "2022 week, from published counts". This repo ships that rebuild, because OpenSky is unreachable from the build environment.
