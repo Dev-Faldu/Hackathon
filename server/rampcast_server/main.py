@@ -115,7 +115,10 @@ def meta():
     a = C.assumptions()
     return {"product": "RAMPCAST", "event": a["event"], "fbo": a["fbo"], "settings": store.get_settings(),
             "window": [d.isoformat() for d in C.window_days()], "live_source": ds.source, "notes": ds.notes,
-            "claude_enabled": explain.claude_available(), "modules": adapters.status(),
+            "claude_enabled": explain.claude_available(),
+            "local_llm_enabled": explain.local_llm_available(),
+            "local_llm_model": explain.get_local_model_name() if explain.local_llm_available() else None,
+            "modules": adapters.status(),
             "scenarios": list(C.SCENARIOS), "stands": ds.stands, "demo_t": demo_t(),
             "privacy": "Tail numbers hashed; people appear only as booking codes; bookings are synthetic."}
 

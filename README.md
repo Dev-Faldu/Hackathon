@@ -18,7 +18,10 @@ make dev        # API on :8000 and app on http://localhost:5173
 make test       # server tests + app typecheck
 ```
 
-No keys or accounts are needed: briefings, what-if explanations and answers to the manager's questions come from the built-in writer, which only words the engine's facts and cites each number. (Optional: `RAMPCAST_USE_CLAUDE=1` plus an Anthropic key lets Claude word the same facts.) Open a specific replay moment with `http://localhost:5173/?t=2027-02-12T10:00:00-08:00#live`.
+No keys or accounts are needed: briefings, what-if explanations and answers to the manager's questions come from the built-in writer, which only words the engine's facts and cites each number.
+- **Local LLM**: Run completely private and offline with your own local models (e.g. Ollama, LM Studio, vLLM, llama.cpp). Start Ollama (`ollama run llama3.2`) and launch with `RAMPCAST_USE_LOCAL_LLM=1 make dev`. Customize endpoint with `LOCAL_LLM_URL` (default: `http://127.0.0.1:11434/v1/chat/completions`) and model with `LOCAL_LLM_MODEL` (auto-detected by default).
+- **Claude (optional)**: `RAMPCAST_USE_CLAUDE=1` plus an Anthropic key lets Claude word the same facts.
+Open a specific replay moment with `http://localhost:5173/?t=2027-02-12T10:00:00-08:00#live`.
 
 **Data.** Parking control, Live ops, Airport 3D and After-action replay the Super Bowl LVI week (Feb 2022, same stadium) shifted +1,827 days to 2027. `make data` (Role 1 pipeline, `data/scripts/build_processed.py`) builds every file in `data/processed/`:
 - With a real OpenSky pull on disk (`make fetch`, needs internet and a free OpenSky account), it uses those flights and the app labels them "Real 2022 replay (OpenSky)".

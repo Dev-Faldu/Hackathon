@@ -55,7 +55,11 @@ export function Sidebar() {
           </div>
           <div className="mt-2 flex items-center gap-1.5 text-[12px] font-medium">
             <Sparkles size={13} className="text-runway" />
-            {meta?.claude_enabled ? "Claude wording on" : "Built-in briefings · offline"}
+            {meta?.claude_enabled
+              ? "Claude wording on"
+              : meta?.local_llm_enabled
+                ? `Local LLM (${meta.local_llm_model || "active"})`
+                : "Built-in briefings · offline"}
           </div>
         </div>
         <p className="px-1 text-[10.5px] leading-snug text-ink-2">

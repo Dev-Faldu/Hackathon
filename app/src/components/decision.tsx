@@ -96,7 +96,7 @@ export function BriefingPanel({ t }: { t?: string }) {
   };
   return (
     <Panel strong eyebrow={<span className="flex items-center gap-1.5"><Sparkles size={12} className="text-runway" /> Morning briefing</span>}
-      title="What the numbers say" actions={<Chip tone="runway">{data ? (data.fallback ? "Built-in" : "Claude") : "…"}</Chip>}>
+      title="What the numbers say" actions={<Chip tone="runway">{data ? (data.fallback ? "Built-in" : (data.model?.startsWith("local") ? "Local LLM" : "Claude")) : "…"}</Chip>}>
       {loading && !data ? (
         <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-11/12" /><Skeleton className="h-4 w-4/5" /></div>
       ) : data ? (
