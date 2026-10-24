@@ -140,6 +140,10 @@ Response: `{"decision":"confirmed|approval|full","position":{...}|null,"price_us
 
 Inbox: every request received by `t` from every channel, each with `status` (`auto` or `look`), `issues` and `notes`. Requests are rebuilt from the replay week; channel mix, lead times, duplicates and aircraft swaps are assumptions (`bookings` in `assumptions.yaml`).
 
+### Parking layouts
+
+Every parking route takes `layout=stands` (48 marked stands) or `layout=tandem` (game-day packing; slot ids like `B3-2` = row B, column 3, second in the column; `H1`–`H6` hot spots; `T*` temp zone; `P*` overflow pad). Tows carry `kind` (`arrival` or `departure`) and `for_flight_t`. Accepted bookings join the plan: `POST /bookings/accept` returns `flight_id` and `position`; `DELETE /bookings/accepted/{flight_id}` cancels.
+
 ### `GET /airfield/movements`
 
 The other FBOs' business-jet visits at VNY in the replay (`id, size_class, landed, departed, origin`), so the 3D runway carries the whole field's traffic.
