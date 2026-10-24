@@ -30,7 +30,7 @@ export default function Parking() {
   const st = useApi(() => api.parkingState(tick.bucketIso, method, temp, layout), [tick.bucketMs, method, temp, layout, pinsV]);
   const res = useApi(() => api.reservations(boardDay, method, temp, layout), [boardDay, method, temp, layout, pinsV]);
   const m = plan.data?.metrics, cmp = plan.data?.compare;
-  const opt = method === "optimized" ? m : cmp, base = method === "optimized" ? cmp : m;
+  const opt = method !== "first_come" ? m : cmp, base = method !== "first_come" ? cmp : m;
   const towCut = opt && base && base.tows ? Math.round((1 - opt.tows / base.tows) * 100) : 0;
   const towSoon = useMemo(() => new Set((st.data?.tows_next_3h ?? []).map((t) => t.flight_id)), [st.data]);
   const selOcc = st.data?.occupants.find((o) => o.flight_id === selected) ?? null;
@@ -46,6 +46,7 @@ export default function Parking() {
         </button>
         <Segmented value={method} onChange={setMethod}
           options={[{ value: "optimized", label: <span className="flex items-center gap-1.5"><Shuffle size={13} /> RAMPCAST arrangement</span> },
+            { value: "cpsat", label: "Exact solver" },
             { value: "first_come", label: "Whiteboard (first free)" }]} />
       </TopBar>
       <ReplayBar />
@@ -62,18 +63,20 @@ export default function Parking() {
           tone={st.data && st.data.stands_used >= (m?.stands ?? 48) ? "alert" : "runway"}
           sub={st.data ? `${st.data.hot_used} on hot spots · ${st.data.temp_used} temp${tandem ? ` · ${st.data.pad_used} on the pad` : ""} · ${st.data.overflow_now} without a position` : "…"}
           info={tandem ? g("tandem") : g("stands_now")} />
-        <Kpi label="Tows this week" value={m?.tows ?? 0} tone={method === "optimized" ? "ok" : "alert"}
+        <Kpi label="Tows this week" value={m?.tows ?? 0} tone={method !== "first_come" ? "ok" : "alert"}
           sub={opt && base ? <span>RAMPCAST <b className="num">{opt.tows}</b> vs whiteboard <b className="num">{base.tows}</b> · <span className="font-semibold text-ok">−{towCut}%</span></span> : "…"} info={g("tows")} />
         <Kpi label="Overflow aircraft" value={m?.overflow_aircraft ?? 0} tone={(m?.overflow_aircraft ?? 0) > 0 ? "alert" : "ok"}
           sub={temp ? "With temporary taxiway stands open" : "Open the temp zone to absorb more"} info={g("overflow_aircraft")} />
-        <Kpi label="Boxed-in events" value={m?.boxed_in_events ?? 0} sub="A jet stuck behind one leaving later" tone={method === "optimized" ? "ok" : "watch"} info={g("boxed_in")} />
+        <Kpi label="Boxed-in events" value={m?.boxed_in_events ?? 0} tone={method !== "first_come" ? "ok" : "watch"} info={g("boxed_in")}
+          sub={method === "cpsat" ? "CP-SAT plans nobody boxed in; the rest come from owners leaving off schedule" : "A jet stuck behind one leaving later"} />
         <Kpi label="Hot-spot turns" value={m?.hot_spot_uses ?? 0} sub="Drop-and-go kept off the stands" info={g("hot_spot")} />
         <Kpi label="Parking revenue (est.)" value={(m?.revenue_est_usd ?? 0) / 1000} digits={1} unit="k USD" sub={`${m?.utilization_pct ?? 0}% stand utilization · fees in assumptions`} info={g("revenue")} />
       </KpiRow>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Panel eyebrow={<span className="flex items-center gap-1.5"><SquareParking size={12} /> Apron · {dayLabel(tIso)} {hhmm(tIso)}</span>}
-          title={method === "optimized" ? (tandem ? "Game-day packing: long stays deep, quick turns up front" : "RAMPCAST arrangement: long stays deep, quick turns up front")
+          title={method === "cpsat" ? "Exact solver (CP-SAT): the whole week planned up front, nobody boxed in on paper"
+            : method === "optimized" ? (tandem ? "Game-day packing: long stays deep, quick turns up front" : "RAMPCAST arrangement: long stays deep, quick turns up front")
             : "Whiteboard: first free slot that fits"}
           actions={<Chip><MousePointerClick size={12} /> Click a jet to inspect or move it</Chip>}>
           {plan.data && st.data && plan.data.layout === layout ? (tandem ? (

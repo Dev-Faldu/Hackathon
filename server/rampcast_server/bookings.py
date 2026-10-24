@@ -18,10 +18,11 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+from rampcast.engine.common import airport_ll
+
 from . import config as C
 from .data import Dataset, Flight, _short_id
 from .engine import customs_close
-from .engine import _airport_ll
 from .parking import COLUMN_KINDS, Plan, Position, _column_cost, _ideal_depth, span
 
 A = C.assumptions
@@ -252,7 +253,7 @@ def flight_from_sheet(sheet: dict, taken: set[str]) -> Flight:
         fid, n = f"{base}-{n}", n + 1
     origin = sheet.get("origin") or ""
     try:
-        lat, lon = _airport_ll(origin) if origin else (0.0, 0.0)
+        lat, lon = airport_ll(origin) if origin else (0.0, 0.0)
     except Exception:  # unknown airport: no map position, still parks
         lat, lon = 0.0, 0.0
     stay_h = (depart - arrive).total_seconds() / 3600

@@ -102,6 +102,7 @@ class Flight:
     stay_type: str            # drop_and_go | overnight | through_game | event_stay | pre_window
     source: str
     booking_code: str | None = None
+    curfew_class: str | None = None   # stage2_jets | older_stage3_jets | "" (none); None = use the assumption in engine
 
     @property
     def footprint(self) -> float:
@@ -124,6 +125,7 @@ class Booking:
     deadline_local: datetime | None
     hotel_zone: str
     synthetic: bool = True
+    car_staged_at: str = "KVNY"       # airport where the ground car waits for this party
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -312,9 +314,15 @@ def load_processed() -> Dataset | None:
         return None
     share = C.assumptions()["fbo"].get("share_of_airport_arrivals", 0.3)
     events: dict[str, dict] = {}
+    fixes = {"bad_lines": 0, "departure_before_landing": 0, "origin_after_landing": 0, "unknown_size": 0}
     with open(replay) as f:
         for line in f:
-            e = json.loads(line)
+            try:
+                e = json.loads(line)
+                e["flight_id"], e["event"], C.parse_t(e["t_utc"])
+            except (ValueError, KeyError, TypeError):
+                fixes["bad_lines"] += 1
+                continue
             events.setdefault(e["flight_id"], {}).update({e["event"]: e, "meta": e})
     flights = []
     for fid, ev in events.items():
@@ -326,11 +334,21 @@ def load_processed() -> Dataset | None:
         landed = C.parse_t(ev["landed"]["t_utc"])
         dep_o = C.parse_t(ev["departed_origin"]["t_utc"]) if "departed_origin" in ev else landed - timedelta(hours=3)
         dep_v = C.parse_t(ev["departed_vny"]["t_utc"]) if "departed_vny" in ev else landed + timedelta(hours=26)
+        if dep_v <= landed:      # a departure from an earlier visit, or a clock error: treat as unknown
+            fixes["departure_before_landing"] += 1
+            dep_v = landed + timedelta(hours=26)
+        if dep_o >= landed:
+            fixes["origin_after_landing"] += 1
+            dep_o = landed - timedelta(hours=3)
+        size = m.get("size_class", "other")
+        if size not in C.SIZE_CLASSES:
+            fixes["unknown_size"] += 1
+            size = "other"
         o = ORIGIN_BY_ICAO.get(m.get("origin") or "", (m.get("origin") or "UNKN", m.get("origin") or "Unknown",
                                                          *KVNY, 0, bool(m.get("is_international"))))
         stay = ("pre_window" if landed < C.window_start_local()
                 else "drop_and_go" if (dep_v - landed) < timedelta(hours=3) else "overnight")
-        flights.append(Flight(_short_id(fid), m.get("tail_hash", fid[:16]), m.get("size_class", "other"), o[0], o[1], o[2],
+        flights.append(Flight(_short_id(fid), m.get("tail_hash", fid[:16]), size, o[0], o[1], o[2],
                               o[3], bool(m.get("is_international")), dep_o, landed, dep_v, stay,
                               "opensky_2022_shifted"))
     if not flights:
@@ -344,7 +362,8 @@ def load_processed() -> Dataset | None:
         for b in json.loads(bpath.read_text()):
             bookings[b["booking_code"]] = Booking(
                 b["booking_code"], _short_id(b["flight_id"]), b["party_size"], b["commitment_type"],
-                C.parse_t(b["deadline_local"]) if b.get("deadline_local") else None, b["hotel_zone"], True)
+                C.parse_t(b["deadline_local"]) if b.get("deadline_local") else None, b["hotel_zone"], True,
+                b.get("car_staged_at", "KVNY"))
     by_flight = {b.flight_id: b.booking_code for b in bookings.values()}
     rng = np.random.default_rng(61)
     for f in flights:
@@ -354,6 +373,21 @@ def load_processed() -> Dataset | None:
             f.booking_code = code
             bookings[code] = _booking(rng, code, f)
     spath = C.PROCESSED / "stands.json"
-    stands = json.loads(spath.read_text())["stands"] if spath.exists() else default_stands()
-    note = (SOURCE_NOTES.get(source) or SOURCE_NOTES["opensky_2022_shifted"]) + " Bookings are synthetic."
-    return Dataset(source, "actual", sorted(flights, key=lambda f: f.landed), bookings, stands, [note])
+    stands = normalize_stands(json.loads(spath.read_text())["stands"]) if spath.exists() else default_stands()
+    notes = [(SOURCE_NOTES.get(source) or SOURCE_NOTES["opensky_2022_shifted"]) + " Bookings are synthetic."]
+    if any(fixes.values()):
+        notes.append("Data checks: " + ", ".join(f"{n} {k.replace('_', ' ')}" for k, n in fixes.items() if n)
+                     + " (bad lines skipped; impossible times replaced with defaults; unknown sizes treated as 'other').")
+    return Dataset(source, "actual", sorted(flights, key=lambda f: f.landed), bookings, stands, notes)
+
+
+def normalize_stands(stands: list[dict]) -> list[dict]:
+    """Fill in `column` when a stands file leaves it out: stands go three deep, in the order listed per row."""
+    if all("column" in s for s in stands):
+        return stands
+    out, seen = [], {}
+    for s in stands:
+        i = seen.get(s["row"], 0)
+        seen[s["row"]] = i + 1
+        out.append({**s, "column": s.get("column", i // 3 + 1)})
+    return out

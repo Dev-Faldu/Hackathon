@@ -52,8 +52,8 @@ def test_priority_inputs_exclude_identity_and_payment():
 
 def test_priority_queue_sorted_with_reasons(client):
     q = client.get(f"/priority/queue?t={T}").json()
-    scores = [i["score"] for i in q["items"]]
-    assert scores == sorted(scores, reverse=True)
+    assert q["order"] == ["fixed_time", "medical_access", "hard_deadline", "wait"]  # strict order (tests/test_priority.py)
+    assert [i["rank"] for i in q["items"]] == list(range(1, len(q["items"]) + 1))
     assert all(i["reasons"] for i in q["items"])
     assert all(i["booking_code"].startswith("RC-") for i in q["items"])
 
@@ -229,3 +229,28 @@ def test_build_replay_feeds_the_loader(tmp_path, monkeypatch):
     g = next(f for f in ds.flights if f.size_class == "large")
     assert g.landed.date().isoformat() == "2027-02-12" and g.departed_vny.date().isoformat() == "2027-02-15"
     assert next(f for f in ds.flights if f.origin == "CYYZ").is_international
+
+
+@pytest.mark.parametrize("mods", [
+    {"customs_hours": {"fri": ["09:00", "25:99"]}},
+    {"customs_hours": {"friday": ["09:00", "14:30"]}},
+    {"customs_hours": {"fri": ["14:30", "09:00"]}},
+    {"runway_closed": {"from": "2027-02-12T14:00:00-08:00", "to": "2027-02-12T10:00:00-08:00"}},
+    {"runway_closed": {"from": "2031-01-01T10:00:00-08:00", "to": "2031-01-01T11:00:00-08:00"}},
+    {"runway_closed": {"from": "not a time", "to": "2027-02-12T11:00:00-08:00"}},
+    {"demand_multiplier": 50},
+    {"diversions": {"VNY-0001": "burbank"}},
+])
+def test_whatif_rejects_bad_modifiers(client, mods):
+    r = client.post("/whatif", json={"scenario": "medium", "modifiers": mods})
+    assert r.status_code == 422, r.text
+
+
+def test_bad_replay_time_is_a_422(client):
+    assert client.get("/alerts?t=yesterday").status_code == 422
+    assert client.get("/priority/queue?t=2027-13-40T99:00").status_code == 422
+
+
+def test_whatif_reports_the_stand_replan(client):
+    r = client.post("/whatif", json={"scenario": "medium", "modifiers": CLOSURE}).json()
+    assert r["stand_plan"]["boxed_in"] == 0

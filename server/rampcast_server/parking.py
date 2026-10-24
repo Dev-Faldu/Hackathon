@@ -10,11 +10,18 @@ Two layouts share this engine:
   cabins and four deep for the rest, six drop-and-go hot spots, and an overflow pad. Slot ids and the column
   pattern match app/src/three/compact.ts, which draws the same slots in 3D.
 
-Two arrangements are produced so the difference can be measured:
+Three arrangements are produced so the difference can be measured:
 - "first_come": the whiteboard method, first free stand that fits, front stands first.
-- "optimized":  RAMPCAST's arrangement, which knows each jet's planned departure and parks long
-                stays deep, short stays in front, drop-and-go on hot spots, minimising tows.
-Both are suggestions. The line supervisor approves every tow and marshals every aircraft.
+- "optimized":  RAMPCAST's default. Each arrival goes where it is least likely to box anyone in, given who is
+                parked right now and when they said they would leave; then a whole-week local search moves one jet
+                at a time while tows drop.
+- "cpsat":      Role 3's exact solver (rampcast/engine/stands.py, OR-Tools CP-SAT) plans the whole week up front with
+                "nobody boxed in" as a hard rule plus a margin for departure drift; walking the week as it happens,
+                a jet whose planned slot is still taken is parked on arrival where it fits best.
+Every method plans on the departure times owners gave (they drift, most for long stays) and counts tows from
+what actually happens, so even a plan with no tows on paper has a few. Measured on the 2022-based week, the
+default wins on most layouts and CP-SAT wins with the temporary zone open on game day; the AI screen shows both.
+All are suggestions: the line supervisor approves every tow and marshals every aircraft.
 """
 from __future__ import annotations
 
@@ -24,6 +31,8 @@ import json
 import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+
+from rampcast.engine import stands as cpsat
 
 from . import config as C
 from .data import Dataset, Flight
@@ -55,6 +64,8 @@ class Plan:
     tows: list[dict] = field(default_factory=list)
     blocks: list[dict] = field(default_factory=list)
     notes: dict[str, list[str]] = field(default_factory=dict)  # flight_id -> reasons for the placement
+    solver: str = "whiteboard"                                # how the plan was produced
+    solve_s: float = 0.0
 
 
 # Game-day tandem layout. Keep in step with COLUMN_PATTERN, L_DEPTH, M_DEPTH, LANE_CLEAR in app/src/three/compact.ts.
@@ -119,6 +130,11 @@ def _as_told(f: Flight) -> Flight:
     return dataclasses.replace(f, departed_vny=told)
 
 
+def as_told(ds: Dataset) -> Dataset:
+    """The week as the planner sees it (stated departure times)."""
+    return dataclasses.replace(ds, flights=[_as_told(f) for f in ds.flights])
+
+
 def _overlap(a: Flight, b: Flight) -> bool:
     return a.landed < b.departed_vny and b.landed < a.departed_vny
 
@@ -145,9 +161,51 @@ def _column_cost(f: Flight, p: Position, members: list[tuple[Flight, Position]])
     return n
 
 
+METHODS = ("first_come", "optimized", "cpsat")
+
+# Last CP-SAT plan per (layout, temp zone): a pin or a new booking re-solves incrementally from it.
+_last: dict[tuple[str, bool], tuple[dict[str, tuple], dict[str, str], dict[str, str | None], str]] = {}
+
+
+def drift_slack(flights: list[Flight]) -> dict[str, timedelta]:
+    """Margin kept between jets sharing a column: departure uncertainty x parking.cpsat.drift_margin_sigma."""
+    a = A()["parking"]
+    sig, z = a.get("departure_uncertainty_h", {}), a.get("cpsat", {}).get("drift_margin_sigma", 0)
+    out = {}
+    for f in flights:
+        stay = _stay_h(f)
+        h = sig.get("over_20h", 0) if stay > 20 else sig.get("over_3h", 0) if stay > 3 else 0
+        if h * z:
+            out[f.flight_id] = timedelta(hours=h * z)
+    return out
+
+
+def _cpsat(told: list[Flight], pos: list[Position], temp_zone: bool, layout: str,
+           pins: dict[str, str]) -> tuple[dict[str, str | None], str, float]:
+    """CP-SAT stand plan on the stated departure times. Re-solves only what changed since the last plan."""
+    key = (layout, temp_zone)
+    slack, budget = drift_slack(told), A()["parking"].get("cpsat", {}).get("budget")
+    times = {f.flight_id: (f.landed, f.departed_vny, f.size_class) for f in told}
+    prev = _last.get(key)
+    if prev is not None and prev[0] == times and prev[1] == pins:
+        return prev[2], prev[3], 0.0
+    if prev is not None and all(times.get(fid) == v for fid, v in prev[0].items()):
+        # Same week plus new flights (accepted bookings) and/or new pins: re-plan only around them.
+        changed = (set(times) - set(prev[0])) | {fid for fid in set(pins) | set(prev[1]) if pins.get(fid) != prev[1].get(fid)}
+        sol = cpsat.resolve(told, pos, prev[2], changed, pins, budget=budget, slack=slack)
+    else:
+        sol = cpsat.solve(told, pos, pins, budget=budget, slack=slack)
+    if len(_last) >= 8:
+        _last.pop(next(iter(_last)))
+    _last[key] = (times, dict(pins), sol.assignment, sol.method)
+    return sol.assignment, sol.method, sol.solve_s
+
+
 def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins: dict[str, str] | None = None,
           layout: str = "stands") -> Plan:
     pins = pins or {}
+    if method == "cpsat" and cpsat.cp_model is None:
+        method = "optimized"
     a = A()["parking"]
     pos = positions(ds.stands, temp_zone, layout)
     by_id = {p.id: p for p in pos}
@@ -181,7 +239,13 @@ def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins:
         c += 0.45 * abs(_ideal_depth(ft) - p.depth) + 0.004 * (p.max_wingspan_ft - span(f))
         return c + zone_cost[p.kind]
 
-    # 1. Place each arrival in time order.
+    # 1. Place each arrival in time order. CP-SAT plans the whole week up front on the stated times; walking the
+    #    week as it really happens, a jet whose planned slot is still taken (its occupant stayed longer than the
+    #    owner said) is parked on arrival wherever fits best, as the ramp supervisor would.
+    planned: dict[str, str | None] = {}
+    if method == "cpsat":
+        planned, plan.solver, plan.solve_s = _cpsat(list(told.values()), pos, temp_zone, layout, pins)
+    taken_by: dict[str, str] = {}
     for _, kind, f in events:
         if kind == 0:
             pid = plan.assignment.get(f.flight_id)
@@ -193,8 +257,12 @@ def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins:
                 and not any(g is not f and _overlap(f, g) for g in held.get(p.id, ()))]
         choice = None
         pin = pins.get(f.flight_id)
+        want = planned.get(f.flight_id, "")
         if pin in by_id and occupant[pin] is None and by_id[pin].max_wingspan_ft >= span(f):
             choice, source[f.flight_id] = by_id[pin], "pin"
+        elif want and occupant[want] is None and any(p.id == want for p in free):
+            choice = by_id[want]
+            source[f.flight_id] = "hot" if choice.kind == "hot" else "optimized"
         elif free:
             if method == "first_come":
                 choice, source[f.flight_id] = next((p for p in free if p.kind == "stand"), free[0]), "first_come"
@@ -205,12 +273,18 @@ def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins:
                 else:
                     choice = min((p for p in free if p.kind != "hot"), key=lambda p: (live_cost(f, p), p.id), default=None) or free[0]
                     source[f.flight_id] = "optimized"
+                if want:
+                    source[f.flight_id] = "replanned"
+                    taken_by[f.flight_id] = occupant[want].flight_id if occupant.get(want) else ""
+                elif want is None:
+                    source[f.flight_id] = "unplanned"
         plan.assignment[f.flight_id] = choice.id if choice else None
         if choice:
             occupant[choice.id] = f
 
-    # 2. Optimized only: improve with the whole week in view (move one jet at a time while tows drop).
+    # 2. Default method: improve with the whole week in view (move one jet at a time while tows drop).
     if method == "optimized":
+        plan.solver = "greedy + local search"
         at: dict[str, list[Flight]] = {p.id: [] for p in pos}
         for fid, pid in plan.assignment.items():
             if pid:
@@ -304,6 +378,11 @@ def build(ds: Dataset, method: str = "optimized", temp_zone: bool = False, pins:
             why = [f"Stays {_stay_h(f):.0f} h, departs {f.departed_vny:%a %H:%M}: {where}"]
             if src == "moved":
                 why.append("Moved by the optimizer after looking at the whole week")
+            elif src == "optimized":
+                why.append("Planned to land before and leave after every jet in front of it, on the times the owners gave")
+            elif src == "replanned":
+                why.append(f"Parked here on arrival: its planned slot {planned.get(fid)} was still taken"
+                           + (f" by {taken_by[fid]}, which stayed longer than its owner said" if taken_by.get(fid) else ""))
         n = involved.get(fid, 0)
         why.append(f"Needs {n * a['tows_per_block']} tow(s) to get in or out" if n else "No tows: nothing blocks it and it blocks nothing")
         plan.notes[fid] = why
@@ -356,6 +435,7 @@ def metrics(ds: Dataset, plan: Plan) -> dict:
         "utilization_pct": round(stand_hours / (len(stands) * C.n_hours()) * 100, 1) if stands else 0,
         "revenue_est_usd": round(revenue, -2),
         "aircraft_parked": sum(1 for v in plan.assignment.values() if v),
+        "solver": plan.solver, "solve_s": plan.solve_s,
     }
 
 

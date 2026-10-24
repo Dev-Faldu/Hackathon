@@ -37,17 +37,18 @@ export function CountUp({ value, digits = 0, className }: { value: number; digit
   return <motion.span className={cx("num", className)}>{text}</motion.span>;
 }
 
-export function Kpi({ label, value, digits = 0, unit, sub, tone, children, info }: {
-  label: string; value: number; digits?: number; unit?: string; sub?: ReactNode;
+export function Kpi({ label, value, digits = 0, unit, rel, sub, tone, children, info }: {
+  label: string; value: number; digits?: number; unit?: string; rel?: string; sub?: ReactNode;
   tone?: "ok" | "watch" | "alert" | "runway"; children?: ReactNode; info?: { what: ReactNode; source?: ReactNode };
 }) {
   const toneCls = { ok: "text-ok", watch: "text-watch", alert: "text-alert", runway: "text-runway" };
   return (
     <div className="glass flex min-w-0 flex-col gap-1 px-4 py-3.5">
       <div className="flex min-w-0 items-center gap-1"><div className="label truncate">{label}</div>{info && <InfoTip what={info.what} source={info.source} />}</div>
-      <div className={cx("flex items-baseline gap-1.5 text-[28px] font-semibold leading-none tracking-[-0.02em]", tone && toneCls[tone])}>
+      <div className={cx("flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-[28px] font-semibold leading-none tracking-[-0.02em]", tone && toneCls[tone])}>
         <CountUp value={value} digits={digits} />
         {unit && <span className="text-[13px] font-medium text-ink-2">{unit}</span>}
+        {rel && <span className="num">({rel})</span>}
       </div>
       {sub && <div className="text-[12px] leading-snug text-ink-2">{sub}</div>}
       {children}

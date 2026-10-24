@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import re
 import threading
 from contextlib import asynccontextmanager
 from datetime import timedelta
@@ -10,7 +11,9 @@ from datetime import timedelta
 import numpy as np
 from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+from rampcast.engine import audit, models as M, whatif
 
 from . import adapters, bookings, config as C, engine, explain, forecast, la28, parking, store
 from .data import Dataset, Flight, airfield_movements, generate_sample, load_processed
@@ -50,6 +53,14 @@ def replay() -> Replay:
     return Replay(live_dataset())
 
 
+def query_t(t: str | None):
+    """A replay time from a request; a malformed one is the caller's error (422), not a crash."""
+    try:
+        return C.parse_t(t)
+    except ValueError:
+        raise HTTPException(422, f"t must be an ISO time like 2027-02-12T13:10:00-08:00, not {t!r}")
+
+
 def check_scenario(s: str) -> str:
     if s not in C.SCENARIOS:
         raise HTTPException(422, f"scenario must be one of {C.SCENARIOS}")
@@ -58,30 +69,78 @@ def check_scenario(s: str) -> str:
 
 # ---------- models ----------
 
-class RunwayClosed(BaseModel):
+def _check_time(value: str, what: str) -> str:
+    try:
+        t = C.parse_t(value)
+    except ValueError:
+        raise ValueError(f"{what} must be an ISO time like 2027-02-12T13:05:00-08:00, not {value!r}")
+    start = C.window_start_local()
+    if not (start - timedelta(days=1) <= t <= start + timedelta(hours=C.n_hours())):
+        raise ValueError(f"{what} {value} is outside the planning window {C.window()[0]} to {C.window()[1]}")
+    return value
+
+
+class _Window(BaseModel):
     from_: str = Field(alias="from")
     to: str
     model_config = {"populate_by_name": True}
 
+    @model_validator(mode="after")
+    def _ordered(self):
+        _check_time(self.from_, "from")
+        _check_time(self.to, "to")
+        if C.parse_t(self.to) <= C.parse_t(self.from_):
+            raise ValueError(f"'to' ({self.to}) must be after 'from' ({self.from_})")
+        return self
 
-class ArrivalDelay(BaseModel):
-    from_: str = Field(alias="from")
-    to: str
+
+class RunwayClosed(_Window):
+    pass
+
+
+class ArrivalDelay(_Window):
     minutes: int = Field(120, ge=15, le=480)
-    model_config = {"populate_by_name": True}
 
 
 class Modifiers(BaseModel):
     runway_closed: RunwayClosed | None = None
     arrival_delay: ArrivalDelay | None = None
-    demand_multiplier: float = 1.0
+    demand_multiplier: float = Field(1.0, ge=0.3, le=3.0)
     customs_hours: dict[str, list[str]] | None = None
+    diversions: dict[str, str] | None = None   # flight_id -> ICAO the operator says the jet will land at
     at: str | None = None
+
+    @field_validator("customs_hours")
+    @classmethod
+    def _customs(cls, v):
+        days = {"mon", "tue", "wed", "thu", "fri", "sat", "sun"}
+        for day, hours in (v or {}).items():
+            if day not in days:
+                raise ValueError(f"customs day must be one of {sorted(days)}, not {day!r}")
+            if len(hours) != 2 or not all(re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", h) for h in hours):
+                raise ValueError(f"customs hours for {day} must be two HH:MM times, e.g. ['09:00', '14:30']")
+            if hours[1] <= hours[0]:
+                raise ValueError(f"customs on {day} must close after it opens")
+        return v
+
+    @field_validator("diversions")
+    @classmethod
+    def _icao(cls, v):
+        for fid, icao in (v or {}).items():
+            if not re.fullmatch(r"[A-Z]{4}", icao):
+                raise ValueError(f"diversion airport for {fid} must be a 4-letter ICAO code, not {icao!r}")
+        return v
+
+    @field_validator("at")
+    @classmethod
+    def _at(cls, v):
+        return _check_time(v, "at") if v else v
 
 
 class PlanRequest(BaseModel):
     scenario: str = "medium"
     modifiers: Modifiers = Modifiers()
+    layout: str = "stands"          # which parking layout a what-if re-plans
 
 
 class AuditEntry(BaseModel):
@@ -138,86 +197,50 @@ def _strategies(scenario: str, modifiers: dict) -> dict:
     return engine.strategies(ds)
 
 
-@router.post("/plan/strategies")
+@router.post("/plan/strategies", response_model=M.StrategiesResponse)
 def post_strategies(req: PlanRequest):
     mods = req.modifiers.model_dump(by_alias=True, exclude_none=True)
     out = adapters.call("rampcast.engine.api", "get_strategies", _strategies, check_scenario(req.scenario), mods)
+    for c in out["strategies"]:
+        k = c["kpis"]
+        audit.propose(f"strategy:{c['id']}", f"{c['name']}: {k['overflow_aircraft']} overflow, {k['co2_t']} t CO2",
+                      key=f"{req.scenario}:{sorted(mods.items())}:{c['id']}:{k['overflow_aircraft']}:{k['co2_t']}")
     out["approved"] = store.approved_strategy()
     return out
 
 
-@router.get("/priority/queue")
+@router.get("/priority/queue", response_model=M.QueueResponse)
 def get_queue(t: str | None = None):
-    return engine.priority_queue(live_dataset(), C.parse_t(t), store.get_settings()["weights"])
+    return engine.priority_queue(live_dataset(), query_t(t), store.get_settings()["weights"])
 
 
-@router.get("/alerts")
+@router.get("/alerts", response_model=M.AlertsResponse)
 def get_alerts(t: str | None = None):
-    return engine.alerts(live_dataset(), C.parse_t(t))
+    return engine.alerts(live_dataset(), query_t(t))
 
 
 @router.get("/replay/state")
 def get_replay(t: str | None = None):
-    return replay().state(C.parse_t(t))
+    return replay().state(query_t(t))
 
 
-@router.post("/whatif")
+@router.post("/whatif", response_model=M.WhatIfResponse)
 def post_whatif(req: PlanRequest):
     scenario = check_scenario(req.scenario)
     mods = req.modifiers.model_dump(by_alias=True, exclude_none=True)
-    base = plan_dataset(scenario)
-    changed = plan_dataset(scenario, mods.get("demand_multiplier", 1.0))
-    affected: list[dict] = []
-    t = C.parse_t(mods.get("at"))
-    if mods.get("runway_closed"):
-        changed, affected = engine.apply_runway_closure(changed, mods["runway_closed"])
-        t = C.parse_t(mods["runway_closed"]["from"])
-        mods_alert = {**mods, "affected_count": len(affected)}
-    else:
-        mods_alert = mods
-    if mods.get("arrival_delay"):
-        changed, late = engine.apply_arrival_delay(changed, mods["arrival_delay"])
-        affected += late
-        t = C.parse_t(mods["arrival_delay"]["from"])
-        mods_alert = {**mods_alert, "affected_count": len(affected)}
-    before, after = engine.strategies(base), engine.strategies(changed)
-    kpi_diff = {}
-    for b, a in zip(before["strategies"], after["strategies"]):
-        kpi_diff[b["id"]] = {k: [b["kpis"][k], a["kpis"][k]] for k in b["kpis"] if k != "risk"}
-    alerts_before = {x["id"] for x in engine.alerts(base, t)["alerts"]}
-    alerts_after = engine.alerts(changed, t, mods_alert)["alerts"]
-    customs_risk = [x for x in alerts_after if x["kind"] == "customs_window"]
-    customs_missed = sum(1 for x in affected if x.get("customs_missed"))
-    facts = {"facts": [
-        {"id": "whatif.affected", "value": len(affected), "text": "inbound jets affected"},
-        {"id": "whatif.max_delay_min", "value": max([x["delay_min"] for x in affected], default=0), "text": "max delay"},
-        {"id": "whatif.customs_at_risk", "value": max(len(customs_risk), customs_missed), "text": "international arrivals at customs risk"},
-        {"id": "whatif.hours_before", "value": before["status_quo"]["hours_over_capacity"], "text": "hours over capacity before"},
-        {"id": "whatif.hours_after", "value": after["status_quo"]["hours_over_capacity"], "text": "hours over capacity after"},
-    ], "modifiers": mods}
-    if mods.get("arrival_delay"):
-        # Fixed-time commitments the delay now breaks: deadline was reachable before, not after.
-        broken = 0
-        for x in affected:
-            bk = base.bookings.get(x["booking_code"] or "")
-            if bk and bk.deadline_local:
-                drive = timedelta(minutes=engine.drive_minutes("KVNY", bk.hotel_zone) + 25)
-                if C.parse_t(x["eta_local"]) + drive <= bk.deadline_local < C.parse_t(x["new_eta_local"]) + drive:
-                    broken += 1
-        kb, ka = before["strategies"][1]["kpis"], after["strategies"][1]["kpis"]
-        facts["facts"] += [
-            {"id": "whatif.peak_moves_before", "value": kb["peak_movements_per_hour"], "text": "movements in the peak hour before"},
-            {"id": "whatif.peak_moves_after", "value": ka["peak_movements_per_hour"], "text": "movements in the peak hour after"},
-            {"id": "whatif.staff_before", "value": kb["peak_line_staff"], "text": "line techs at the peak, strategy B, before"},
-            {"id": "whatif.staff_after", "value": ka["peak_line_staff"], "text": "line techs at the peak, strategy B, after"},
-            {"id": "whatif.commitments_at_risk", "value": broken, "text": "fixed-time commitments now at risk"},
-        ]
+    out = whatif.run(plan_dataset(scenario), plan_dataset(scenario, mods.get("demand_multiplier", 1.0)), mods,
+                     store.get_settings()["weights"])
+    if mods.get("runway_closed") or mods.get("arrival_delay"):
+        # New ETAs: re-solve the live week's stand plan (the one Parking control shows), incrementally,
+        # on the departure times owners gave, as the plan itself was made.
+        layout = check_layout(req.layout)
+        live = parking.as_told(ops_dataset())
+        plan = parking_plan("optimized", False, layout)
+        out["stand_plan"] = whatif.restand(live, whatif.apply_disruptions(live, mods)[0], plan.assignment,
+                                           plan.positions, dict(_pins[layout]))
     key = f"whatif:{scenario}:{sorted(mods.items())}"
-    return {"scenario": scenario, "modifiers": mods, "kpi_diff": kpi_diff,
-            "status_quo": {"before": before["status_quo"], "after": after["status_quo"]},
-            "new_alerts": [x for x in alerts_after if x["id"] not in alerts_before],
-            "affected_flights": affected, "strategies": after["strategies"],
-            "explanation": explain.explain("whatif", facts, key)}
+    out["explanation"] = explain.explain("whatif", {"facts": out.pop("facts"), "modifiers": mods}, key)
+    return {"scenario": scenario, **out}
 
 
 def _briefing_facts(scenario: str, t) -> dict:
@@ -241,15 +264,15 @@ def _briefing_facts(scenario: str, t) -> dict:
 
 @router.get("/briefing")
 def get_briefing(scenario: str = "medium", t: str | None = None):
-    tt = C.parse_t(t)
+    tt = query_t(t)
     facts = _briefing_facts(check_scenario(scenario), tt)
     out = explain.explain("briefing", facts, f"briefing:{scenario}:{tt:%d%H}")
     return {**out, "recommended": facts["recommended"], "facts": facts["facts"]}
 
 
-@router.post("/explain")
+@router.post("/explain", response_model=M.Explanation)
 def post_explain(req: ExplainRequest):
-    tt = C.parse_t(req.t)
+    tt = query_t(req.t)
     facts = _briefing_facts(check_scenario(req.scenario), tt)
     return explain.explain("question", facts, f"q:{req.scenario}:{tt:%d%H}:{req.question}", req.question)
 
@@ -319,7 +342,7 @@ def get_audit():
 
 @router.post("/audit")
 def post_audit(entry: AuditEntry):
-    if entry.action not in ("approve", "edit", "reject"):
+    if entry.action not in audit.DECISIONS:
         raise HTTPException(422, "action must be approve, edit or reject")
     return store.audit_append(entry.model_dump())
 
@@ -372,8 +395,8 @@ def _parking_plan(method: str, temp: bool, layout: str, key: str) -> parking.Pla
 
 
 def parking_plan(method: str, temp: bool, layout: str = "stands") -> parking.Plan:
-    if method not in ("optimized", "first_come"):
-        raise HTTPException(422, "method must be optimized or first_come")
+    if method not in parking.METHODS:
+        raise HTTPException(422, f"method must be one of {', '.join(parking.METHODS)}")
     check_layout(layout)
     return _parking_plan(method, temp, layout, f"{parking.pins_key(_pins[layout])}-{_accepted_v[0]}")
 
@@ -382,7 +405,7 @@ def parking_plan(method: str, temp: bool, layout: str = "stands") -> parking.Pla
 def get_parking_plan(method: str = "optimized", temp: bool = False, layout: str = "stands"):
     ds = ops_dataset()
     plan = parking_plan(method, temp, layout)
-    other = parking_plan("first_come" if method == "optimized" else "optimized", temp, layout)
+    other = parking_plan("optimized" if method == "first_come" else "first_come", temp, layout)
     return {"method": method, "temp_zone": temp, "layout": layout, "source": ds.source,
             "positions": [p.to_dict() for p in plan.positions],
             "metrics": parking.metrics(ds, plan), "compare": parking.metrics(ds, other),
@@ -392,7 +415,7 @@ def get_parking_plan(method: str = "optimized", temp: bool = False, layout: str 
 
 @router.get("/parking/state")
 def get_parking_state(t: str | None = None, method: str = "optimized", temp: bool = False, layout: str = "stands"):
-    return parking.state(ops_dataset(), parking_plan(method, temp, layout), C.parse_t(t))
+    return parking.state(ops_dataset(), parking_plan(method, temp, check_layout(layout)), query_t(t))
 
 
 @router.get("/parking/reservations")

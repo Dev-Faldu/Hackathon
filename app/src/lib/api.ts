@@ -24,8 +24,8 @@ export const api = {
   queue: (t?: string) => http<Queue>(`/priority/queue?${q(t)}`),
   alerts: (t?: string) => http<{ t_local: string; alerts: Alert[] }>(`/alerts?${q(t)}`),
   replay: (t?: string) => http<ReplayState>(`/replay/state?${q(t)}`),
-  whatif: (s: Scenario, modifiers: Record<string, unknown>) =>
-    http<WhatIf>("/whatif", { method: "POST", body: JSON.stringify({ scenario: s, modifiers }) }),
+  whatif: (s: Scenario, modifiers: Record<string, unknown>, layout: Layout = "stands") =>
+    http<WhatIf>("/whatif", { method: "POST", body: JSON.stringify({ scenario: s, modifiers, layout }) }),
   briefing: (s: Scenario, t?: string) => http<Briefing>(`/briefing?scenario=${s}&${q(t)}`),
   explain: (question: string, s: Scenario, t?: string) =>
     http<Explanation>("/explain", { method: "POST", body: JSON.stringify({ question, scenario: s, t }) }),
