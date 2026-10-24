@@ -92,3 +92,18 @@ runway_needed_ft:                   # assumption: planning minimum by size class
   super_mid: 5200
   large: 5800
   other: 5000
+
+parking:                            # parking positions beyond the 48 stands (assumptions for the fictional FBO)
+  hot_spots: 4                      # short-term drop-and-go positions by the terminal, max 3 h
+  hot_spot_max_hours: 3
+  temp_zone_stands: 12              # taxiway closed for parking (strategy C), needs airport + FAA approval
+  tows_per_block: 2                 # out and back for each boxed-in event
+
+parking_fees_usd:                   # assumption: per night, before event surcharge; drop-and-go is a flat handling fee
+  light: 150
+  mid: 250
+  super_mid: 350
+  large: 500
+  other: 250
+  drop_and_go_flat: 150
+  event_multiplier: 2.0

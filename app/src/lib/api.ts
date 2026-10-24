@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
-  AfterAction, Alert, AuditRow, Briefing, Explanation, Forecast, Meta, Occupancy, Queue, ReplayState, Scenario,
-  Settings, StrategiesResponse, WhatIf,
+  AfterAction, Alert, AssignResult, AuditRow, Briefing, Explanation, Forecast, Meta, Occupancy, ParkingMethod,
+  ParkingPlan, ParkingState, Queue, ReplayState, Reservation, Scenario, Settings, StrategiesResponse, WhatIf,
 } from "./types";
 
 const BASE = "/api";
@@ -32,6 +32,13 @@ export const api = {
   settings: () => http<Settings>("/settings"),
   putSettings: (patch: Partial<Settings>) => http<Settings>("/settings", { method: "PUT", body: JSON.stringify(patch) }),
   audit: () => http<{ entries: AuditRow[] }>("/audit"),
+  parkingPlan: (m: ParkingMethod, temp: boolean) => http<ParkingPlan>(`/parking/plan?method=${m}&temp=${temp}`),
+  parkingState: (t: string, m: ParkingMethod, temp: boolean) =>
+    http<ParkingState>(`/parking/state?${q(t)}&method=${m}&temp=${temp}`),
+  reservations: (day: string, m: ParkingMethod, temp: boolean) =>
+    http<{ day: string; items: Reservation[] }>(`/parking/reservations?day=${day}&method=${m}&temp=${temp}`),
+  assign: (flight_id: string, position_id: string | null, confirm: boolean, replay_t_local?: string) =>
+    http<AssignResult>("/parking/assign", { method: "POST", body: JSON.stringify({ flight_id, position_id, confirm, replay_t_local }) }),
   decide: (action: "approve" | "edit" | "reject", target: string, note = "", replay_t_local?: string) =>
     http<AuditRow>("/audit", { method: "POST", body: JSON.stringify({ action, target, note, replay_t_local }) }),
 };

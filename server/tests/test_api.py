@@ -78,3 +78,28 @@ def test_replay_and_afteraction(client):
 
 def test_audit_rejects_unknown_action(client):
     assert client.post("/audit", json={"action": "land", "target": "flight:x"}).status_code == 422
+
+
+def test_parking_optimized_needs_fewer_tows_than_whiteboard(client):
+    opt = client.get("/parking/plan?method=optimized").json()
+    assert opt["metrics"]["tows"] < opt["compare"]["tows"]
+    assert opt["compare"]["method"] == "first_come"
+    ids = {p["id"] for p in opt["positions"]}
+    assert {"A1", "D12", "H1"} <= ids
+    for row in opt["gantt"]:
+        bars = sorted(row["bars"], key=lambda b: b["start"])
+        if row["position"] != "OVERFLOW":
+            assert all(a["end"] <= b["start"] for a, b in zip(bars, bars[1:])), f"double-booked {row['position']}"
+
+
+def test_parking_reservations_explain_every_placement(client):
+    items = client.get("/parking/reservations?day=2027-02-12").json()["items"]
+    assert items and all(i["reasons"] for i in items)
+
+
+def test_parking_assign_validates_before_pinning(client):
+    plan = client.get("/parking/plan").json()
+    big = next(b for r in plan["gantt"] if r["position"] != "OVERFLOW" for b in r["bars"] if b["size_class"] == "large")
+    small_stand = next(p["id"] for p in plan["positions"] if p["max_wingspan_ft"] == 60)
+    r = client.post("/parking/assign", json={"flight_id": big["flight_id"], "position_id": small_stand, "confirm": True}).json()
+    assert not r["ok"] and not r["confirmed"] and any("Wingspan" in i for i in r["issues"])

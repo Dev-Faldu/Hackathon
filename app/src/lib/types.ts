@@ -105,3 +105,38 @@ export interface AfterAction {
   hours_over_capacity_with_plan: number; strategy: string; strategy_kpis: Kpis; peak_occupancy: number;
   capacity: number; stand_conflicts_week: number; audit: AuditRow[];
 }
+
+// ---------- parking control ----------
+export type ParkingMethod = "optimized" | "first_come";
+export interface ParkingPosition { id: string; kind: "stand" | "hot" | "temp"; row: string; column: number; depth: number; max_wingspan_ft: number }
+export interface ParkingMetrics {
+  method: ParkingMethod; temp_zone: boolean; tows: number; boxed_in_events: number; overflow_aircraft: number;
+  hot_spot_uses: number; temp_zone_uses: number; peak_stands_used: number; stands: number; utilization_pct: number;
+  revenue_est_usd: number; aircraft_parked: number;
+}
+export interface GanttBar {
+  flight_id: string; booking_code: string | null; size_class: SizeClass; start: string; end: string; stay_type: string;
+  origin: string; tow_involved: boolean;
+}
+export interface Tow { t_local: string; flight_id: string; size_class: SizeClass; from: string; to: string; reason: string; for_flight: string }
+export interface ParkingPlan {
+  method: ParkingMethod; temp_zone: boolean; source: string; positions: ParkingPosition[]; metrics: ParkingMetrics;
+  compare: ParkingMetrics; gantt: { position: string; kind: string; bars: GanttBar[] }[]; tows: Tow[];
+  pins: Record<string, string>; window: string[];
+}
+export interface Occupant {
+  flight_id: string; booking_code: string | null; size_class: SizeClass; wingspan_ft: number; position: string | null;
+  kind: string; arrive_local: string; depart_local: string; origin: string; origin_name: string; stay_type: string; reasons: string[];
+}
+export interface ParkingState {
+  t_local: string; occupants: Occupant[]; tows_next_3h: Tow[];
+  arrivals_next_3h: { flight_id: string; booking_code: string | null; size_class: SizeClass; arrive_local: string; position: string | null; origin: string }[];
+  departures_next_3h: { flight_id: string; size_class: SizeClass; depart_local: string; position: string | null }[];
+  stands_used: number; hot_used: number; temp_used: number; overflow_now: number;
+}
+export interface Reservation {
+  flight_id: string; booking_code: string | null; size_class: SizeClass; origin: string; origin_name: string;
+  arrive_local: string; depart_local: string; stay_h: number; stay_type: string; position: string | null;
+  action: "stand" | "hot_spot" | "temp" | "overflow"; label: string; reasons: string[]; tows: number;
+}
+export interface AssignResult { ok: boolean; issues: string[]; confirmed?: boolean; tows_before?: number; tows_after?: number; pins: Record<string, string> }

@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 
 from . import config as C
 from .data import KVNY, Dataset
-from .engine import assign_stands, capacity, eta_band_min
+from . import parking
+from .engine import capacity, eta_band_min
 
 
 def _interp(lat1: float, lon1: float, lat2: float, lon2: float, frac: float) -> tuple[float, float]:
@@ -25,8 +26,11 @@ def _interp(lat1: float, lon1: float, lat2: float, lon2: float, frac: float) -> 
 class Replay:
     def __init__(self, ds: Dataset):
         self.ds = ds
-        self.plan = assign_stands(ds.flights, ds.stands)
-        self.conflicts = sum(p["conflicts"] for p in self.plan.values())
+        pplan = parking.build(ds, "optimized")
+        boxed = {b["flight_id"] for b in pplan.blocks} | {b["blocked_by"] for b in pplan.blocks}
+        self.plan = {fid: {"stand_id": pid if pid and pid[0] not in "HT" else pid, "conflicts": int(fid in boxed)}
+                     for fid, pid in pplan.assignment.items()}
+        self.conflicts = len(pplan.blocks)
 
     def state(self, t: datetime) -> dict:
         ds = self.ds

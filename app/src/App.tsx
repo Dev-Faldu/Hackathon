@@ -5,10 +5,11 @@ import { useApp } from "./lib/store";
 import AfterAction from "./screens/AfterAction";
 import EventSetup from "./screens/EventSetup";
 import LiveOps from "./screens/LiveOps";
+import Parking from "./screens/Parking";
 import PlanBoard from "./screens/PlanBoard";
 import WhatIf from "./screens/WhatIf";
 
-const SCREENS = { setup: EventSetup, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction };
+const SCREENS = { setup: EventSetup, parking: Parking, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction };
 
 export default function App() {
   const { screen } = useApp();

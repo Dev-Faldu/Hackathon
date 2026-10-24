@@ -11,7 +11,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import adapters, config as C, engine, explain, forecast, store
+from . import adapters, config as C, engine, explain, forecast, parking, store
 from .data import Dataset, generate_sample, load_processed
 from .replay import Replay
 
@@ -278,6 +278,74 @@ def post_audit(entry: AuditEntry):
 @router.get("/health")
 def health():
     return {"ok": True}
+
+
+# ---------- parking control ----------
+
+_pins: dict[str, str] = {}
+
+
+class AssignRequest(BaseModel):
+    flight_id: str
+    position_id: str | None = None
+    confirm: bool = False
+    actor_role: str = "Line supervisor"
+    replay_t_local: str | None = None
+
+
+@functools.lru_cache(maxsize=32)
+def _parking_plan(method: str, temp: bool, pins_key: str) -> parking.Plan:
+    return parking.build(live_dataset(), method, temp, dict(_pins))
+
+
+def parking_plan(method: str, temp: bool) -> parking.Plan:
+    if method not in ("optimized", "first_come"):
+        raise HTTPException(422, "method must be optimized or first_come")
+    return _parking_plan(method, temp, parking.pins_key(_pins))
+
+
+@router.get("/parking/plan")
+def get_parking_plan(method: str = "optimized", temp: bool = False):
+    ds = live_dataset()
+    plan = parking_plan(method, temp)
+    other = parking_plan("first_come" if method == "optimized" else "optimized", temp)
+    return {"method": method, "temp_zone": temp, "source": ds.source,
+            "positions": [p.to_dict() for p in plan.positions],
+            "metrics": parking.metrics(ds, plan), "compare": parking.metrics(ds, other),
+            "gantt": parking.gantt(ds, plan, ds.bookings), "tows": plan.tows,
+            "pins": dict(_pins), "window": [d.isoformat() for d in C.window_days()]}
+
+
+@router.get("/parking/state")
+def get_parking_state(t: str | None = None, method: str = "optimized", temp: bool = False):
+    return parking.state(live_dataset(), parking_plan(method, temp), C.parse_t(t))
+
+
+@router.get("/parking/reservations")
+def get_parking_reservations(day: str = "2027-02-12", method: str = "optimized", temp: bool = False):
+    return {"day": day, "items": parking.recommendations(live_dataset(), parking_plan(method, temp), day)}
+
+
+@router.post("/parking/assign")
+def post_parking_assign(req: AssignRequest):
+    """Check a manual move; with confirm=true, pin it, re-plan everyone else around it, and log it."""
+    ds = live_dataset()
+    before = parking.metrics(ds, parking_plan("optimized", False))
+    if req.position_id is None:
+        if req.confirm:
+            _pins.pop(req.flight_id, None)
+        return {"ok": True, "issues": [], "pins": dict(_pins)}
+    issues = parking.validate_move(ds, parking_plan("optimized", False), req.flight_id, req.position_id)
+    trial = dict(_pins)
+    trial[req.flight_id] = req.position_id
+    after = parking.metrics(ds, parking.build(ds, "optimized", False, trial))
+    if req.confirm and not issues:
+        _pins[req.flight_id] = req.position_id
+        store.audit_append({"action": "edit", "target": f"parking:{req.flight_id}->{req.position_id}",
+                            "actor_role": req.actor_role, "note": "Manual stand assignment",
+                            "replay_t_local": req.replay_t_local})
+    return {"ok": not issues, "issues": issues, "confirmed": bool(req.confirm and not issues),
+            "tows_before": before["tows"], "tows_after": after["tows"], "pins": dict(_pins)}
 
 
 app.include_router(router, prefix="/api")
