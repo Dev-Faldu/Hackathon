@@ -63,6 +63,10 @@ body {
   .btn-primary { @apply btn bg-runway text-white shadow-[0_6px_18px_rgba(37,99,235,0.28)] hover:bg-[#1d4fd6]; }
   .btn-ghost { @apply btn border border-hairline bg-white/70 text-ink hover:bg-white; }
   .chip { @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-medium; }
+  .inp {
+    @apply w-full min-w-0 rounded-control border border-hairline bg-white/80 px-3 py-2 text-[13px] text-ink outline-none transition
+      focus:border-runway/40 focus:ring-2 focus:ring-runway/20;
+  }
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }

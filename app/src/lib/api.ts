@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AfterAction, Alert, AssignResult, AuditRow, Briefing, Explanation, Forecast, Meta, Occupancy, ParkingMethod,
-  ParkingPlan, ParkingState, Queue, ReplayState, Reservation, Scenario, Settings, StrategiesResponse, WhatIf, La28Report } from "./types";
+  ParkingPlan, ParkingState, Queue, ReplayState, Reservation, Scenario, Settings, StrategiesResponse, WhatIf, La28Report,
+  BookingMeta, BookingQuote, Inbox, TripRequest } from "./types";
 import type { Movement } from "../three/layout";
 
 const BASE = "/api";
@@ -30,6 +31,11 @@ export const api = {
     http<Explanation>("/explain", { method: "POST", body: JSON.stringify({ question, scenario: s, t }) }),
   afteraction: (s: Scenario) => http<AfterAction>(`/afteraction?scenario=${s}`),
   la28: (s: Scenario) => http<La28Report>(`/la28?scenario=${s}`),
+  bookingQuote: (r: TripRequest) => http<BookingQuote>("/bookings/quote", { method: "POST", body: JSON.stringify(r) }),
+  bookingAccept: (trip_sheet: Record<string, unknown>, replay_t_local?: string) =>
+    http<{ ok: boolean; trip_sheet: Record<string, unknown> }>("/bookings/accept", { method: "POST", body: JSON.stringify({ trip_sheet, replay_t_local }) }),
+  bookingInbox: (t?: string) => http<Inbox>(`/bookings/inbox?${q(t)}`),
+  bookingMeta: () => http<BookingMeta>("/bookings/connections"),
   airfieldMovements: () => http<{ source: string; movements: Movement[] }>("/airfield/movements"),
   settings: () => http<Settings>("/settings"),
   putSettings: (patch: Partial<Settings>) => http<Settings>("/settings", { method: "PUT", body: JSON.stringify(patch) }),

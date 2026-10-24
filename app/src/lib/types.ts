@@ -156,3 +156,29 @@ export interface La28Report {
   la28: La28Profile; super_bowl: La28Profile;
   recommendations: { title: string; detail: string; approver: string }[]; never: string;
 }
+
+// ---------- booking desk ----------
+export interface BookingCheck { ok: boolean; label: string; detail: string }
+export interface BookingQuote {
+  request_id: string; decision: "confirmed" | "approval" | "full" | "invalid"; headline: string; size_class: SizeClass;
+  position: ParkingPosition | null; position_label: string | null; tows: number | null; price_usd: number;
+  price_lines: { label: string; usd: number }[]; event_rates: boolean; hold_expires_local: string | null;
+  checks: BookingCheck[]; alternatives: { kind: string; label: string; detail: string }[];
+  risk: { p90_peak: number | null; p_over: number; peak_at: string | null; capacity: number }; answer_ms: number;
+  trip_sheet: Record<string, unknown>;
+}
+export interface InboxItem {
+  request_id: string; received_local: string; channel: string; flight: string; flight_id: string; size_class: SizeClass;
+  origin: string; eta_local: string; etd_local: string; position: string | null; lead_days: number;
+  status: "auto" | "look"; issues: { kind: string; text: string }[]; notes: string[];
+}
+export interface Inbox {
+  t_local: string; total: number; auto: number; look: number; by_channel: Record<string, number>;
+  by_issue: Record<string, number>; median_lead_days: number | null; items: InboxItem[]; note: string;
+}
+export interface Connection { name: string; kind: string; flow: string; status: string; today: string; with_rampcast: string }
+export interface BookingMeta { connections: Connection[]; aircraft_types: { code: string; name: string; size_class: SizeClass }[]; services: string[] }
+export interface TripRequest {
+  arrive_local: string; depart_local: string; aircraft_type?: string; size_class?: SizeClass; tail?: string; origin?: string;
+  international?: boolean; services?: string[]; channel?: string; t?: string;
+}

@@ -132,6 +132,38 @@ def test_la28_profile_differs_from_super_bowl(client):
     assert all(x["approver"] for x in r["recommendations"])
 
 
+def test_booking_quote_answers_with_position_or_alternatives(client):
+    quiet = client.post("/bookings/quote", json={"aircraft_type": "GLF6", "arrive_local": "2027-02-17T10:00",
+                                                 "depart_local": "2027-02-18T09:00"}).json()
+    assert quiet["decision"] in ("confirmed", "approval") and quiet["position"] is not None
+    assert quiet["price_usd"] == 500 and not quiet["event_rates"]          # one night, large cabin, outside the event week
+    assert quiet["trip_sheet"]["parking"]["position"] == quiet["position"]["id"]
+    peak = client.post("/bookings/quote", json={"size_class": "large", "arrive_local": "2027-02-12T15:00",
+                                                "depart_local": "2027-02-15T11:00"}).json()
+    if peak["decision"] == "full":
+        assert peak["position"] is None and any(a["kind"] == "partner" for a in peak["alternatives"])
+    else:
+        assert peak["decision"] == "approval"                              # the ramp is over capacity that weekend
+    bad = client.post("/bookings/quote", json={"aircraft_type": "XXXX", "arrive_local": "2027-02-12T15:00", "depart_local": "2027-02-12T16:00"})
+    assert bad.status_code == 422
+
+
+def test_booking_quote_flags_customs_and_curfew(client):
+    q = client.post("/bookings/quote", json={"size_class": "mid", "international": True, "arrive_local": "2027-02-10T10:00",
+                                             "depart_local": "2027-02-10T23:30"}).json()
+    failed = {c["label"] for c in q["checks"] if not c["ok"]}
+    assert {"Customs", "Noise curfew"} <= failed                          # CBP opens 15:00 on Wednesdays; 23:30 is curfew
+    assert q["decision"] != "confirmed"
+
+
+def test_booking_inbox_counts_add_up(client):
+    box = client.get("/bookings/inbox", params={"t": T}).json()
+    assert box["auto"] + box["look"] == box["total"] == sum(box["by_channel"].values())
+    assert all(i["issues"] for i in box["items"] if i["status"] == "look")
+    assert all(i["received_local"] <= T[:16] + "-08:00" for i in box["items"])
+    assert sum(box["by_channel"].values()) > 0 and "FlightBridge" in box["by_channel"]
+
+
 def test_build_replay_feeds_the_loader(tmp_path, monkeypatch):
     """Raw OpenSky CSVs -> replay_2027.jsonl -> load_processed, without network."""
     import csv as _csv

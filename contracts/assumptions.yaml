@@ -107,3 +107,26 @@ parking_fees_usd:                   # assumption: per night, before event surcha
   other: 250
   drop_and_go_flat: 150
   event_multiplier: 2.0
+
+bookings:                           # instant booking desk and the shared inbox (assumptions; replace with the FBO's own numbers)
+  hold_minutes: 15                  # an instant answer holds the slot this long for the operator to accept
+  stay_buffer_min: 15               # gap kept between one jet leaving a position and the next arriving
+  auto_confirm_max_p_over: 0.2      # auto-confirm only when the forecast gives at most this chance of the ramp being over capacity
+  eta_change_flag_min: 30           # live tracking moves the ETA by more than this: re-plan automatically and note it
+  eta_change_look_min: 90           # moves by more than this: a person confirms with the crew and the car service
+  tracking_horizon_h: 6             # live ETA known this long before landing (flight tracking)
+  walk_in_share: 0.12               # arrivals with no request at all
+  duplicate_share: 0.05             # trips requested twice through two channels
+  aircraft_change_share: 0.03       # operator swaps to a bigger aircraft after requesting
+  channel_mix:                      # how requests reach the FBO
+    FlightBridge: 0.45
+    Scheduler export: 0.20
+    Email: 0.15
+    Phone: 0.10
+    FBO portal: 0.10
+  lead_days:                        # how far ahead requests arrive, by stay type [min, max]
+    event_stay: [14, 75]
+    through_game: [14, 75]
+    overnight: [2, 30]
+    drop_and_go: [0, 7]
+    pre_window: [7, 40]

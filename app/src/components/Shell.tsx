@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BarChart3, Box, Database, FlaskConical, Medal, Pause, Play, Plane, Radar, Settings2, ShieldCheck, Sparkles, SquareParking } from "lucide-react";
+import { BarChart3, Box, CalendarCheck, Database, FlaskConical, Medal, Pause, Play, Plane, Radar, Settings2, ShieldCheck, Sparkles, SquareParking } from "lucide-react";
 import type { ReactNode } from "react";
 import { cx, dayLabel, hhmm, sourceOf } from "../lib/format";
 import { useApp, type Screen } from "../lib/store";
@@ -7,6 +7,7 @@ import { Chip, Segmented } from "./ui";
 
 const NAV: { id: Screen; label: string; icon: ReactNode; hint: string }[] = [
   { id: "setup", label: "Event setup", icon: <Settings2 size={17} />, hint: "Capacity, staff, priority rules" },
+  { id: "bookings", label: "Booking desk", icon: <CalendarCheck size={17} />, hint: "Instant answers, one inbox" },
   { id: "parking", label: "Parking control", icon: <SquareParking size={17} />, hint: "Stands, tows, reservations" },
   { id: "world", label: "Airport 3D", icon: <Box size={17} />, hint: "Live 3D world of the airfield" },
   { id: "plan", label: "Plan board", icon: <BarChart3 size={17} />, hint: "Forecast and strategy options" },

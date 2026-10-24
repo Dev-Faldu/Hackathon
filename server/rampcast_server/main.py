@@ -11,7 +11,7 @@ from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from . import adapters, config as C, engine, explain, forecast, la28, parking, store
+from . import adapters, bookings, config as C, engine, explain, forecast, la28, parking, store
 from .data import Dataset, airfield_movements, generate_sample, load_processed
 from .replay import Replay
 
@@ -394,6 +394,72 @@ def post_parking_assign(req: AssignRequest):
                             "replay_t_local": req.replay_t_local})
     return {"ok": not issues, "issues": issues, "confirmed": bool(req.confirm and not issues),
             "tows_before": before["tows"], "tows_after": after["tows"], "pins": dict(_pins)}
+
+
+# ---------- booking desk ----------
+
+class TripRequest(BaseModel):
+    arrive_local: str
+    depart_local: str
+    size_class: str | None = None
+    aircraft_type: str | None = None
+    tail: str | None = None
+    origin: str | None = None
+    international: bool = False
+    services: list[str] = Field(default_factory=list)
+    channel: str = "FBO portal"
+    t: str | None = None              # replay "now", for the hold expiry
+
+
+class AcceptRequest(BaseModel):
+    trip_sheet: dict
+    actor_role: str = "Customer service"
+    replay_t_local: str | None = None
+
+
+def _quote(req: TripRequest) -> dict:
+    if req.size_class is not None and req.size_class not in C.SIZE_CLASSES:
+        raise HTTPException(422, f"size_class must be one of {', '.join(C.SIZE_CLASSES)}")
+    if req.size_class is None and req.aircraft_type not in bookings.AIRCRAFT_TYPES:
+        raise HTTPException(422, "give size_class or a known aircraft_type (ICAO designator)")
+    try:
+        return bookings.quote(live_dataset(), parking_plan("optimized", False), forecast.occupancy("medium"),
+                              req.model_dump(), C.parse_t(req.t or demo_t()))
+    except ValueError as e:
+        raise HTTPException(422, f"bad time: {e}") from e
+
+
+@router.post("/bookings/quote")
+def post_booking_quote(req: TripRequest):
+    """Instant answer for a trip request typed in at the desk."""
+    return _quote(req)
+
+
+@router.post("/bookings/inbound")
+def post_booking_inbound(req: TripRequest):
+    """Open endpoint: any scheduler, trip-services tool or FBO system can post a trip request and get the answer back."""
+    return {"received_via": req.channel, **_quote(req)}
+
+
+@router.post("/bookings/accept")
+def post_booking_accept(req: AcceptRequest):
+    """The operator accepted: log it and return the trip sheet that goes back to FlightBridge and the FBO system."""
+    sheet = {**req.trip_sheet, "parking": {**req.trip_sheet.get("parking", {}), "status": "confirmed"}}
+    store.audit_append({"action": "approve", "target": f"booking:{sheet.get('request_id')}->{sheet['parking'].get('position')}",
+                        "actor_role": req.actor_role, "note": f"Parking confirmed for {sheet.get('tail') or 'request'}",
+                        "replay_t_local": req.replay_t_local})
+    return {"ok": True, "trip_sheet": sheet}
+
+
+@router.get("/bookings/inbox")
+def get_booking_inbox(t: str | None = None):
+    return bookings.inbox(live_dataset(), parking_plan("optimized", False), C.parse_t(t or demo_t()))
+
+
+@router.get("/bookings/connections")
+def get_booking_connections():
+    types = [{"code": k, "name": v[0], "size_class": v[1]} for k, v in bookings.AIRCRAFT_TYPES.items()]
+    return {"connections": bookings.CONNECTIONS, "aircraft_types": types, "services": list(bookings.SERVICES)}
 
 
 app.include_router(router, prefix="/api")

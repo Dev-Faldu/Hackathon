@@ -1,6 +1,7 @@
 import { motion, AnimatePresence, animate, useMotionValue, useTransform } from "framer-motion";
-import { Check, CheckCircle2, Info, Pencil, X, AlertTriangle } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { Check, CheckCircle2, ChevronDown, Info, Pencil, X, AlertTriangle } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../lib/api";
 import { cx } from "../lib/format";
 import { useApp } from "../lib/store";
@@ -35,14 +36,14 @@ export function CountUp({ value, digits = 0, className }: { value: number; digit
   return <motion.span className={cx("num", className)}>{text}</motion.span>;
 }
 
-export function Kpi({ label, value, digits = 0, unit, sub, tone, children }: {
+export function Kpi({ label, value, digits = 0, unit, sub, tone, children, info }: {
   label: string; value: number; digits?: number; unit?: string; sub?: ReactNode;
-  tone?: "ok" | "watch" | "alert" | "runway"; children?: ReactNode;
+  tone?: "ok" | "watch" | "alert" | "runway"; children?: ReactNode; info?: { what: ReactNode; source?: ReactNode };
 }) {
   const toneCls = { ok: "text-ok", watch: "text-watch", alert: "text-alert", runway: "text-runway" };
   return (
     <div className="glass flex min-w-0 flex-col gap-1 px-4 py-3.5">
-      <div className="label truncate">{label}</div>
+      <div className="flex min-w-0 items-center gap-1"><div className="label truncate">{label}</div>{info && <InfoTip what={info.what} source={info.source} />}</div>
       <div className={cx("flex items-baseline gap-1.5 text-[28px] font-semibold leading-none tracking-[-0.02em]", tone && toneCls[tone])}>
         <CountUp value={value} digits={digits} />
         {unit && <span className="text-[13px] font-medium text-ink-2">{unit}</span>}
@@ -178,5 +179,54 @@ export function CitedText({ text }: { text: string }) {
         ),
       )}
     </p>
+  );
+}
+
+/** A summary line that opens to the full detail. First-time users read the summary; experts open it. */
+export function Disclosure({ summary, children, defaultOpen = false, className, tone }: {
+  summary: ReactNode; children: ReactNode; defaultOpen?: boolean; className?: string; tone?: "look";
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={cx("rounded-[14px] border bg-white/60", tone === "look" ? "border-watch/30" : "border-hairline", className)}>
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 rounded-[14px] px-3.5 py-2.5 text-left transition hover:bg-white/60">
+        <div className="min-w-0 flex-1">{summary}</div>
+        <ChevronDown size={16} className={cx("shrink-0 text-ink-2 transition-transform", open && "rotate-180")} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18 }} className="overflow-hidden">
+            <div className="border-t border-hairline px-3.5 py-3 text-[12.5px] leading-relaxed text-ink-2">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** An (i) next to a number: what it means in plain words, and where it comes from. */
+export function InfoTip({ what, source, label = "What this number means" }: { what: ReactNode; source?: ReactNode; label?: string }) {
+  const btn = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const show = () => {
+    const r = btn.current?.getBoundingClientRect();
+    if (r) setPos({ x: Math.min(window.innerWidth - 300, Math.max(12, r.left - 140)), y: r.bottom + 8 });
+  };
+  return (
+    <>
+      <button ref={btn} type="button" aria-label={label} onMouseEnter={show} onMouseLeave={() => setPos(null)} onFocus={show} onBlur={() => setPos(null)}
+        onClick={(e) => { e.stopPropagation(); if (pos) setPos(null); else show(); }}
+        className="inline-grid h-4 w-4 shrink-0 place-items-center rounded-full text-ink-3 transition hover:bg-runway/10 hover:text-runway focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-runway/40">
+        <Info size={12} />
+      </button>
+      {pos && createPortal(
+        <div role="tooltip" style={{ left: pos.x, top: pos.y }}
+          className="glass-strong pointer-events-none fixed z-[100] w-[288px] px-3.5 py-2.5 text-[12px] normal-case leading-snug tracking-normal text-ink">
+          <div>{what}</div>
+          {source && <div className="mt-1.5 border-t border-hairline pt-1.5 text-[11px] text-ink-2"><span className="font-medium">Source:</span> {source}</div>}
+        </div>, document.body)}
+    </>
   );
 }

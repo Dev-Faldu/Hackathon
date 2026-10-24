@@ -9,9 +9,10 @@ import Parking from "./screens/Parking";
 import PlanBoard from "./screens/PlanBoard";
 import WhatIf from "./screens/WhatIf";
 import La28 from "./screens/La28";
+import Bookings from "./screens/Bookings";
 import World3D from "./screens/World3D";
 
-const SCREENS = { setup: EventSetup, parking: Parking, world: World3D, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction, la28: La28 };
+const SCREENS = { setup: EventSetup, bookings: Bookings, parking: Parking, world: World3D, plan: PlanBoard, live: LiveOps, whatif: WhatIf, after: AfterAction, la28: La28 };
 
 export default function App() {
   const { screen } = useApp();
