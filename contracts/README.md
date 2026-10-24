@@ -31,10 +31,13 @@ Conventions:
 | airport | string | `KVNY` | the basin airport this row is about |
 | event_name | string | `SB_LVI_2022` | null for ordinary weeks |
 | day_offset | int | `-2` | days relative to game day, null for ordinary weeks |
+| source | string | `published` | `published` (anchors/benchmarks) or `assumed` |
 
 ### `daily_counts.csv`
 
-`date, airport, arrivals, departures, arr_light, arr_mid, arr_super_mid, arr_large, arr_other, event_name, day_offset`
+`date, airport, arrivals, departures, arr_light, arr_mid, arr_super_mid, arr_large, arr_other, event_name, day_offset, source`
+
+Dates without arrival tracking are left blank/missing for arrival columns instead of fake zeroes.
 
 ### `replay_2027.jsonl`: one JSON event per line, sorted by `t_utc`
 
