@@ -14,8 +14,12 @@ import os
 import re
 from pathlib import Path
 
-import anthropic
 import httpx
+
+try:
+    import anthropic
+except ImportError:  # optional: only needed with RAMPCAST_USE_CLAUDE=1 and a key
+    anthropic = None
 
 log = logging.getLogger("rampcast.explain")
 
@@ -37,7 +41,7 @@ _client: anthropic.Anthropic | None = None
 
 
 def claude_available() -> bool:
-    if os.environ.get("RAMPCAST_DISABLE_CLAUDE") or not os.environ.get("RAMPCAST_USE_CLAUDE"):
+    if anthropic is None or os.environ.get("RAMPCAST_DISABLE_CLAUDE") or not os.environ.get("RAMPCAST_USE_CLAUDE"):
         return False
     return bool(os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
                 or (Path.home() / ".config" / "anthropic").exists())

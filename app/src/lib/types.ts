@@ -78,7 +78,7 @@ export interface Ground {
 export interface ReplayState {
   t_local: string; source: string; notes: string[]; capacity: number; occupancy: number; occupancy_pct: number;
   aircraft_on_ground: number; overflow_now: number; airborne_count: number; arrivals_today: number;
-  departures_today: number; stand_conflicts_week: number; airborne: Airborne[]; ground: Ground[];
+  departures_today: number; stand_conflicts_week: number; boxed_now?: number; tows_week?: number; airborne: Airborne[]; ground: Ground[];
   recent: { t_local: string; event: string; flight_id: string; origin: string; size_class: SizeClass }[];
   upcoming: { flight_id: string; booking_code: string | null; eta_local: string; eta_p90_local: string; origin: string;
     origin_name: string; size_class: SizeClass; is_international: boolean }[];

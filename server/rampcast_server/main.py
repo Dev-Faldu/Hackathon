@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import os
 import functools
 import json
 import logging
@@ -24,6 +25,10 @@ from .replay import Replay
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    if SERVERLESS:  # each instance answers from the snapshot; no background work between requests
+        serverless_boot()
+        yield
+        return
     # Precomputed answers first (milliseconds), then warm what is left in one background thread (see _warm_up).
     snapshot.load()
     threading.Thread(target=_warm_up, daemon=True).start()
@@ -91,6 +96,21 @@ def _prime_from_snapshot() -> None:
 # ---------- warm-up: a slow laptop computes the week in about a minute; the app says so meanwhile ----------
 
 _warm = {"done": False, "step": "starting"}
+SERVERLESS = bool(os.environ.get("RAMPCAST_SERVERLESS"))  # set by api/index.py on Vercel
+_booted = [False]
+
+
+def serverless_boot() -> None:
+    """Serverless start: load the precomputed answers and hand back the solved plans; nothing runs in the background."""
+    if _booted[0]:
+        return
+    _booted[0] = True
+    snapshot.load()
+    try:
+        _prime_from_snapshot()
+    except Exception as e:  # the engine still answers, just slower for the exact solver
+        log.warning("could not prime the exact-solver plans: %s", e)
+    _warm["done"] = True
 
 
 def _warm_up() -> None:
