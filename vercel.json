@@ -1,17 +1,25 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "installCommand": "cd app && npm ci --no-audit --no-fund",
-  "buildCommand": "cd app && npx vite build",
-  "outputDirectory": "app/dist",
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 60,
-      "includeFiles": "{server/rampcast_server/**,server/snapshot/**,rampcast/**,data/processed/**,contracts/**,reports/*.csv}",
-      "excludeFiles": "{app/**,docs/**,data/raw/**,data/scripts/**,**/tests/**,**/__pycache__/**,server/.venv/**,server/tests/**,reports/*.png,logs/**}"
+  "services": {
+    "web": {
+      "root": "app/",
+      "framework": "vite",
+      "buildCommand": "npx vite build"
+    },
+    "api": {
+      "root": "./",
+      "framework": "fastapi",
+      "entrypoint": "api.index:app",
+      "functions": {
+        "api/index.py": {
+          "maxDuration": 60,
+          "excludeFiles": "{app/**,docs/**,data/raw/**,data/scripts/**,**/tests/**,**/__pycache__/**,server/.venv/**,reports/*.png,logs/**}"
+        }
+      }
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" }
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
   ]
 }
