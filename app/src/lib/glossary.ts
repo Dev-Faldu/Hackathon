@@ -15,7 +15,7 @@ export const GLOSSARY: Record<string, Term> = {
   inbound: { term: "Inbound now", what: "Jets in the air heading to our FBO at this moment of the replay.", source: "Replay; a live build reads FlightAware or ADS-B." },
   on_ground: { term: "Aircraft on ground", what: "Our jets parked or moving on the ramp right now.", source: "Replay." },
   overflow_now: { term: "Need overflow", what: "Jets on the ground right now with no stand that fits; they need a hot spot, the temporary zone or a partner airport.", source: "Draft stand plan." },
-  conflicts: { term: "Departure-order conflicts", what: "Times in the week a jet is parked behind one that leaves later, so someone must tow.", source: "Draft stand plan." },
+  conflicts: { term: "Boxed in right now", what: "Jets on the ramp at this moment that are parked behind a jet leaving after them, so a tug must pull the front jet out first. The week's planned tows are on Parking control.", source: "Stand plan on the 48 marked stands, replay clock." },
   stands_now: { term: "Stands in use", what: "Marked stands taken at this moment, out of 48.", source: "Parking plan at the replay time." },
   tows: { term: "Tows this week", what: "Each time a tug must pull a jet out and back so another can get in or out. Fewer tows means less risk of hangar rash and fewer tug drivers.", source: "Parking plan; 2 tows per boxed-in event (assumptions.yaml)." },
   boxed_in: { term: "Boxed-in events", what: "A jet parked behind one that leaves later. Each one costs two tows.", source: "Parking plan." },

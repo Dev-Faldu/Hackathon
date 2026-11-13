@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import functools
+import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -11,7 +12,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 PROCESSED = ROOT / "data" / "processed"
 ASSUMPTIONS_PATH = ROOT / "contracts" / "assumptions.yaml"
-LOG_DIR = ROOT / "logs"
+# Audit log and settings. Serverless hosts (Vercel) only allow writes under /tmp, so it can be moved.
+LOG_DIR = Path(os.environ["RAMPCAST_LOG_DIR"]) if os.environ.get("RAMPCAST_LOG_DIR") else ROOT / "logs"
 
 LA = ZoneInfo("America/Los_Angeles")
 UTC = ZoneInfo("UTC")

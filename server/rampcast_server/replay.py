@@ -27,10 +27,25 @@ class Replay:
     def __init__(self, ds: Dataset):
         self.ds = ds
         pplan = parking.build(ds, "optimized")
-        boxed = {b["flight_id"] for b in pplan.blocks} | {b["blocked_by"] for b in pplan.blocks}
-        self.plan = {fid: {"stand_id": pid if pid and pid[0] not in "HT" else pid, "conflicts": int(fid in boxed)}
-                     for fid, pid in pplan.assignment.items()}
+        self.positions = {p.id: p for p in pplan.positions}
+        self.plan = {fid: {"stand_id": pid if pid and pid[0] not in "HT" else pid} for fid, pid in pplan.assignment.items()}
         self.conflicts = len(pplan.blocks)
+        self.tows_week = len(pplan.tows) * C.assumptions()["parking"]["tows_per_block"]
+        self.flights = {f.flight_id: f for f in ds.flights}
+
+    def _boxed_now(self, ground: list[dict]) -> set[str]:
+        """Jets parked right now behind a jet in the same column that leaves after them: they need a tow to get out."""
+        cols: dict[tuple, list[tuple[int, datetime, str]]] = {}
+        for g in ground:
+            p = self.positions.get(g["stand_id"] or "")
+            if p is not None and p.kind in parking.COLUMN_KINDS:
+                cols.setdefault((p.row, p.column), []).append((p.depth, self.flights[g["flight_id"]].departed_vny, g["flight_id"]))
+        out = set()
+        for mates in cols.values():
+            for depth, leaves, fid in mates:
+                if any(d < depth and other_leaves > leaves for d, other_leaves, _ in mates):
+                    out.add(fid)
+        return out
 
     def state(self, t: datetime) -> dict:
         ds = self.ds
@@ -53,7 +68,7 @@ class Replay:
                 if p.get("stand_id") is None:
                     overflow += 1
                 ground.append({"flight_id": f.flight_id, "booking_code": f.booking_code, "size_class": f.size_class,
-                               "stand_id": p.get("stand_id"), "conflicts": p.get("conflicts", 0),
+                               "stand_id": p.get("stand_id"), "conflicts": 0,
                                "landed_local": C.iso_local(f.landed), "departs_local": C.iso_local(f.departed_vny),
                                "stay_type": f.stay_type, "footprint": f.footprint})
             if t - timedelta(minutes=45) <= f.landed <= t:
@@ -69,6 +84,9 @@ class Replay:
                                  "is_international": f.is_international})
         occ = sum(g["footprint"] for g in ground)
         day_start = t.replace(hour=0, minute=0, second=0, microsecond=0)
+        boxed = self._boxed_now(ground)
+        for g in ground:
+            g["conflicts"] = int(g["flight_id"] in boxed)
         recent.sort(key=lambda r: r["t_local"], reverse=True)
         upcoming.sort(key=lambda r: r["eta_local"])
         return {
@@ -77,7 +95,7 @@ class Replay:
             "aircraft_on_ground": len(ground), "overflow_now": overflow, "airborne_count": len(airborne),
             "arrivals_today": sum(1 for f in ds.flights if day_start <= f.landed <= t),
             "departures_today": sum(1 for f in ds.flights if day_start <= f.departed_vny <= t),
-            "stand_conflicts_week": self.conflicts,
+            "stand_conflicts_week": self.conflicts, "boxed_now": len(boxed), "tows_week": self.tows_week,
             "airborne": airborne, "ground": ground, "recent": recent[:12], "upcoming": upcoming,
             "stands": ds.stands, "paths_interpolated": True,
         }

@@ -38,7 +38,8 @@ export default function LiveOps() {
         <Kpi label="Inbound now" value={s?.airborne_count ?? 0} sub="Airborne to KVNY, our FBO" tone="runway" info={g("inbound")} />
         <Kpi label="Need overflow" value={s?.overflow_now ?? 0} tone={s && s.overflow_now > 0 ? "alert" : "ok"} sub="No stand fits right now" info={g("overflow_now")} />
         <Kpi label="Aircraft on ground" value={s?.aircraft_on_ground ?? 0} sub={`${s?.arrivals_today ?? 0} arrivals · ${s?.departures_today ?? 0} departures today`} info={g("on_ground")} />
-        <Kpi label="Departure-order conflicts" value={s?.stand_conflicts_week ?? 0} sub="Whole week, in the draft stand plan" info={g("conflicts")} />
+        <Kpi label="Boxed in right now" value={s?.boxed_now ?? 0} tone={(s?.boxed_now ?? 0) > 0 ? "watch" : "ok"}
+          sub={s?.tows_week != null ? <>parked behind a jet that leaves later · <span className="num">{s.tows_week}</span> planned tows this week</> : "…"} info={g("conflicts")} />
       </KpiRow>
 
       <div className="mt-5 grid gap-5 2xl:grid-cols-[1.75fr_1fr]">
